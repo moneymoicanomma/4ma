@@ -1,19 +1,27 @@
 const heroImage =
-  "https://www.figma.com/api/mcp/asset/28f457c3-5c11-402f-8858-c361f59ee360";
-const logoMark =
-  "https://www.figma.com/api/mcp/asset/d1618739-88dc-4cbb-b3c4-a5bedf9fb4f3";
-const logoMarkBottom =
-  "https://www.figma.com/api/mcp/asset/9127816b-cd15-4291-ab44-e7542cf82540";
-const logoMarkSide =
-  "https://www.figma.com/api/mcp/asset/674770fc-00b1-42ea-af83-df1268c79219";
+  "https://www.figma.com/api/mcp/asset/83fa3342-e3d2-442b-be31-facae874d567";
+const audienceFaceOne =
+  "https://www.figma.com/api/mcp/asset/49be92e1-ced0-4a86-b3b7-67c8d918cead";
+const audienceFaceTwo =
+  "https://www.figma.com/api/mcp/asset/fddbddd5-1703-4e7f-a2cb-a233135a6775";
+const audienceFaceThree =
+  "https://www.figma.com/api/mcp/asset/8a90f70f-556d-4704-858a-fe75231a6060";
+const audienceFaceFour =
+  "https://www.figma.com/api/mcp/asset/d16270ce-5405-421c-a628-ae3c2c95b65a";
+const logoTop =
+  "https://www.figma.com/api/mcp/asset/50dd4ae1-06fc-4b63-875d-15c811abae82";
+const logoBottom =
+  "https://www.figma.com/api/mcp/asset/787d0faf-eb0c-4745-951a-65ab6b03acc7";
+const logoSide =
+  "https://www.figma.com/api/mcp/asset/f660e1c6-af1e-4e6b-810f-580f2730e1d2";
 const streamIcon =
-  "https://www.figma.com/api/mcp/asset/f80157ec-a9eb-4491-8e3a-6c4952a84f7b";
-const fightIcon =
-  "https://www.figma.com/api/mcp/asset/b325dc4d-0e33-4d14-910f-96e6d61e0abb";
-const arenaIcon =
-  "https://www.figma.com/api/mcp/asset/7fe25bad-7400-4e36-a33a-56c60c24e435";
-const podcastIcon =
-  "https://www.figma.com/api/mcp/asset/8ed9edd4-e654-499b-9681-b080b792840c";
+  "https://www.figma.com/api/mcp/asset/af75b97d-1630-44d6-9009-129c2956edac";
+const fightsIcon =
+  "https://www.figma.com/api/mcp/asset/ea488977-59fe-4f28-b3b3-04bfa031aab6";
+const stadiumIcon =
+  "https://www.figma.com/api/mcp/asset/078d838d-e466-4922-97e2-98ae122984a9";
+const microphoneIcon =
+  "https://www.figma.com/api/mcp/asset/050dfad8-23ba-4054-a1c4-03421330e31c";
 
 const navItems = [
   { label: "O Evento", href: "#evento", active: true },
@@ -22,16 +30,16 @@ const navItems = [
   { label: "Alcance", href: "#alcance" }
 ];
 
-const facts = [
-  { label: "Data do Evento", value: "30. maio. 2026" },
-  { label: "Localização", value: "Corneman, São Paulo" },
-  { label: "Transmissão", value: "Renato Money Moicano" }
+const eventFacts = [
+  { label: "Data do Evento", value: "30. MAIO. 2026" },
+  { label: "Localização", value: "CORNEMAN, SÃO PAULO" },
+  { label: "Transmissão", value: "RENATO MONEY MOICANO" }
 ];
 
-const features = [
+const featureCards = [
   {
-    icon: fightIcon,
-    title: "Lutas que Valem Assistir",
+    icon: fightsIcon,
+    title: "Lutas Que Valem Assistir",
     copy:
       "Confrontos casados com critério técnico real. Nada de enchimento de card, nada de luta fácil. Cada combate tem história, tem nível e tem motivo pra estar no card."
   },
@@ -39,37 +47,80 @@ const features = [
     icon: streamIcon,
     title: "Transmissão Que Não Escapa Nada",
     copy:
-      "Replay, estatísticas, câmeras no cage e comentários ao vivo. Você assiste de casa e sente que está na arena, só que sem levar porrada."
+      "Replay, estatísticas, câmeras no cage e comentários ao vivo. Você assiste de casa e sente que está na arena (só que sem levar porrada)."
   },
   {
-    icon: arenaIcon,
+    icon: stadiumIcon,
     title: "Atmosfera de Evento Grande",
     copy:
       "Arena, estrutura profissional, pesagem, entrada dos atletas e toda a cerimônia que transforma uma luta em um espetáculo de verdade."
   },
   {
-    icon: podcastIcon,
+    icon: microphoneIcon,
     title: "Um Comentário Que Você Nunca Viu",
     copy:
-      "Técnica, provocação e humor sem filtro numa transmissão com personalidade própria, feita para quem acompanha luta de verdade."
+      "Arena, estrutura profissional, pesagem, entrada dos atletas e toda a cerimônia que transforma uma luta em um espetáculo de verdade."
   }
 ];
 
-function SectionEyebrow({ children }: { children: React.ReactNode }) {
+const audienceFaces = [
+  audienceFaceOne,
+  audienceFaceTwo,
+  audienceFaceThree,
+  audienceFaceFour
+];
+
+type ButtonVariant = "primary" | "secondary" | "nav";
+type ButtonSize = "medium" | "large";
+
+function LandingButton({
+  children,
+  href,
+  id,
+  size = "medium",
+  variant = "primary"
+}: Readonly<{
+  children: React.ReactNode;
+  href: string;
+  id?: string;
+  size?: ButtonSize;
+  variant?: ButtonVariant;
+}>) {
+  const className = [
+    "landing-button",
+    `landing-button--${variant}`,
+    `landing-button--${size}`
+  ].join(" ");
+
   return (
-    <div className="section-eyebrow">
-      <span className="section-eyebrow__line" />
-      <span>{children}</span>
-    </div>
+    <a className={className} href={href} id={id}>
+      {children}
+    </a>
   );
 }
 
 function BrandMark() {
   return (
     <div className="brand-mark" aria-label="Money Moicano MMA">
-      <img src={logoMark} alt="" />
-      <img src={logoMarkBottom} alt="" />
-      <img src={logoMarkSide} alt="" />
+      <img src={logoTop} alt="" />
+      <img src={logoBottom} alt="" />
+      <img src={logoSide} alt="" />
+    </div>
+  );
+}
+
+function SectionEyebrow({
+  children,
+  centered = false
+}: Readonly<{
+  children: React.ReactNode;
+  centered?: boolean;
+}>) {
+  return (
+    <div className={centered ? "section-eyebrow section-eyebrow--centered" : "section-eyebrow"}>
+      <span className="section-eyebrow__line" />
+      <span>{children}</span>
+      {centered ? <span className="section-eyebrow__line" /> : null}
     </div>
   );
 }
@@ -79,88 +130,93 @@ export default function Home() {
     <main className="page-shell">
       <header className="topbar">
         <BrandMark />
-        <nav className="topbar__nav" aria-label="Seções principais">
+
+        <nav className="topbar__nav" aria-label="Primary">
           {navItems.map((item) => (
             <a
-              key={item.label}
               className={item.active ? "topbar__link is-active" : "topbar__link"}
               href={item.href}
+              key={item.label}
             >
               {item.label}
             </a>
           ))}
         </nav>
-        <a className="button button--compact" href="#ingressos">
+
+        <LandingButton href="#ingressos" variant="nav">
           Comprar Ingressos
-        </a>
+        </LandingButton>
       </header>
 
       <section className="hero" id="evento">
-        <div className="hero__media">
-          <img src={heroImage} alt="Lutadores no cage durante o evento" />
+        <div className="hero__image-shell" aria-hidden="true">
+          <img className="hero__image" src={heroImage} alt="" />
         </div>
-        <div className="hero__overlay" />
+        <div className="hero__scrim" />
+
         <div className="hero__content">
           <SectionEyebrow>O evento que o MMA brasileiro precisava</SectionEyebrow>
+
           <h1 className="hero__title">
-            <span className="hero__title-line">Porrada sincera</span>
-            <span className="hero__title-line is-highlight">sem filtro.</span>
+            <span>Porrada sincera</span>
+            <span className="is-highlight">sem filtro.</span>
           </h1>
-          <p className="hero__copy">
+
+          <p className="body-copy hero__copy">
             O Money Moicano MMA é um evento profissional de MMA comandado por Renato
             Moicano, atleta do UFC, comentarista sem filtro e dono do canal que
             explodiu o YouTube Brasil. Lutas reais. Transmissão ao vivo. Sem
             paciência pra choro.
           </p>
+
           <div className="hero__actions">
-            <a className="button" href="#ingressos">
+            <LandingButton href="#ingressos" id="ingressos" size="large">
               Garantir Ingresso
-            </a>
-            <a className="button button--ghost" href="#transmissao">
+            </LandingButton>
+            <LandingButton href="#transmissao" size="large" variant="secondary">
               Saiba mais
-            </a>
+            </LandingButton>
           </div>
         </div>
 
-        <div className="facts-bar">
-          <div className="facts-bar__items">
-            {facts.map((fact) => (
-              <div className="fact" key={fact.label}>
-                <span className="fact__label">{fact.label}</span>
-                <strong className="fact__value">{fact.value}</strong>
+        <div className="event-bar">
+          <div className="event-bar__facts">
+            {eventFacts.map((fact) => (
+              <div className="event-fact" key={fact.label}>
+                <span className="event-fact__label">{fact.label}</span>
+                <span className="event-fact__value">{fact.value}</span>
               </div>
             ))}
           </div>
-          <div className="facts-bar__icon">
+
+          <div className="event-bar__icon">
             <img src={streamIcon} alt="" />
           </div>
         </div>
       </section>
 
-      <section className="section section--centered" id="alcance">
-        <div className="section__intro section__intro--wide">
-          <div className="section-eyebrow section-eyebrow--centered">
-            <span className="section-eyebrow__line" />
-            <span>Não é mais um eventinho de MMA</span>
-            <span className="section-eyebrow__line" />
-          </div>
-          <h2 className="section__title section__title--xl">
-            Estrutura profissional,
-            <br />
-            <span className="is-highlight">humor duvidoso</span> &amp;
-            <br />
-            lutas reais.
+      <section className="section section--proof" id="alcance">
+        <div className="section__headline section__headline--centered">
+          <SectionEyebrow centered>Não é mais um eventinho de MMA</SectionEyebrow>
+
+          <h2 className="display-title display-title--proof">
+            <span>Estrutura profissional,</span>
+            <span>
+              <span className="is-highlight">humor duvidoso</span> &amp;
+            </span>
+            <span>lutas reais.</span>
           </h2>
-          <p className="section__copy section__copy--lead">
+
+          <p className="body-copy body-copy--lead">
             Lutas reais. Estrutura profissional. Arbitragem capacitada. E uma
-            transmissão que mistura análise técnica com o humor sem filtro que o
-            MMA brasileiro nunca teve.
+            transmissão que mistura análise técnica com o humor sem filtro que o MMA
+            brasileiro nunca teve.
           </p>
         </div>
 
         <div className="feature-grid">
-          {features.map((feature, index) => (
-            <article className="feature-card" key={feature.title} style={{ animationDelay: `${index * 120}ms` }}>
+          {featureCards.map((feature) => (
+            <article className="feature-card" key={feature.title}>
               <img className="feature-card__icon" src={feature.icon} alt="" />
               <h3 className="feature-card__title">{feature.title}</h3>
               <p className="feature-card__copy">{feature.copy}</p>
@@ -168,29 +224,44 @@ export default function Home() {
           ))}
         </div>
 
-        <a className="button" href="#ingressos">
+        <LandingButton href="#ingressos" size="large">
           Garantir Ingresso
-        </a>
+        </LandingButton>
       </section>
 
-      <section className="section section--cta" id="transmissao">
-        <div className="section__intro section__intro--narrow">
+      <section className="section section--transmission" id="transmissao">
+        <div className="transmission-copy">
           <SectionEyebrow>Transmissão de qualidade duvidosa</SectionEyebrow>
-          <h2 className="section__title">
-            Uma pegada que não existe em mais
-            <br />
+
+          <h2 className="display-title display-title--closing">
+            <span>Uma pegada que não existe</span>
+            <span>em mais</span>
             <span className="is-highlight">lugar nenhum.</span>
           </h2>
-          <p className="section__copy">
-            Lutas reais. Estrutura profissional. Arbitragem capacitada. E uma
-            transmissão que mistura análise técnica com o humor sem filtro de uma
-            resenha braba.
+
+          <div className="avatar-stack" aria-hidden="true">
+            {audienceFaces.map((avatar, index) => (
+              <img
+                className="avatar-stack__item"
+                key={avatar}
+                src={avatar}
+                alt=""
+                style={{ zIndex: audienceFaces.length - index }}
+              />
+            ))}
+          </div>
+
+          <p className="body-copy body-copy--muted">
+            Não é podcast profissional nem amador. É o meio-termo que o MMA
+            precisava.
           </p>
         </div>
 
-        <a className="button button--large" id="ingressos" href="#evento">
-          Garantir Ingresso
-        </a>
+        <div className="media-mosaic" aria-hidden="true">
+          <div className="media-mosaic__tile media-mosaic__tile--small" />
+          <div className="media-mosaic__tile media-mosaic__tile--small" />
+          <div className="media-mosaic__tile media-mosaic__tile--tall" />
+        </div>
       </section>
     </main>
   );
