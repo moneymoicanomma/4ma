@@ -479,8 +479,12 @@ export default function Home() {
         <div className="audience-copy">
           <SectionEyebrow>Audiência internacional</SectionEyebrow>
 
-          <h2 className="display-title display-title--closing">
-            Os gringos vão ver o que é evento de qualidade
+          <h2 className="display-title display-title--audience">
+            <span>Os gringos vão</span>
+            <span>ver o que é evento</span>
+            <span className="display-title__line">
+              de <span className="display-title__accent">qualidade</span>
+            </span>
           </h2>
 
           <p className="body-copy audience-copy__body">
@@ -585,6 +589,16 @@ export default function Home() {
 
         <BrandMark className="footer__wordmark" wide />
       </footer>
+
+      <div className="mobile-sticky-cta">
+        <div className="mobile-sticky-cta__copy">
+          <span className="mobile-sticky-cta__label">Ingressos</span>
+          <strong className="mobile-sticky-cta__value">A partir de R$ 120</strong>
+        </div>
+        <a className="landing-button landing-button--primary landing-button--mobile-fixed" href="#ingressos">
+          Garantir
+        </a>
+      </div>
     </main>
   );
 }
