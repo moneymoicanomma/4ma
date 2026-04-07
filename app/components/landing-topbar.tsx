@@ -27,6 +27,7 @@ export function LandingTopbar({
 
   useEffect(() => {
     const sections = Array.from(document.querySelectorAll<HTMLElement>("[data-nav-section]"));
+    const footer = document.querySelector<HTMLElement>(".footer");
 
     if (!sections.length || !navItems.length) {
       return;
@@ -37,7 +38,10 @@ export function LandingTopbar({
     const syncActiveSection = () => {
       const threshold = Math.max(120, window.innerHeight * 0.34);
       let nextActive = navItems[0].sectionId;
-      const shouldShowMobileCta = window.scrollY > Math.max(220, window.innerHeight * 0.38);
+      const footerTop = footer?.getBoundingClientRect().top ?? Number.POSITIVE_INFINITY;
+      const shouldShowMobileCta =
+        window.scrollY > Math.max(220, window.innerHeight * 0.38) &&
+        footerTop > window.innerHeight - 28;
 
       for (const section of sections) {
         if (section.getBoundingClientRect().top <= threshold) {
