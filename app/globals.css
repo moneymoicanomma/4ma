@@ -59,33 +59,15 @@ img {
 }
 
 .brand-mark {
-  position: relative;
+  display: flex;
+  align-items: center;
   width: 76px;
-  height: 58px;
   flex: none;
 }
 
 .brand-mark img {
-  position: absolute;
-  max-width: none;
-}
-
-.brand-mark img:nth-child(1) {
-  top: 0;
-  left: 0;
-  width: 57px;
-}
-
-.brand-mark img:nth-child(2) {
-  bottom: 0;
-  left: 0;
-  width: 43px;
-}
-
-.brand-mark img:nth-child(3) {
-  top: 20px;
-  left: 0;
-  width: 76px;
+  width: 100%;
+  height: auto;
 }
 
 .topbar__nav {

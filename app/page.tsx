@@ -8,20 +8,15 @@ const audienceFaceThree =
   "https://www.figma.com/api/mcp/asset/8a90f70f-556d-4704-858a-fe75231a6060";
 const audienceFaceFour =
   "https://www.figma.com/api/mcp/asset/d16270ce-5405-421c-a628-ae3c2c95b65a";
-const logoTop =
-  "https://www.figma.com/api/mcp/asset/50dd4ae1-06fc-4b63-875d-15c811abae82";
-const logoBottom =
-  "https://www.figma.com/api/mcp/asset/787d0faf-eb0c-4745-951a-65ab6b03acc7";
-const logoSide =
-  "https://www.figma.com/api/mcp/asset/f660e1c6-af1e-4e6b-810f-580f2730e1d2";
+const brandLogo = "/assets/landing/logo money moicano mma.svg";
 const streamIcon =
-  "https://www.figma.com/api/mcp/asset/af75b97d-1630-44d6-9009-129c2956edac";
+  "/assets/landing/Video-Game-Logo-Streamplay--Streamline-Ultimate.svg";
 const fightsIcon =
-  "https://www.figma.com/api/mcp/asset/ea488977-59fe-4f28-b3b3-04bfa031aab6";
+  "/assets/landing/Fists-Crashing-Conflict--Streamline-Ultimate.svg";
 const stadiumIcon =
-  "https://www.figma.com/api/mcp/asset/078d838d-e466-4922-97e2-98ae122984a9";
+  "/assets/landing/Stadium-Classic-2--Streamline-Ultimate.svg";
 const microphoneIcon =
-  "https://www.figma.com/api/mcp/asset/050dfad8-23ba-4054-a1c4-03421330e31c";
+  "/assets/landing/Microphone-Podcast-2--Streamline-Ultimate.svg";
 
 const navItems = [
   { label: "O Evento", href: "#evento", active: true },
@@ -102,9 +97,7 @@ function LandingButton({
 function BrandMark() {
   return (
     <div className="brand-mark" aria-label="Money Moicano MMA">
-      <img src={logoTop} alt="" />
-      <img src={logoBottom} alt="" />
-      <img src={logoSide} alt="" />
+      <img src={brandLogo} alt="Money Moicano MMA" />
     </div>
   );
 }
