@@ -66,8 +66,7 @@ const featureCards = [
 const transmissionTiles = [
   {
     title: "Comentários nada técnicos",
-    image: "/assets/landing/figma/transmissao-comentarios.png",
-    accentImage: "/assets/landing/figma/transmissao-overlay.png",
+    image: "/assets/landing/figma/transmissao-overlay.png",
     className: "transmission-tile transmission-tile--comments",
     sizes: "(max-width: 780px) 100vw, 319px"
   },
@@ -78,7 +77,8 @@ const transmissionTiles = [
     sizes: "(max-width: 780px) 100vw, 319px"
   },
   {
-    title: "Pelo menos vai ter luta boa",
+    title: "Certeza de luta boa",
+    titleSecondary: "(Isso realmente aconteceu)",
     image: "/assets/landing/figma/luta-boa.png",
     className: "transmission-tile transmission-tile--fight",
     sizes: "(max-width: 780px) 100vw, 299px"
@@ -323,17 +323,18 @@ export default function Home() {
 
       <section className="section section--transmission" data-nav-section="transmissao" id="transmissao">
         <div className="transmission-copy">
-          <SectionEyebrow>Transmissão de qualidade duvidosa</SectionEyebrow>
+          <SectionEyebrow>Produção de evento internacional</SectionEyebrow>
 
           <h2 className="display-title display-title--closing">
-            <span>Uma pegada que não existe</span>
+            <span>Uma pegada</span>
+            <span>que não existe</span>
             <span>em mais</span>
             <span className="is-highlight">lugar nenhum.</span>
           </h2>
 
           <p className="body-copy body-copy--muted">
-            Não é podcast profissional, nem amador. É o meio-termo que o MMA
-            precisava.
+            Tudo extremamente profissional (menos o conteúdo proferido pelos
+            comentaristas)
           </p>
         </div>
 
@@ -348,18 +349,16 @@ export default function Home() {
                   sizes={tile.sizes}
                   src={tile.image}
                 />
-                {tile.accentImage ? (
-                  <Image
-                    alt=""
-                    className="transmission-tile__image transmission-tile__image--offset"
-                    fill
-                    sizes={tile.sizes}
-                    src={tile.accentImage}
-                  />
-                ) : null}
                 <span className="transmission-tile__overlay" />
               </div>
-              <h3 className="transmission-tile__title">{tile.title}</h3>
+              <h3 className="transmission-tile__title">
+                <span>{tile.title}</span>
+                {tile.titleSecondary ? (
+                  <span className="transmission-tile__title-secondary">
+                    {tile.titleSecondary}
+                  </span>
+                ) : null}
+              </h3>
             </article>
           ))}
         </div>

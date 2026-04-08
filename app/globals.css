@@ -699,6 +699,14 @@ section[id] {
   text-transform: uppercase;
 }
 
+.transmission-tile__title-secondary {
+  margin-top: 6px;
+  color: rgba(255, 255, 255, 0.74);
+  font-size: 0.72em;
+  line-height: 1.2;
+  letter-spacing: 1px;
+}
+
 .casters-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -2011,6 +2019,11 @@ section[id] {
     bottom: 16px;
     left: 18px;
     font-size: 16px;
+  }
+
+  .transmission-tile__title-secondary {
+    margin-top: 7px;
+    font-size: 0.68em;
   }
 
   .section--casters {
