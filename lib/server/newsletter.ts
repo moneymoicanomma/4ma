@@ -2,22 +2,20 @@ import "server-only";
 
 import type { NewsletterSubscriptionPayload } from "@/lib/contracts/newsletter";
 
-import { getServerEnv, isUpstreamConfigured } from "@/lib/server/env";
-import { postJsonToUpstream, UpstreamApiError } from "@/lib/server/http";
+import { getServerEnv, isUpstreamConfigured, type ServerEnv } from "@/lib/server/env";
+import { postJsonToUpstream } from "@/lib/server/http";
 
 type NewsletterSubscribeResult =
   | { ok: true }
   | {
       ok: false;
       reason: "not_configured" | "upstream_error";
-      status?: number;
     };
 
 export async function subscribeToNewsletter(
-  payload: NewsletterSubscriptionPayload
+  payload: NewsletterSubscriptionPayload,
+  env: ServerEnv = getServerEnv()
 ): Promise<NewsletterSubscribeResult> {
-  const env = getServerEnv();
-
   if (!isUpstreamConfigured(env)) {
     return {
       ok: false,
@@ -36,13 +34,10 @@ export async function subscribeToNewsletter(
     );
 
     return { ok: true };
-  } catch (error) {
-    const status = error instanceof UpstreamApiError ? error.status : 502;
-
+  } catch {
     return {
       ok: false,
-      reason: "upstream_error",
-      status
+      reason: "upstream_error"
     };
   }
 }

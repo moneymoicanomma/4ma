@@ -2,14 +2,20 @@
 
 import { type FormEvent, useState } from "react";
 
-import type { PublicMutationResponse } from "@/lib/contracts/newsletter";
+import {
+  isValidNewsletterEmail,
+  normalizeNewsletterEmail,
+  type PublicMutationResponse
+} from "@/lib/contracts/newsletter";
 
 type FormState = {
+  invalidEmail: boolean;
   status: "idle" | "submitting" | "success" | "error";
   message: string;
 };
 
 const initialState: FormState = {
+  invalidEmail: false,
   status: "idle",
   message: ""
 };
@@ -22,10 +28,20 @@ export function NewsletterSignupForm() {
 
     const form = event.currentTarget;
     const formData = new FormData(form);
-    const email = String(formData.get("email") ?? "");
+    const email = normalizeNewsletterEmail(formData.get("email"));
     const website = String(formData.get("website") ?? "");
 
+    if (!isValidNewsletterEmail(email)) {
+      setState({
+        invalidEmail: true,
+        status: "error",
+        message: "Informe um e-mail válido."
+      });
+      return;
+    }
+
     setState({
+      invalidEmail: false,
       status: "submitting",
       message: "Enviando..."
     });
@@ -48,6 +64,7 @@ export function NewsletterSignupForm() {
 
       if (!response.ok || !payload?.ok) {
         setState({
+          invalidEmail: false,
           status: "error",
           message: payload?.message ?? "Não foi possível enviar. Tenta novamente."
         });
@@ -56,11 +73,13 @@ export function NewsletterSignupForm() {
 
       form.reset();
       setState({
+        invalidEmail: false,
         status: "success",
         message: payload.message
       });
     } catch {
       setState({
+        invalidEmail: false,
         status: "error",
         message: "Não foi possível enviar. Tenta novamente."
       });
@@ -73,6 +92,7 @@ export function NewsletterSignupForm() {
         Seu e-mail
       </label>
       <input
+        aria-invalid={state.invalidEmail || undefined}
         className="newsletter-form__input"
         id="newsletter-email"
         name="email"
@@ -80,6 +100,9 @@ export function NewsletterSignupForm() {
         type="email"
         autoComplete="email"
         inputMode="email"
+        onInput={() => {
+          setState((current) => (current.invalidEmail ? initialState : current));
+        }}
         required
       />
       <input

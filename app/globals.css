@@ -13,6 +13,8 @@
   --text-faint: rgba(255, 255, 255, 0.4);
   --accent: #e8181a;
   --accent-dark: #a21215;
+  --motion-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --motion-ease-soft: cubic-bezier(0.16, 1, 0.3, 1);
   --page-width: 1200px;
   --font-body: "poster-gothic-atf", sans-serif;
   --font-title: "sinter", sans-serif;
@@ -64,6 +66,21 @@ button:focus-visible {
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
   border: 0;
+}
+
+html[data-motion="enabled"] [data-reveal] {
+  opacity: 0;
+  transform: translate3d(0, 26px, 0);
+  transition:
+    opacity 520ms var(--motion-ease),
+    transform 520ms var(--motion-ease);
+  transition-delay: var(--reveal-delay, 0ms);
+  will-change: opacity, transform;
+}
+
+html[data-motion="enabled"] [data-reveal].is-visible {
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
 }
 
 img {
@@ -222,10 +239,13 @@ ul {
 }
 
 .landing-button {
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   border: 1px solid transparent;
+  overflow: hidden;
+  isolation: isolate;
   white-space: nowrap;
   text-align: center;
   font-family: var(--font-title);
@@ -237,18 +257,48 @@ ul {
     transform 160ms ease,
     border-color 160ms ease,
     background-color 160ms ease,
-    color 160ms ease;
+    color 160ms ease,
+    box-shadow 200ms var(--motion-ease-soft);
+}
+
+.landing-button::after {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  z-index: -1;
+  background: linear-gradient(
+    120deg,
+    rgba(255, 255, 255, 0) 20%,
+    rgba(255, 255, 255, 0.14) 48%,
+    rgba(255, 255, 255, 0) 76%
+  );
+  opacity: 0;
+  transform: translateX(-130%);
+  transition:
+    opacity 180ms ease,
+    transform 360ms var(--motion-ease-soft);
 }
 
 .landing-button:hover,
 .landing-button:focus-visible {
-  transform: translateY(-1px);
+  transform: translateY(-2px);
+}
+
+.landing-button:hover::after,
+.landing-button:focus-visible::after {
+  opacity: 1;
+  transform: translateX(130%);
+}
+
+.landing-button:active {
+  transform: translateY(0) scale(0.985);
 }
 
 .landing-button--nav,
 .landing-button--primary {
   background: var(--accent);
   color: #ffffff;
+  box-shadow: 0 16px 34px rgba(232, 24, 26, 0.18);
 }
 
 .landing-button--secondary {
@@ -260,6 +310,26 @@ ul {
 .landing-button--light {
   background: #ffffff;
   color: var(--accent);
+}
+
+.landing-button--nav:hover,
+.landing-button--nav:focus-visible,
+.landing-button--primary:hover,
+.landing-button--primary:focus-visible {
+  background: #ff2427;
+  box-shadow: 0 18px 36px rgba(232, 24, 26, 0.26);
+}
+
+.landing-button--secondary:hover,
+.landing-button--secondary:focus-visible {
+  border-color: rgba(255, 255, 255, 0.38);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.landing-button--light:hover,
+.landing-button--light:focus-visible {
+  background: #fff4f4;
+  color: #bf1215;
 }
 
 .landing-button--nav {
@@ -649,6 +719,11 @@ section[id] {
   overflow: hidden;
   min-height: 207px;
   background: #ffffff;
+  transition:
+    transform 240ms var(--motion-ease-soft),
+    box-shadow 240ms var(--motion-ease-soft),
+    opacity 220ms ease,
+    filter 220ms ease;
 }
 
 .transmission-tile--comments {
@@ -671,6 +746,7 @@ section[id] {
 
 .transmission-tile__image {
   object-fit: cover;
+  transition: transform 520ms var(--motion-ease), filter 240ms ease;
 }
 
 .transmission-tile__image--offset {
@@ -682,6 +758,7 @@ section[id] {
   position: absolute;
   inset: 0;
   background: linear-gradient(180deg, rgba(0, 0, 0, 0) 24%, rgba(0, 0, 0, 0.92) 100%);
+  transition: background 240ms ease;
 }
 
 .transmission-tile__title {
@@ -701,6 +778,7 @@ section[id] {
   line-height: 1.35;
   letter-spacing: 1.2px;
   text-transform: uppercase;
+  transition: transform 220ms var(--motion-ease-soft);
 }
 
 .transmission-tile__title > span {
@@ -726,6 +804,10 @@ section[id] {
   display: flex;
   flex-direction: column;
   gap: 14px;
+  transition:
+    transform 240ms var(--motion-ease-soft),
+    opacity 220ms ease,
+    filter 220ms ease;
 }
 
 .caster-card__visual {
@@ -737,6 +819,7 @@ section[id] {
 
 .caster-card__image {
   object-fit: cover;
+  transition: transform 520ms var(--motion-ease), filter 240ms ease;
 }
 
 .caster-card__copy {
@@ -753,7 +836,7 @@ section[id] {
   padding: 56px 48px;
   background:
     linear-gradient(180deg, rgba(12, 12, 12, 0.74) 0%, rgba(12, 12, 12, 0.94) 100%),
-    url("/assets/landing/figma/ingressos-bg.png") center/cover no-repeat;
+    var(--tickets-bg-image) center/cover no-repeat;
 }
 
 .ticket-grid {
@@ -772,6 +855,12 @@ section[id] {
   gap: 24px;
   padding: 28px;
   background: var(--panel-soft);
+  transition:
+    transform 240ms var(--motion-ease-soft),
+    box-shadow 240ms var(--motion-ease-soft),
+    opacity 220ms ease,
+    filter 220ms ease,
+    background-color 220ms ease;
 }
 
 .ticket-card--featured {
@@ -859,6 +948,7 @@ section[id] {
 
 .audience-media__image {
   object-fit: cover;
+  transition: transform 560ms var(--motion-ease), filter 260ms ease;
 }
 
 .audience-copy {
@@ -945,10 +1035,27 @@ section[id] {
   letter-spacing: 1px;
   text-transform: uppercase;
   padding: 18px 20px;
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease,
+    box-shadow 160ms ease,
+    color 160ms ease;
 }
 
 .newsletter-form__input::placeholder {
   color: rgba(229, 226, 225, 0.42);
+}
+
+.newsletter-form__input:focus-visible {
+  outline: none;
+  border-color: rgba(232, 24, 26, 0.44);
+  background: #303030;
+  box-shadow: inset 0 0 0 1px rgba(232, 24, 26, 0.14);
+}
+
+.newsletter-form__input[aria-invalid="true"] {
+  border-color: rgba(255, 106, 108, 0.42);
+  box-shadow: inset 0 0 0 1px rgba(255, 106, 108, 0.12);
 }
 
 .newsletter-form__button {
@@ -963,15 +1070,18 @@ section[id] {
   letter-spacing: -1px;
   text-transform: uppercase;
   cursor: pointer;
+  box-shadow: 0 16px 34px rgba(232, 24, 26, 0.18);
   transition:
     transform 160ms ease,
-    background-color 160ms ease;
+    background-color 160ms ease,
+    box-shadow 200ms var(--motion-ease-soft);
 }
 
 .newsletter-form__button:hover,
 .newsletter-form__button:focus-visible {
-  background: var(--accent);
-  transform: translateY(-1px);
+  background: #ff2427;
+  transform: translateY(-2px);
+  box-shadow: 0 18px 36px rgba(232, 24, 26, 0.24);
 }
 
 .newsletter-form__button:disabled {
@@ -1036,6 +1146,11 @@ section[id] {
   width: min(100%, 220px);
   min-width: 180px;
   min-height: 88px;
+  opacity: 0.82;
+  transition:
+    transform 220ms var(--motion-ease-soft),
+    opacity 220ms ease,
+    filter 220ms ease;
 }
 
 .partner-logo img {
@@ -1044,6 +1159,57 @@ section[id] {
   max-width: 100%;
   height: 58px;
   object-fit: contain;
+}
+
+.transmission-tile:hover,
+.transmission-tile:focus-within,
+.caster-card:hover,
+.caster-card:focus-within,
+.ticket-card:hover,
+.ticket-card:focus-within,
+.partner-logo:hover,
+.partner-logo:focus-within {
+  transform: translateY(-4px);
+}
+
+.transmission-tile:hover,
+.transmission-tile:focus-within {
+  box-shadow: 0 22px 44px rgba(0, 0, 0, 0.32);
+}
+
+.transmission-tile:hover .transmission-tile__image,
+.transmission-tile:focus-within .transmission-tile__image,
+.caster-card:hover .caster-card__image,
+.caster-card:focus-within .caster-card__image,
+.audience-media:hover .audience-media__image,
+.audience-media:focus-within .audience-media__image {
+  transform: scale(1.04);
+}
+
+.transmission-tile:hover .transmission-tile__overlay,
+.transmission-tile:focus-within .transmission-tile__overlay {
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.02) 20%, rgba(0, 0, 0, 0.96) 100%);
+}
+
+.transmission-tile:hover .transmission-tile__title,
+.transmission-tile:focus-within .transmission-tile__title {
+  transform: translateY(-4px);
+}
+
+.ticket-card:hover,
+.ticket-card:focus-within {
+  box-shadow: 0 26px 52px rgba(0, 0, 0, 0.22);
+}
+
+.ticket-card--featured:hover,
+.ticket-card--featured:focus-within {
+  box-shadow: 0 30px 64px rgba(232, 24, 26, 0.28);
+}
+
+.partner-logo:hover,
+.partner-logo:focus-within {
+  opacity: 1;
+  filter: brightness(1.04);
 }
 
 .section--sponsors > .landing-button {
@@ -1601,6 +1767,17 @@ section[id] {
     color: #ffffff;
     box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.03);
     padding: 0;
+    transition:
+      transform 180ms var(--motion-ease-soft),
+      background-color 180ms ease,
+      border-color 180ms ease;
+  }
+
+  .topbar__menu-toggle:hover,
+  .topbar__menu-toggle:focus-visible {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.16);
+    transform: translateY(-1px);
   }
 
   .topbar__menu-toggle-bar {
@@ -1729,11 +1906,24 @@ section[id] {
     line-height: 1;
     letter-spacing: -0.8px;
     text-transform: uppercase;
+    transition:
+      transform 180ms var(--motion-ease-soft),
+      border-color 180ms ease,
+      background-color 180ms ease,
+      color 180ms ease;
   }
 
   .topbar__sheet-link.is-active {
     border-color: rgba(232, 24, 26, 0.28);
     background: rgba(232, 24, 26, 0.12);
+    color: #ffffff;
+  }
+
+  .topbar__sheet-link:hover,
+  .topbar__sheet-link:focus-visible {
+    transform: translateX(4px);
+    border-color: rgba(255, 255, 255, 0.16);
+    background: rgba(255, 255, 255, 0.06);
     color: #ffffff;
   }
 
@@ -1934,6 +2124,30 @@ section[id] {
   .event-bar__facts::-webkit-scrollbar,
   .sponsors-marquee::-webkit-scrollbar {
     display: none;
+  }
+
+  [data-rail] > [data-rail-item] {
+    opacity: 0.68;
+    filter: saturate(0.84);
+    transform: scale(0.972);
+  }
+
+  [data-rail] > [data-rail-item][data-rail-active="true"] {
+    opacity: 1;
+    filter: saturate(1);
+    transform: scale(1);
+  }
+
+  .event-bar__facts > .event-fact[data-rail-active="true"],
+  .feature-grid > .feature-card[data-rail-active="true"],
+  .transmission-gallery > .transmission-tile[data-rail-active="true"],
+  .casters-grid > .caster-card[data-rail-active="true"],
+  .ticket-grid > .ticket-card[data-rail-active="true"] {
+    box-shadow: 0 18px 42px rgba(0, 0, 0, 0.2);
+  }
+
+  .ticket-grid > .ticket-card--featured[data-rail-active="true"] {
+    box-shadow: 0 26px 62px rgba(232, 24, 26, 0.3);
   }
 
   .feature-grid {

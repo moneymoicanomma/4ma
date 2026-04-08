@@ -2,14 +2,17 @@ import "server-only";
 
 import type { NextRequest } from "next/server";
 
-export function isAllowedRequestOrigin(request: NextRequest, allowedOrigins: string[]) {
+export function isAllowedRequestOrigin(
+  request: NextRequest,
+  allowedOrigins: ReadonlySet<string>
+) {
   const origin = request.headers.get("origin");
 
   if (!origin) {
     return true;
   }
 
-  return origin === request.nextUrl.origin || allowedOrigins.includes(origin);
+  return origin === request.nextUrl.origin || allowedOrigins.has(origin);
 }
 
 export function getClientIdentifier(request: NextRequest) {

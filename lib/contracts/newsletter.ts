@@ -21,7 +21,21 @@ type NewsletterParseResult =
       message: string;
     };
 
+export const MAX_NEWSLETTER_EMAIL_LENGTH = 160;
+
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+export function normalizeNewsletterEmail(input: unknown) {
+  return typeof input === "string" ? input.trim().toLowerCase() : "";
+}
+
+export function isValidNewsletterEmail(email: string) {
+  return (
+    email.length > 0 &&
+    email.length <= MAX_NEWSLETTER_EMAIL_LENGTH &&
+    EMAIL_PATTERN.test(email)
+  );
+}
 
 export function parseNewsletterSubscription(input: unknown): NewsletterParseResult {
   if (typeof input !== "object" || input === null) {
@@ -29,7 +43,7 @@ export function parseNewsletterSubscription(input: unknown): NewsletterParseResu
   }
 
   const record = input as Record<string, unknown>;
-  const email = typeof record.email === "string" ? record.email.trim().toLowerCase() : "";
+  const email = normalizeNewsletterEmail(record.email);
   const website = typeof record.website === "string" ? record.website.trim() : "";
 
   if (website) {
@@ -43,7 +57,7 @@ export function parseNewsletterSubscription(input: unknown): NewsletterParseResu
     };
   }
 
-  if (!email || email.length > 160 || !EMAIL_PATTERN.test(email)) {
+  if (!isValidNewsletterEmail(email)) {
     return {
       ok: false,
       message: "Informe um e-mail válido."

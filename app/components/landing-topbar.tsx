@@ -1,6 +1,6 @@
 "use client";
 
-import { startTransition, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
 type NavItem = {
   href: string;
@@ -34,45 +34,92 @@ export function LandingTopbar({
     }
 
     let frame = 0;
+    let footerVisible = false;
+    let sectionOffsets = sections.map((section) => ({
+      sectionId: section.dataset.navSection ?? navItems[0].sectionId,
+      top: section.getBoundingClientRect().top + window.scrollY
+    }));
 
-    const syncActiveSection = () => {
-      const threshold = Math.max(120, window.innerHeight * 0.34);
+    const syncViewportState = () => {
+      const sectionThreshold = window.scrollY + Math.max(120, window.innerHeight * 0.34);
+      const ctaThreshold = Math.max(220, window.innerHeight * 0.38);
       let nextActive = navItems[0].sectionId;
-      const footerTop = footer?.getBoundingClientRect().top ?? Number.POSITIVE_INFINITY;
-      const shouldShowMobileCta =
-        window.scrollY > Math.max(220, window.innerHeight * 0.38) &&
-        footerTop > window.innerHeight - 28;
 
-      for (const section of sections) {
-        if (section.getBoundingClientRect().top <= threshold) {
-          nextActive = section.dataset.navSection ?? nextActive;
-          continue;
+      for (const section of sectionOffsets) {
+        if (section.top <= sectionThreshold) {
+          nextActive = section.sectionId;
+        } else {
+          break;
         }
-
-        break;
       }
 
-      startTransition(() => {
-        setActiveSection((current) => (current === nextActive ? current : nextActive));
-      });
-
-      document.body.dataset.mobileCta = shouldShowMobileCta ? "visible" : "hidden";
+      setActiveSection((current) => (current === nextActive ? current : nextActive));
+      document.body.dataset.mobileCta =
+        window.scrollY > ctaThreshold && !footerVisible ? "visible" : "hidden";
     };
 
     const requestSync = () => {
       window.cancelAnimationFrame(frame);
-      frame = window.requestAnimationFrame(syncActiveSection);
+      frame = window.requestAnimationFrame(syncViewportState);
     };
 
-    requestSync();
+    const refreshSectionOffsets = () => {
+      sectionOffsets = sections.map((section) => ({
+        sectionId: section.dataset.navSection ?? navItems[0].sectionId,
+        top: section.getBoundingClientRect().top + window.scrollY
+      }));
 
+      syncViewportState();
+    };
+
+    const requestRefresh = () => {
+      window.cancelAnimationFrame(frame);
+      frame = window.requestAnimationFrame(refreshSectionOffsets);
+    };
+
+    const footerObserver = footer
+      ? new IntersectionObserver(
+          ([entry]) => {
+            footerVisible = entry?.isIntersecting ?? false;
+            requestSync();
+          },
+          {
+            threshold: 0.05,
+            rootMargin: "0px 0px -28px 0px"
+          }
+        )
+      : null;
+
+    let cancelled = false;
+
+    requestRefresh();
+
+    if (footer && footerObserver) {
+      footerObserver.observe(footer);
+    }
     window.addEventListener("scroll", requestSync, { passive: true });
-    window.addEventListener("resize", requestSync);
+    window.addEventListener("resize", requestRefresh);
+    window.addEventListener("load", requestRefresh);
+
+    const fontsReady = document.fonts?.ready;
+
+    if (fontsReady) {
+      void fontsReady
+        .then(() => {
+          if (!cancelled) {
+            requestRefresh();
+          }
+        })
+        .catch(() => {});
+    }
 
     return () => {
+      cancelled = true;
       window.cancelAnimationFrame(frame);
+      footerObserver?.disconnect();
       window.removeEventListener("scroll", requestSync);
-      window.removeEventListener("resize", requestSync);
+      window.removeEventListener("resize", requestRefresh);
+      window.removeEventListener("load", requestRefresh);
       delete document.body.dataset.mobileCta;
     };
   }, [navItems]);
@@ -86,18 +133,19 @@ export function LandingTopbar({
   }, [menuOpen]);
 
   useEffect(() => {
-    const closeMenuOnDesktop = () => {
-      if (window.innerWidth > 780) {
-        startTransition(() => {
-          setMenuOpen(false);
-        });
+    const desktopViewport = window.matchMedia("(min-width: 781px)");
+
+    const closeMenuOnDesktop = (event?: MediaQueryListEvent) => {
+      if (event?.matches ?? desktopViewport.matches) {
+        setMenuOpen(false);
       }
     };
 
-    window.addEventListener("resize", closeMenuOnDesktop);
+    closeMenuOnDesktop();
+    desktopViewport.addEventListener("change", closeMenuOnDesktop);
 
     return () => {
-      window.removeEventListener("resize", closeMenuOnDesktop);
+      desktopViewport.removeEventListener("change", closeMenuOnDesktop);
     };
   }, []);
 
@@ -119,9 +167,7 @@ export function LandingTopbar({
             href={item.href}
             key={item.label}
             onClick={() => {
-              startTransition(() => {
-                setActiveSection(item.sectionId);
-              });
+              setActiveSection(item.sectionId);
             }}
           >
             {item.label}
@@ -141,9 +187,7 @@ export function LandingTopbar({
           className="topbar__menu-toggle"
           type="button"
           onClick={() => {
-            startTransition(() => {
-              setMenuOpen((current) => !current);
-            });
+            setMenuOpen((current) => !current);
           }}
         >
           <span className="topbar__menu-toggle-bar" />
@@ -158,9 +202,7 @@ export function LandingTopbar({
           className="topbar__sheet-backdrop"
           type="button"
           onClick={() => {
-            startTransition(() => {
-              setMenuOpen(false);
-            });
+            setMenuOpen(false);
           }}
         />
 
@@ -172,9 +214,7 @@ export function LandingTopbar({
               className="topbar__sheet-close"
               type="button"
               onClick={() => {
-                startTransition(() => {
-                  setMenuOpen(false);
-                });
+                setMenuOpen(false);
               }}
             >
               Fechar
@@ -193,10 +233,8 @@ export function LandingTopbar({
                 href={item.href}
                 key={item.label}
                 onClick={() => {
-                  startTransition(() => {
-                    setActiveSection(item.sectionId);
-                    setMenuOpen(false);
-                  });
+                  setActiveSection(item.sectionId);
+                  setMenuOpen(false);
                 }}
               >
                 {item.label}

@@ -86,7 +86,7 @@ export async function POST(request: NextRequest) {
     return publicApiResponse(successPayload);
   }
 
-  const result = await subscribeToNewsletter(parsed.data);
+  const result = await subscribeToNewsletter(parsed.data, env);
 
   if (!result.ok) {
     const status = result.reason === "not_configured" ? 503 : 502;

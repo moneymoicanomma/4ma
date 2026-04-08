@@ -1,29 +1,31 @@
 import Image from "next/image";
 
+import { LandingMotionController } from "./components/landing-motion-controller";
 import { LandingTopbar } from "./components/landing-topbar";
 import { NewsletterSignupForm } from "./components/newsletter-signup-form";
 
 const r2PublicBase = "https://pub-ecc1c3f0770f4d4ebd9b8cc27c8d8bcf.r2.dev";
-const r2Asset = (fileName: string) => `${r2PublicBase}/${fileName}`;
+const r2Asset = (fileName: string) =>
+  `${r2PublicBase}/${fileName
+    .split("/")
+    .map((segment) => encodeURIComponent(segment))
+    .join("/")}`;
 
 const heroImage = r2Asset("hero-main-v3.webp");
-const brandLogo = "/assets/landing/logo money moicano mma.svg";
-const brandLogoWide = "/assets/landing/logo money moicano mma extenso.svg";
-const streamIcon =
-  "/assets/landing/Video-Game-Logo-Streamplay--Streamline-Ultimate.svg";
-const fightsIcon =
-  "/assets/landing/Fists-Crashing-Conflict--Streamline-Ultimate.svg";
-const stadiumIcon =
-  "/assets/landing/Stadium-Classic-2--Streamline-Ultimate.svg";
-const microphoneIcon =
-  "/assets/landing/Microphone-Podcast-2--Streamline-Ultimate.svg";
-const cornermanIcon = "/assets/landing/cornerman.svg";
-const cornermanSloganLogo = "/assets/landing/cornerman%20-%20slogan.svg";
-const joyaGearLogo = "/assets/landing/joyagear.svg";
-const esportesDaSorteLogo = "/assets/landing/esportes-da-sorte.svg";
-const instagramIcon = "/assets/landing/instagram_logo.svg";
-const youtubeIcon = "/assets/landing/youtube_logo.svg";
-const xIcon = "/assets/landing/x_logo.svg.svg";
+const brandLogo = r2Asset("logo money moicano mma.svg");
+const brandLogoWide = r2Asset("logo money moicano mma extenso.svg");
+const streamIcon = r2Asset("Video-Game-Logo-Streamplay--Streamline-Ultimate.svg");
+const fightsIcon = r2Asset("Fists-Crashing-Conflict--Streamline-Ultimate.svg");
+const stadiumIcon = r2Asset("Stadium-Classic-2--Streamline-Ultimate.svg");
+const microphoneIcon = r2Asset("Microphone-Podcast-2--Streamline-Ultimate.svg");
+const cornermanIcon = r2Asset("cornerman.svg");
+const cornermanSloganLogo = r2Asset("cornerman - slogan.svg");
+const joyaGearLogo = r2Asset("joyagear.svg");
+const esportesDaSorteLogo = r2Asset("esportes-da-sorte.svg");
+const instagramIcon = r2Asset("instagram_logo.svg");
+const youtubeIcon = r2Asset("youtube_logo.svg");
+const xIcon = r2Asset("x_logo.svg.svg");
+const ticketBackgroundImage = r2Asset("ingressos-bg.webp");
 
 const navItems = [
   { label: "O Evento", href: "#evento", sectionId: "evento" },
@@ -91,13 +93,13 @@ const casterCards = [
   {
     name: "Renato Money Moicano",
     copy: "Dono dessa parada, lutador do UFC, cansado e calvo.",
-    image: "/assets/landing/figma/caster-renato-moicano.png",
+    image: r2Asset("caster-renato-moicano.webp"),
     imagePosition: "center 24%"
   },
   {
     name: "Tiago Pamplona",
     copy: "Amigo do Moicano, comentarista do UFC e tem um podcast fracassado.",
-    image: "/assets/landing/figma/caster-tiago-pamplona.png",
+    image: r2Asset("caster-tiago-pamplona.webp"),
     imagePosition: "center 18%"
   }
 ];
@@ -158,17 +160,27 @@ const partners = [
 
 type ButtonVariant = "primary" | "secondary" | "nav" | "light";
 type ButtonSize = "medium" | "large";
+type AssetImageProps = React.ComponentPropsWithoutRef<"img"> & {
+  lazy?: boolean;
+};
+
+function AssetImage({
+  lazy = true,
+  decoding = "async",
+  loading,
+  ...props
+}: Readonly<AssetImageProps>) {
+  return <img {...props} decoding={decoding} loading={lazy ? loading ?? "lazy" : loading} />;
+}
 
 function LandingButton({
   children,
   href,
-  id,
   size = "medium",
   variant = "primary"
 }: Readonly<{
   children: React.ReactNode;
   href: string;
-  id?: string;
   size?: ButtonSize;
   variant?: ButtonVariant;
 }>) {
@@ -181,7 +193,7 @@ function LandingButton({
     .join(" ");
 
   return (
-    <a className={className} href={href} id={id}>
+    <a className={className} href={href}>
       {children}
     </a>
   );
@@ -189,17 +201,23 @@ function LandingButton({
 
 function BrandMark({
   wide = false,
-  className = ""
+  className = "",
+  lazy = false
 }: Readonly<{
   wide?: boolean;
   className?: string;
+  lazy?: boolean;
 }>) {
   return (
     <div
       aria-label="Money Moicano MMA"
       className={wide ? `brand-mark brand-mark--wide ${className}`.trim() : `brand-mark ${className}`.trim()}
     >
-      <img src={wide ? brandLogoWide : brandLogo} alt="Money Moicano MMA" />
+      <AssetImage
+        alt="Money Moicano MMA"
+        lazy={lazy}
+        src={wide ? brandLogoWide : brandLogo}
+      />
     </div>
   );
 }
@@ -223,6 +241,7 @@ function SectionEyebrow({
 export default function Home() {
   return (
     <main className="page-shell">
+      <LandingMotionController />
       <LandingTopbar
         brandLogo={brandLogo}
         ctaHref="#ingressos"
@@ -232,12 +251,13 @@ export default function Home() {
 
       <section className="hero" data-nav-section="evento" id="evento">
         <div className="hero__image-shell" aria-hidden="true">
-          <img
+          <Image
+            fill
             className="hero__image"
-            src={heroImage}
             alt=""
-            decoding="async"
-            fetchPriority="high"
+            priority
+            sizes="(max-width: 780px) 100vw, 1273px"
+            src={heroImage}
           />
         </div>
         <div className="hero__scrim" />
@@ -268,14 +288,14 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="event-bar">
-          <div className="event-bar__facts">
+        <div className="event-bar" data-reveal>
+          <div className="event-bar__facts" data-rail>
             {eventFacts.map((fact) => (
-              <div className="event-fact" key={fact.label}>
+              <div className="event-fact" data-rail-item key={fact.label}>
                 <span className="event-fact__label">{fact.label}</span>
                 <span className="event-fact__value">
                   {fact.icon ? (
-                    <img className="event-fact__value-icon" src={fact.icon} alt="" />
+                    <AssetImage className="event-fact__value-icon" lazy={false} src={fact.icon} alt="" />
                   ) : null}
                   <span>{fact.value}</span>
                 </span>
@@ -284,13 +304,13 @@ export default function Home() {
           </div>
 
           <div className="event-bar__icon">
-            <img src={streamIcon} alt="" />
+            <AssetImage lazy={false} src={streamIcon} alt="" />
           </div>
         </div>
       </section>
 
       <section className="section section--proof" data-nav-section="evento">
-        <div className="section__headline section__headline--centered">
+        <div className="section__headline section__headline--centered" data-reveal>
           <SectionEyebrow centered>Não é mais um eventinho de MMA</SectionEyebrow>
 
           <h2 className="display-title display-title--proof">
@@ -308,10 +328,10 @@ export default function Home() {
           </p>
         </div>
 
-        <div className="feature-grid">
+        <div className="feature-grid" data-rail>
           {featureCards.map((feature) => (
-            <article className="feature-card" key={feature.title}>
-              <img className="feature-card__icon" src={feature.icon} alt="" />
+            <article className="feature-card" data-rail-item data-reveal key={feature.title}>
+              <AssetImage className="feature-card__icon" src={feature.icon} alt="" />
               <h3 className="feature-card__title">{feature.title}</h3>
               <p className="feature-card__copy">{feature.copy}</p>
             </article>
@@ -324,7 +344,7 @@ export default function Home() {
       </section>
 
       <section className="section section--transmission" data-nav-section="transmissao" id="transmissao">
-        <div className="transmission-copy">
+        <div className="transmission-copy" data-reveal>
           <SectionEyebrow>Produção de evento internacional</SectionEyebrow>
 
           <h2 className="display-title display-title--closing">
@@ -340,9 +360,9 @@ export default function Home() {
           </p>
         </div>
 
-        <div className="transmission-gallery" aria-label="Momentos da transmissão">
+        <div className="transmission-gallery" aria-label="Momentos da transmissão" data-rail>
           {transmissionTiles.map((tile) => (
-            <article className={tile.className} key={tile.title}>
+            <article className={tile.className} data-rail-item data-reveal key={tile.title}>
               <div className="transmission-tile__media">
                 <Image
                   alt=""
@@ -367,16 +387,16 @@ export default function Home() {
       </section>
 
       <section className="section section--casters" data-nav-section="transmissao" id="casters">
-        <div className="section__headline section__headline--centered">
+        <div className="section__headline section__headline--centered" data-reveal>
           <SectionEyebrow centered>Nossos casters</SectionEyebrow>
           <h2 className="display-title display-title--secondary">
             Conheça os responsáveis por essa parada
           </h2>
         </div>
 
-        <div className="casters-grid">
+        <div className="casters-grid" data-rail>
           {casterCards.map((caster) => (
-            <article className="caster-card" key={caster.name}>
+            <article className="caster-card" data-rail-item data-reveal key={caster.name}>
               <div className="caster-card__visual">
                 <Image
                   alt={caster.name}
@@ -396,8 +416,13 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="section section--tickets" data-nav-section="ingressos" id="ingressos">
-        <div className="section__headline section__headline--centered">
+      <section
+        className="section section--tickets"
+        data-nav-section="ingressos"
+        id="ingressos"
+        style={{ "--tickets-bg-image": `url("${ticketBackgroundImage}")` } as React.CSSProperties}
+      >
+        <div className="section__headline section__headline--centered" data-reveal>
           <SectionEyebrow centered>Ingressos</SectionEyebrow>
 
           <h2 className="display-title display-title--proof">Moicano wants money!!!</h2>
@@ -408,9 +433,11 @@ export default function Home() {
           </p>
         </div>
 
-        <div className="ticket-grid">
+        <div className="ticket-grid" data-rail>
           {ticketTiers.map((tier) => (
             <article
+              data-rail-item
+              data-reveal
               className={tier.featured ? "ticket-card ticket-card--featured" : "ticket-card"}
               key={tier.name}
             >
@@ -442,7 +469,7 @@ export default function Home() {
       </section>
 
       <section className="section section--audience" data-nav-section="publico" id="publico">
-        <div className="audience-media">
+        <div className="audience-media" data-reveal>
           <Image
             alt="Audiência internacional do Money Moicano MMA"
             className="audience-media__image"
@@ -452,7 +479,7 @@ export default function Home() {
           />
         </div>
 
-        <div className="audience-copy">
+        <div className="audience-copy" data-reveal>
           <SectionEyebrow>Audiência internacional</SectionEyebrow>
 
           <h2 className="display-title display-title--audience">
@@ -476,7 +503,7 @@ export default function Home() {
       </section>
 
       <section className="section section--cta" data-nav-section="publico">
-        <div className="newsletter-panel">
+        <div className="newsletter-panel" data-reveal>
           <div className="newsletter-panel__copy">
             <SectionEyebrow centered>Newsletter</SectionEyebrow>
             <h2 className="display-title display-title--newsletter">
@@ -498,14 +525,14 @@ export default function Home() {
         className="section section--sponsors"
         data-nav-section="publico"
       >
-        <h2 className="sponsors__heading" id="sponsors-title">
+        <h2 className="sponsors__heading" data-reveal id="sponsors-title">
           Nossos parceiros:
         </h2>
 
-        <div className="partners-row" aria-label="Parceiros do evento">
+        <div className="partners-row" aria-label="Parceiros do evento" data-reveal>
           {partners.map((partner) => (
-            <div className={partner.className} key={partner.name}>
-              <img src={partner.logo} alt={partner.name} />
+            <div className={partner.className} data-reveal key={partner.name}>
+              <AssetImage src={partner.logo} alt={partner.name} />
             </div>
           ))}
         </div>
@@ -516,8 +543,8 @@ export default function Home() {
       </section>
 
       <footer className="footer" data-nav-section="publico">
-        <div className="footer__row">
-          <BrandMark />
+        <div className="footer__row" data-reveal>
+          <BrandMark lazy />
 
           <nav className="footer__nav" aria-label="Footer">
             {footerLinks.map((item) => (
@@ -530,19 +557,19 @@ export default function Home() {
           <div className="footer__social" aria-label="Redes sociais">
             {socialLinks.map((item) => (
               <a className="footer__social-link" href={item.href} key={item.label}>
-                <img src={item.icon} alt={item.label} />
+                <AssetImage src={item.icon} alt={item.label} />
               </a>
             ))}
           </div>
         </div>
 
-        <BrandMark className="footer__wordmark" wide />
+        <BrandMark className="footer__wordmark" lazy wide />
       </footer>
 
       <div className="mobile-sticky-cta">
         <div className="mobile-sticky-cta__copy">
           <span className="mobile-sticky-cta__label">Ingressos</span>
-          <strong className="mobile-sticky-cta__value">A partir de R$ 120</strong>
+          <strong className="mobile-sticky-cta__value">A partir de R$ 300</strong>
         </div>
         <a className="landing-button landing-button--primary landing-button--mobile-fixed" href="#ingressos">
           Garantir
