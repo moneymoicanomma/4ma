@@ -7,4 +7,4 @@ yarn-error.log*
 *.tsbuildinfo
 .env*
 !.env.example
-public/assets/landing/figma
+public/assets/landing/

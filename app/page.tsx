@@ -89,16 +89,16 @@ const transmissionTiles = [
 
 const casterCards = [
   {
-    name: "Tiago Pamplona",
-    copy: "Amigo do Moicano, comentarista do UFC e tem um podcast fracassado.",
-    image: "/assets/landing/figma/caster-tiago-pamplona.png",
-    imagePosition: "center 18%"
-  },
-  {
     name: "Renato Money Moicano",
     copy: "Dono dessa parada, lutador do UFC, cansado e calvo.",
     image: "/assets/landing/figma/caster-renato-moicano.png",
     imagePosition: "center 24%"
+  },
+  {
+    name: "Tiago Pamplona",
+    copy: "Amigo do Moicano, comentarista do UFC e tem um podcast fracassado.",
+    image: "/assets/landing/figma/caster-tiago-pamplona.png",
+    imagePosition: "center 18%"
   }
 ];
 

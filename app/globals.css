@@ -689,6 +689,10 @@ section[id] {
   right: 24px;
   bottom: 18px;
   left: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
   margin: 0;
   color: #ffffff;
   font-family: var(--font-title);
@@ -699,8 +703,11 @@ section[id] {
   text-transform: uppercase;
 }
 
+.transmission-tile__title > span {
+  display: block;
+}
+
 .transmission-tile__title-secondary {
-  margin-top: 6px;
   color: rgba(255, 255, 255, 0.74);
   font-size: 0.72em;
   line-height: 1.2;
@@ -719,10 +726,6 @@ section[id] {
   display: flex;
   flex-direction: column;
   gap: 14px;
-}
-
-.caster-card:nth-child(odd) {
-  padding-top: 64px;
 }
 
 .caster-card__visual {
@@ -862,12 +865,14 @@ section[id] {
   display: flex;
   flex-direction: column;
   gap: 22px;
+  width: min(100%, 760px);
   max-width: 760px;
   justify-self: start;
 }
 
 .audience-copy__body {
-  max-width: 40ch;
+  width: 100%;
+  max-width: 100%;
   color: rgba(229, 226, 225, 0.6);
 }
 
@@ -1028,6 +1033,7 @@ section[id] {
   display: flex;
   align-items: center;
   justify-content: center;
+  width: min(100%, 220px);
   min-width: 180px;
   min-height: 88px;
 }
@@ -1036,20 +1042,8 @@ section[id] {
   display: block;
   width: auto;
   max-width: 100%;
-  height: auto;
-  max-height: 86px;
-}
-
-.partner-logo--cornerman img {
-  max-height: 60px;
-}
-
-.partner-logo--joyagear img {
-  max-height: 74px;
-}
-
-.partner-logo--esportes img {
-  max-height: 66px;
+  height: 58px;
+  object-fit: contain;
 }
 
 .section--sponsors > .landing-button {
@@ -2022,7 +2016,6 @@ section[id] {
   }
 
   .transmission-tile__title-secondary {
-    margin-top: 7px;
     font-size: 0.68em;
   }
 
@@ -2052,14 +2045,6 @@ section[id] {
     flex: 0 0 min(82vw, 320px);
     gap: 16px;
     scroll-snap-align: center;
-  }
-
-  .caster-card:nth-child(2) {
-    order: -1;
-  }
-
-  .caster-card:nth-child(odd) {
-    padding-top: 0;
   }
 
   .caster-card__visual {
@@ -2116,6 +2101,7 @@ section[id] {
 
   .audience-copy {
     gap: 18px;
+    width: 100%;
     max-width: none;
   }
 
@@ -2130,7 +2116,7 @@ section[id] {
   }
 
   .audience-copy__body {
-    max-width: 31ch;
+    max-width: 100%;
     font-size: 15px;
     line-height: 1.55;
   }
@@ -2207,19 +2193,8 @@ section[id] {
   }
 
   .partner-logo img {
-    max-height: 54px;
-  }
-
-  .partner-logo--cornerman img {
-    max-height: 42px;
-  }
-
-  .partner-logo--joyagear img {
-    max-height: 48px;
-  }
-
-  .partner-logo--esportes img {
-    max-height: 44px;
+    height: 42px;
+    max-height: none;
   }
 
   .section--sponsors > .landing-button {
