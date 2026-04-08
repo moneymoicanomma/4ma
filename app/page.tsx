@@ -3,8 +3,10 @@ import Image from "next/image";
 import { LandingTopbar } from "./components/landing-topbar";
 import { NewsletterSignupForm } from "./components/newsletter-signup-form";
 
-const heroImage =
-  "https://www.figma.com/api/mcp/asset/83fa3342-e3d2-442b-be31-facae874d567";
+const r2PublicBase = "https://pub-ecc1c3f0770f4d4ebd9b8cc27c8d8bcf.r2.dev";
+const r2Asset = (fileName: string) => `${r2PublicBase}/${fileName}`;
+
+const heroImage = r2Asset("hero-main-v3.webp");
 const brandLogo = "/assets/landing/logo money moicano mma.svg";
 const brandLogoWide = "/assets/landing/logo money moicano mma extenso.svg";
 const streamIcon =
@@ -66,20 +68,20 @@ const featureCards = [
 const transmissionTiles = [
   {
     title: "Comentários nada técnicos",
-    image: "/assets/landing/figma/transmissao-overlay.png",
+    image: r2Asset("transmissao-overlay.webp"),
     className: "transmission-tile transmission-tile--comments",
     sizes: "(max-width: 780px) 100vw, 319px"
   },
   {
     title: "Torcida maluca",
-    image: "/assets/landing/figma/torcida-maluca.png",
+    image: r2Asset("torcida-maluca.webp"),
     className: "transmission-tile transmission-tile--crowd",
     sizes: "(max-width: 780px) 100vw, 319px"
   },
   {
     title: "Certeza de luta boa",
     titleSecondary: "(Isso realmente aconteceu)",
-    image: "/assets/landing/figma/luta-boa.png",
+    image: r2Asset("luta-boa.webp"),
     className: "transmission-tile transmission-tile--fight",
     sizes: "(max-width: 780px) 100vw, 299px"
   }
@@ -446,7 +448,7 @@ export default function Home() {
             className="audience-media__image"
             fill
             sizes="(max-width: 980px) 100vw, 535px"
-            src="/assets/landing/figma/audiencia-internacional.png"
+            src={r2Asset("audiencia-internacional.webp")}
           />
         </div>
 
