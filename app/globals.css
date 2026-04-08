@@ -464,6 +464,9 @@ section[id] {
 }
 
 .event-fact__value {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
   color: var(--text-strong);
   font-family: var(--font-title);
   font-size: 18px;
@@ -471,6 +474,13 @@ section[id] {
   line-height: 1;
   letter-spacing: -1px;
   text-transform: uppercase;
+}
+
+.event-fact__value-icon {
+  width: 22px;
+  height: 22px;
+  flex: none;
+  object-fit: contain;
 }
 
 .event-bar__icon {
@@ -691,9 +701,10 @@ section[id] {
 
 .casters-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 24px;
-  width: 100%;
+  width: min(100%, 920px);
+  margin-inline: auto;
 }
 
 .caster-card {
@@ -736,8 +747,10 @@ section[id] {
 
 .ticket-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 28px;
+  width: min(100%, 1320px);
+  margin-inline: auto;
 }
 
 .ticket-card {
@@ -850,23 +863,9 @@ section[id] {
   color: rgba(229, 226, 225, 0.6);
 }
 
-.audience-copy__meta {
-  display: inline-flex;
-  align-items: center;
-  gap: 14px;
-  margin-top: 4px;
-  color: var(--accent);
-  font-family: var(--font-body);
-  font-size: 14px;
-  font-weight: 500;
-  line-height: 1.35;
-  letter-spacing: 1.2px;
-  text-transform: uppercase;
-}
-
-.audience-copy__meta img {
-  width: 24px;
-  height: 24px;
+.audience-copy > .landing-button {
+  align-self: flex-start;
+  margin-top: 6px;
 }
 
 .section--cta {
@@ -962,122 +961,91 @@ section[id] {
   transform: translateY(-1px);
 }
 
+.newsletter-form__button:disabled {
+  cursor: wait;
+  opacity: 0.8;
+  transform: none;
+}
+
+.newsletter-form__status {
+  grid-column: 1 / -1;
+  margin: 2px 0 0;
+  color: rgba(229, 226, 225, 0.68);
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.45;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+}
+
+.newsletter-form__status.is-error {
+  color: #ff6a6c;
+}
+
+.newsletter-form__status.is-success {
+  color: rgba(229, 226, 225, 0.78);
+}
+
 .section--sponsors {
   display: flex;
   flex-direction: column;
-  gap: 36px;
+  align-items: center;
+  gap: 32px;
   padding: 56px 48px 72px;
 }
 
-.sponsors__copy {
-  max-width: 760px;
-}
-
-.sponsors-marquee {
-  --sponsor-gap: 18px;
-  --sponsor-gap-half: 9px;
-  overflow: hidden;
-  width: calc(100% + 96px);
-  margin-inline: -48px;
-  mask-image: linear-gradient(90deg, transparent 0, black 7%, black 93%, transparent 100%);
-  -webkit-mask-image: linear-gradient(90deg, transparent 0, black 7%, black 93%, transparent 100%);
-}
-
-.sponsors-track {
-  display: flex;
-  width: max-content;
-  gap: var(--sponsor-gap);
-  animation: sponsors-slide 32s linear infinite;
-  will-change: transform;
-}
-
-.sponsors-marquee:hover .sponsors-track,
-.sponsors-marquee:focus-within .sponsors-track {
-  animation-play-state: paused;
-}
-
-.sponsor-slot {
-  flex: 0 0 320px;
-  min-height: 208px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background:
-    radial-gradient(circle at top right, rgba(232, 24, 26, 0.16), transparent 45%),
-    rgba(255, 255, 255, 0.03);
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 20px;
-  transition:
-    transform 180ms ease,
-    border-color 180ms ease,
-    background-color 180ms ease,
-    box-shadow 180ms ease;
-}
-
-.sponsor-slot:hover,
-.sponsor-slot:focus-visible {
-  transform: translateY(-4px);
-  border-color: rgba(232, 24, 26, 0.48);
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.22);
-}
-
-.sponsor-slot__tag,
-.sponsor-slot__hover-label {
-  color: var(--accent);
+.sponsors__heading {
+  margin: 0;
+  color: rgba(229, 226, 225, 0.52);
   font-family: var(--font-body);
-  font-size: 13px;
+  font-size: 18px;
   font-weight: 500;
-  line-height: 1.5;
-  letter-spacing: 1.6px;
+  line-height: 1.2;
+  letter-spacing: 1.8px;
+  text-align: center;
   text-transform: uppercase;
 }
 
-.sponsor-slot__name {
-  margin: 0;
-  color: #ffffff;
-  font-family: var(--font-title);
-  font-size: 28px;
-  font-weight: 700;
-  line-height: 1;
-  letter-spacing: -1px;
-  text-transform: uppercase;
-}
-
-.sponsor-slot__copy,
-.sponsor-slot__hover-copy {
-  margin: 0;
-  max-width: 32ch;
-  color: rgba(229, 226, 225, 0.72);
-  font-family: var(--font-body);
-  font-size: 14px;
-  font-weight: 500;
-  line-height: 1.5;
-}
-
-.sponsor-slot__meta {
+.partners-row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding-top: 18px;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  justify-content: center;
+  gap: clamp(40px, 7vw, 120px);
+  width: min(100%, 1180px);
+  flex-wrap: wrap;
 }
 
-.sponsor-slot__hover-copy {
-  font-size: 13px;
-  letter-spacing: 0.6px;
-  text-transform: uppercase;
+.partner-logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 180px;
+  min-height: 88px;
 }
 
-@keyframes sponsors-slide {
-  from {
-    transform: translateX(0);
-  }
+.partner-logo img {
+  display: block;
+  width: auto;
+  max-width: 100%;
+  height: auto;
+  max-height: 86px;
+}
 
-  to {
-    transform: translateX(calc(-50% - var(--sponsor-gap-half)));
-  }
+.partner-logo--cornerman img {
+  max-height: 60px;
+}
+
+.partner-logo--joyagear img {
+  max-height: 74px;
+}
+
+.partner-logo--esportes img {
+  max-height: 66px;
+}
+
+.section--sponsors > .landing-button {
+  min-width: 408px;
 }
 
 .footer {
@@ -1902,6 +1870,11 @@ section[id] {
     font-size: 20px;
   }
 
+  .event-fact__value-icon {
+    width: 20px;
+    height: 20px;
+  }
+
   .event-bar__icon {
     align-self: flex-start;
     width: 44px;
@@ -2068,6 +2041,10 @@ section[id] {
     scroll-snap-align: center;
   }
 
+  .caster-card:nth-child(2) {
+    order: -1;
+  }
+
   .caster-card:nth-child(odd) {
     padding-top: 0;
   }
@@ -2145,9 +2122,10 @@ section[id] {
     line-height: 1.55;
   }
 
-  .audience-copy__meta {
-    margin-top: 8px;
-    font-size: 13px;
+  .audience-copy > .landing-button {
+    width: 100%;
+    max-width: 340px;
+    margin-top: 10px;
   }
 
   .section--cta {
@@ -2197,29 +2175,44 @@ section[id] {
   }
 
   .section--sponsors {
-    gap: 28px;
+    gap: 24px;
     padding: 64px 18px 72px;
   }
 
-  .sponsors-marquee {
-    width: calc(100% + 36px);
-    margin-inline: -18px;
-    overflow-x: auto;
-    mask-image: none;
-    -webkit-mask-image: none;
-    scroll-snap-type: x proximity;
+  .sponsors__heading {
+    font-size: 16px;
+    letter-spacing: 1.4px;
   }
 
-  .sponsors-track {
-    gap: 14px;
-    padding-inline: 18px;
-    animation: none;
+  .partners-row {
+    gap: 22px;
   }
 
-  .sponsor-slot {
-    flex-basis: min(84vw, 310px);
-    min-height: 200px;
-    scroll-snap-align: start;
+  .partner-logo {
+    min-width: min(42vw, 170px);
+    min-height: 66px;
+  }
+
+  .partner-logo img {
+    max-height: 54px;
+  }
+
+  .partner-logo--cornerman img {
+    max-height: 42px;
+  }
+
+  .partner-logo--joyagear img {
+    max-height: 48px;
+  }
+
+  .partner-logo--esportes img {
+    max-height: 44px;
+  }
+
+  .section--sponsors > .landing-button {
+    width: 100%;
+    max-width: 408px;
+    min-width: 0;
   }
 
   .footer {
@@ -2361,14 +2354,33 @@ section[id] {
     font-size: clamp(58px, 21vw, 72px);
   }
 
+  .hero__content {
+    gap: 14px;
+    padding-top: 22px;
+    padding-bottom: 18px;
+  }
+
+  .hero__copy {
+    width: min(100%, 24ch);
+    font-size: 14px;
+    line-height: 1.42;
+    letter-spacing: 0.9px;
+  }
+
   .hero__actions {
     grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .landing-button--large {
+    min-height: 48px;
+    font-size: 15px;
   }
 
   .event-bar {
-    gap: 10px;
+    gap: 8px;
     padding-inline: 16px;
-    padding-bottom: 20px;
+    padding-bottom: 16px;
   }
 
   .event-bar__facts {
@@ -2384,8 +2396,8 @@ section[id] {
 
   .event-fact {
     gap: 6px;
-    min-height: 88px;
-    padding: 10px 10px 12px;
+    min-height: 82px;
+    padding: 9px 9px 10px;
   }
 
   .event-fact__label {
@@ -2397,6 +2409,11 @@ section[id] {
     font-size: 15px;
     line-height: 0.98;
     letter-spacing: -0.5px;
+  }
+
+  .event-fact__value-icon {
+    width: 15px;
+    height: 15px;
   }
 
   .event-bar__icon {

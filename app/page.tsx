@@ -1,6 +1,7 @@
 import Image from "next/image";
 
 import { LandingTopbar } from "./components/landing-topbar";
+import { NewsletterSignupForm } from "./components/newsletter-signup-form";
 
 const heroImage =
   "https://www.figma.com/api/mcp/asset/83fa3342-e3d2-442b-be31-facae874d567";
@@ -14,8 +15,10 @@ const stadiumIcon =
   "/assets/landing/Stadium-Classic-2--Streamline-Ultimate.svg";
 const microphoneIcon =
   "/assets/landing/Microphone-Podcast-2--Streamline-Ultimate.svg";
-const globeIcon =
-  "/assets/landing/Astronomy-Earth-Rotation--Streamline-Ultimate.svg";
+const cornermanIcon = "/assets/landing/cornerman.svg";
+const cornermanSloganLogo = "/assets/landing/cornerman%20-%20slogan.svg";
+const joyaGearLogo = "/assets/landing/joyagear.svg";
+const esportesDaSorteLogo = "/assets/landing/esportes-da-sorte.svg";
 const instagramIcon = "/assets/landing/instagram_logo.svg";
 const youtubeIcon = "/assets/landing/youtube_logo.svg";
 const xIcon = "/assets/landing/x_logo.svg.svg";
@@ -29,7 +32,7 @@ const navItems = [
 
 const eventFacts = [
   { label: "Data do Evento", value: "30 Maio 2026" },
-  { label: "Localização", value: "São Paulo, Brasil" },
+  { label: "Localização", value: "Cornerman, São Paulo", icon: cornermanIcon },
   { label: "Transmissão", value: "Canal Money Moicano" }
 ];
 
@@ -94,27 +97,21 @@ const casterCards = [
     copy: "Dono dessa parada, lutador do UFC, cansado e calvo.",
     image: "/assets/landing/figma/caster-renato-moicano.png",
     imagePosition: "center 24%"
-  },
-  {
-    name: "Tarso Doria",
-    copy: "Precisava de mais um aleatório aqui.",
-    image: "/assets/landing/figma/caster-tarso-doria.png",
-    imagePosition: "center 18%"
   }
 ];
 
 const ticketTiers = [
   {
-    label: "Acesso Padrão",
-    name: "Pista",
-    price: "R$ 120",
+    label: "Pra quem tá liso",
+    name: "VIP Fighting",
+    price: "R$ 300",
     features: ["Acesso ao setor pista", "Bares exclusivos", "Visão frontal"],
-    buttonLabel: "Saiba mais"
+    buttonLabel: "Garantir Ingresso"
   },
   {
-    label: "Mais popular",
-    name: "VIP",
-    price: "R$ 450",
+    label: "Pra quem tá rico e quer uma experiência f#d@",
+    name: "VIP Networking",
+    price: "R$ 800",
     features: [
       "Cadeira ao lado da grade",
       "Open bar (cerveja & água)",
@@ -123,18 +120,6 @@ const ticketTiers = [
     ],
     buttonLabel: "Garantir Ingresso",
     featured: true
-  },
-  {
-    label: "Premium",
-    name: "Camarote",
-    price: "R$ 800",
-    features: [
-      "Vista panorâmica elevada",
-      "Buffet completo",
-      "Meet & greet atletas",
-      "Estacionamento VIP"
-    ],
-    buttonLabel: "Saiba mais"
   }
 ];
 
@@ -151,36 +136,21 @@ const socialLinks = [
   { label: "YouTube", href: "#", icon: youtubeIcon }
 ];
 
-const sponsorSlots = [
+const partners = [
   {
-    tag: "Cota master",
-    name: "Sua marca aqui",
-    copy: "Exposição principal no cage, backdrop, transmissão e peças de campanha."
+    name: "Cornerman",
+    logo: cornermanSloganLogo,
+    className: "partner-logo partner-logo--cornerman"
   },
   {
-    tag: "Naming rights",
-    name: "Presented by",
-    copy: "Assinatura de naming em toda a comunicação do evento e ativações no local."
+    name: "Joya Gear",
+    logo: joyaGearLogo,
+    className: "partner-logo partner-logo--joyagear"
   },
   {
-    tag: "Parceiro oficial",
-    name: "Hospitality",
-    copy: "Área premium, credenciais e presença de marca em recepção e experiência VIP."
-  },
-  {
-    tag: "Mídia parceira",
-    name: "Co-stream",
-    copy: "Inserções em conteúdos, cortes oficiais e amplificação com creators convidados."
-  },
-  {
-    tag: "Produto oficial",
-    name: "Merch + sampling",
-    copy: "Distribuição de produto, kits e integração com ativações de arena."
-  },
-  {
-    tag: "Patrocínio técnico",
-    name: "Equipamento",
-    copy: "Uniformes, estrutura, performance e presença visual nas áreas de operação."
+    name: "Esportes da Sorte",
+    logo: esportesDaSorteLogo,
+    className: "partner-logo partner-logo--esportes"
   }
 ];
 
@@ -301,7 +271,12 @@ export default function Home() {
             {eventFacts.map((fact) => (
               <div className="event-fact" key={fact.label}>
                 <span className="event-fact__label">{fact.label}</span>
-                <span className="event-fact__value">{fact.value}</span>
+                <span className="event-fact__value">
+                  {fact.icon ? (
+                    <img className="event-fact__value-icon" src={fact.icon} alt="" />
+                  ) : null}
+                  <span>{fact.value}</span>
+                </span>
               </div>
             ))}
           </div>
@@ -325,9 +300,9 @@ export default function Home() {
           </h2>
 
           <p className="body-copy body-copy--lead">
-            Lutas reais. Estrutura profissional. Arbitragem capacitada. E uma
-            transmissão que mistura análise técnica com o humor sem filtro que o MMA
-            brasileiro nunca teve.
+            Lutas reais e estrutura profissional chancelados pela Comissão Atlética
+            Brasileira de MMA (CABMMA). E uma transmissão que mistura análise técnica
+            com o humor sem filtro que o MMA nunca teve.
           </p>
         </div>
 
@@ -480,7 +455,7 @@ export default function Home() {
           <SectionEyebrow>Audiência internacional</SectionEyebrow>
 
           <h2 className="display-title display-title--audience">
-            <span>Os gringos vão</span>
+            <span>Até os gringos vão</span>
             <span>ver o que é evento</span>
             <span className="display-title__line">
               de <span className="display-title__accent">qualidade</span>
@@ -489,14 +464,13 @@ export default function Home() {
 
           <p className="body-copy audience-copy__body">
             O Money Moicano MMA rompeu fronteiras. Nossa transmissão atinge o mundo
-            todo, consolidando uma base fiel de fãs globais que buscam a verdadeira
-            essência da luta.
+            todo e quem for gringo e quiser ouvir o que o Moicano tem a dizer se
+            prepare, você tem até o dia 23 de maio pra aprender português brasileiro.
           </p>
 
-          <div className="audience-copy__meta">
-            <img src={globeIcon} alt="" />
-            <span>Transmissão em 2 idiomas</span>
-          </div>
+          <LandingButton href="#ingressos" size="large">
+            Garantir Ingresso
+          </LandingButton>
         </div>
       </section>
 
@@ -514,22 +488,7 @@ export default function Home() {
             </p>
           </div>
 
-          <form className="newsletter-form">
-            <label className="visually-hidden" htmlFor="newsletter-email">
-              Seu e-mail
-            </label>
-            <input
-              className="newsletter-form__input"
-              id="newsletter-email"
-              name="email"
-              placeholder="SEUEMAIL@GMAIL.COM"
-              type="email"
-              autoComplete="email"
-            />
-            <button className="newsletter-form__button" type="button">
-              Inscrever-se
-            </button>
-          </form>
+          <NewsletterSignupForm />
         </div>
       </section>
 
@@ -538,32 +497,21 @@ export default function Home() {
         className="section section--sponsors"
         data-nav-section="publico"
       >
-        <div className="section__headline section__headline--centered">
-          <SectionEyebrow centered>Patrocinadores</SectionEyebrow>
-          <h2 className="display-title display-title--secondary" id="sponsors-title">
-            Espaço reservado para as marcas que querem aparecer do lado certo da pancadaria
-          </h2>
-          <p className="body-copy body-copy--muted sponsors__copy">
-            Placeholder com hover para mapear cotas e posicionamentos antes de fechar
-            os patrocinadores oficiais.
-          </p>
+        <h2 className="sponsors__heading" id="sponsors-title">
+          Nossos parceiros:
+        </h2>
+
+        <div className="partners-row" aria-label="Parceiros do evento">
+          {partners.map((partner) => (
+            <div className={partner.className} key={partner.name}>
+              <img src={partner.logo} alt={partner.name} />
+            </div>
+          ))}
         </div>
 
-        <div className="sponsors-marquee">
-          <div className="sponsors-track">
-            {[...sponsorSlots, ...sponsorSlots].map((slot, index) => (
-              <article className="sponsor-slot" key={`${slot.tag}-${slot.name}-${index}`} tabIndex={0}>
-                <span className="sponsor-slot__tag">{slot.tag}</span>
-                <h3 className="sponsor-slot__name">{slot.name}</h3>
-                <p className="sponsor-slot__copy">{slot.copy}</p>
-                <div className="sponsor-slot__meta">
-                  <span className="sponsor-slot__hover-label">Disponível</span>
-                  <span className="sponsor-slot__hover-copy">Marca parceira em destaque</span>
-                </div>
-              </article>
-            ))}
-          </div>
-        </div>
+        <LandingButton href="#contato" size="large" variant="secondary">
+          Quero ser um parceiro
+        </LandingButton>
       </section>
 
       <footer className="footer" data-nav-section="publico">
