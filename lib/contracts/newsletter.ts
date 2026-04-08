@@ -5,11 +5,6 @@ export type NewsletterSubscriptionPayload = {
   source: typeof NEWSLETTER_SOURCE;
 };
 
-export type PublicMutationResponse = {
-  ok: boolean;
-  message: string;
-};
-
 type NewsletterParseResult =
   | {
       ok: true;

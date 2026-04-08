@@ -1,19 +1,21 @@
 import { NextRequest } from "next/server";
 
-import { parseNewsletterSubscription } from "@/lib/contracts/newsletter";
-import type { PublicMutationResponse } from "@/lib/contracts/public-mutation";
+import {
+  parseFighterApplication,
+  type FighterApplicationPublicResponse
+} from "@/lib/contracts/fighter-application";
 import { publicApiResponse } from "@/lib/server/api-response";
 import { getServerEnv } from "@/lib/server/env";
-import { subscribeToNewsletter } from "@/lib/server/newsletter";
+import { submitFighterApplication } from "@/lib/server/fighter-application";
 import { getClientIdentifier, isAllowedRequestOrigin } from "@/lib/server/request-guards";
 import { takeRateLimitToken } from "@/lib/server/rate-limit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const successPayload: PublicMutationResponse = {
+const successPayload: FighterApplicationPublicResponse = {
   ok: true,
-  message: "Inscrição recebida. Se fizer sentido, te chamamos no e-mail."
+  message: "Inscrição recebida. Se fizer sentido para o card, a equipe entra em contato."
 };
 
 export async function POST(request: NextRequest) {
@@ -42,21 +44,18 @@ export async function POST(request: NextRequest) {
   }
 
   const requester = getClientIdentifier(request);
-  const rateLimit = takeRateLimitToken(`newsletter:${requester}`, {
-    limit: 5,
+  const rateLimit = takeRateLimitToken(`fighter-application:${requester}`, {
+    limit: 3,
     windowMs: 10 * 60 * 1000
   });
 
   if (!rateLimit.ok) {
-    const retryAfterSeconds = Math.max(
-      1,
-      Math.ceil((rateLimit.resetAt - Date.now()) / 1000)
-    );
+    const retryAfterSeconds = Math.max(1, Math.ceil((rateLimit.resetAt - Date.now()) / 1000));
 
     return publicApiResponse(
       {
         ok: false,
-        message: "Muitas tentativas seguidas. Tenta de novo em instantes."
+        message: "Muitas tentativas seguidas. Tenta novamente em alguns minutos."
       },
       {
         status: 429,
@@ -68,7 +67,7 @@ export async function POST(request: NextRequest) {
   }
 
   const payload = await request.json().catch(() => null);
-  const parsed = parseNewsletterSubscription(payload);
+  const parsed = parseFighterApplication(payload);
 
   if (!parsed.ok) {
     return publicApiResponse(
@@ -84,7 +83,7 @@ export async function POST(request: NextRequest) {
     return publicApiResponse(successPayload);
   }
 
-  const result = await subscribeToNewsletter(parsed.data, env);
+  const result = await submitFighterApplication(parsed.data, env);
 
   if (!result.ok) {
     const status = result.reason === "not_configured" ? 503 : 502;

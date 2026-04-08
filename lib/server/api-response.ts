@@ -2,7 +2,7 @@ import "server-only";
 
 import { NextResponse } from "next/server";
 
-import type { PublicMutationResponse } from "@/lib/contracts/newsletter";
+import type { PublicMutationResponse } from "@/lib/contracts/public-mutation";
 
 export function publicApiResponse(
   payload: PublicMutationResponse,

@@ -4,9 +4,9 @@ import { type FormEvent, useState } from "react";
 
 import {
   isValidNewsletterEmail,
-  normalizeNewsletterEmail,
-  type PublicMutationResponse
+  normalizeNewsletterEmail
 } from "@/lib/contracts/newsletter";
+import type { PublicMutationResponse } from "@/lib/contracts/public-mutation";
 
 type FormState = {
   invalidEmail: boolean;
