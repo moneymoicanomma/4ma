@@ -176,7 +176,7 @@ export default async function AtletasDaEdicaoPage() {
       </section>
 
       {authenticatedEmail ? (
-        <section className={styles.formSection} data-reveal id="formulario">
+        <section className={styles.formSection} id="formulario">
           <div className={styles.formIntro}>
             <p className={styles.formKicker}>Ficha oficial do card</p>
             <h2 className={styles.formTitle}>Manda o material completo do atleta.</h2>
