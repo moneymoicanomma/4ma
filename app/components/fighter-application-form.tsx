@@ -265,9 +265,9 @@ export function FighterApplicationForm() {
             </div>
           </fieldset>
 
-          <div className={styles.grid}>
+          <div className={styles.longFields}>
             {selectedSpecialty === "other" ? (
-              <label className={`${styles.field} ${styles.fullWidth}`}>
+              <label className={`${styles.field} ${styles.longField}`}>
                 <span className={styles.label}>Qual é a outra especialidade?</span>
                 <input
                   className={styles.input}
@@ -281,7 +281,7 @@ export function FighterApplicationForm() {
               </label>
             ) : null}
 
-            <label className={`${styles.field} ${styles.fullWidth}`}>
+            <label className={`${styles.field} ${styles.longField}`}>
               <span className={styles.label}>Histórico de competição</span>
               <textarea
                 className={styles.textarea}
@@ -295,7 +295,7 @@ export function FighterApplicationForm() {
               </p>
             </label>
 
-            <label className={`${styles.field} ${styles.fullWidth}`}>
+            <label className={`${styles.field} ${styles.longField}`}>
               <span className={styles.label}>Principais títulos em artes marciais</span>
               <textarea
                 className={styles.textarea}

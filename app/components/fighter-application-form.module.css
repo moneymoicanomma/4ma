@@ -1,14 +1,14 @@
 .form {
   display: grid;
-  gap: 30px;
+  gap: 36px;
   --fighter-accent-line: rgba(232, 24, 26, 0.72);
 }
 
 .shell {
   position: relative;
   display: grid;
-  gap: 28px;
-  padding: clamp(24px, 3vw, 36px);
+  gap: 36px;
+  padding: clamp(28px, 3vw, 42px);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 0;
   background:
@@ -30,8 +30,8 @@
 
 .section {
   display: grid;
-  gap: 18px;
-  padding-top: 28px;
+  gap: 22px;
+  padding-top: 32px;
   border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
 
@@ -42,7 +42,7 @@
 
 .sectionHeader {
   display: grid;
-  gap: 8px;
+  gap: 10px;
 }
 
 .sectionKicker {
@@ -74,7 +74,8 @@
 .grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 18px;
+  gap: 20px 18px;
+  align-items: start;
 }
 
 .fullWidth {
@@ -84,6 +85,7 @@
 .field {
   display: grid;
   gap: 10px;
+  align-content: start;
 }
 
 .label {
@@ -96,6 +98,7 @@
 
 .helper {
   margin: 0;
+  max-width: 64ch;
   color: rgba(227, 226, 225, 0.5);
   font-size: 13px;
   line-height: 1.55;
@@ -123,8 +126,9 @@
 }
 
 .textarea {
-  min-height: 170px;
+  min-height: 188px;
   padding: 16px 18px;
+  line-height: 1.62;
   resize: vertical;
 }
 
@@ -143,7 +147,7 @@
 
 .specialtyGroup {
   display: grid;
-  gap: 12px;
+  gap: 16px;
   min-width: 0;
   margin: 0;
   padding: 0;
@@ -153,11 +157,13 @@
 .specialtyGrid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 12px;
+  gap: 14px;
 }
 
 .specialtyOption {
   position: relative;
+  display: flex;
+  min-width: 0;
 }
 
 .specialtyInput {
@@ -170,9 +176,12 @@
 .specialtyCard {
   position: relative;
   display: grid;
-  gap: 6px;
-  min-height: 122px;
-  padding: 18px;
+  width: 100%;
+  height: 152px;
+  grid-template-rows: auto 1fr;
+  align-content: start;
+  gap: 8px;
+  padding: 18px 16px 16px;
   border: 1px solid rgba(255, 255, 255, 0.09);
   border-radius: 0;
   background:
@@ -211,16 +220,26 @@
 .specialtyLabel {
   color: #ffffff;
   font-family: var(--font-title);
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 700;
-  letter-spacing: -0.7px;
+  line-height: 0.98;
+  letter-spacing: -0.6px;
   text-transform: uppercase;
 }
 
 .specialtyCopy {
   color: rgba(227, 226, 225, 0.6);
   font-size: 13px;
-  line-height: 1.55;
+  line-height: 1.5;
+}
+
+.longFields {
+  display: grid;
+  gap: 20px;
+}
+
+.longField {
+  gap: 12px;
 }
 
 .consentBox {
@@ -290,6 +309,7 @@
   justify-content: space-between;
   gap: 18px;
   flex-wrap: wrap;
+  margin-top: 4px;
 }
 
 .button {
@@ -369,6 +389,10 @@
   .specialtyGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+  .specialtyCard {
+    height: 142px;
+  }
 }
 
 @media (max-width: 640px) {
@@ -380,12 +404,26 @@
     padding: 22px 18px;
   }
 
+  .section {
+    gap: 18px;
+    padding-top: 28px;
+  }
+
   .sectionTitle {
     font-size: 28px;
   }
 
   .input {
     min-height: 54px;
+  }
+
+  .textarea {
+    min-height: 176px;
+  }
+
+  .specialtyCard {
+    height: auto;
+    min-height: 132px;
   }
 
   .actions {
