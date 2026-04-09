@@ -15,7 +15,7 @@ const r2Asset = (fileName: string) =>
     .join("/")}`;
 
 const brandLogoWide = r2Asset("logo money moicano mma extenso.svg");
-const heroImage = r2Asset("hero-main-v3.webp");
+const heroImage = r2Asset("hero-lute.webp");
 
 export const metadata: Metadata = {
   title: "Lute no MMMMA | Money Moicano MMA",

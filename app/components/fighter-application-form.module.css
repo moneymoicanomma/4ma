@@ -1,18 +1,31 @@
 .form {
   display: grid;
   gap: 30px;
+  --fighter-accent-line: rgba(232, 24, 26, 0.72);
 }
 
 .shell {
+  position: relative;
   display: grid;
   gap: 28px;
   padding: clamp(24px, 3vw, 36px);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 32px;
+  border-radius: 0;
   background:
     linear-gradient(180deg, rgba(17, 17, 17, 0.95) 0%, rgba(8, 8, 8, 0.98) 100%),
     rgba(0, 0, 0, 0.9);
   box-shadow: 0 28px 80px rgba(0, 0, 0, 0.36);
+}
+
+.shell::before {
+  content: "";
+  position: absolute;
+  top: -1px;
+  left: -1px;
+  width: 64px;
+  height: 1px;
+  background: var(--fighter-accent-line);
+  pointer-events: none;
 }
 
 .section {
@@ -92,7 +105,7 @@
 .textarea {
   width: 100%;
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 18px;
+  border-radius: 0;
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.035) 0%, rgba(255, 255, 255, 0.02) 100%),
     rgba(9, 9, 9, 0.84);
@@ -155,12 +168,13 @@
 }
 
 .specialtyCard {
+  position: relative;
   display: grid;
   gap: 6px;
   min-height: 122px;
   padding: 18px;
   border: 1px solid rgba(255, 255, 255, 0.09);
-  border-radius: 22px;
+  border-radius: 0;
   background:
     radial-gradient(circle at top right, rgba(232, 24, 26, 0.16), transparent 44%),
     rgba(255, 255, 255, 0.03);
@@ -169,6 +183,18 @@
     border-color 160ms ease,
     background-color 160ms ease,
     box-shadow 180ms ease;
+}
+
+.specialtyCard::after {
+  content: "";
+  position: absolute;
+  right: -1px;
+  bottom: -1px;
+  width: 18px;
+  height: 18px;
+  border-right: 1px solid rgba(255, 255, 255, 0.2);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  pointer-events: none;
 }
 
 .specialtyInput:checked + .specialtyCard {
@@ -198,14 +224,26 @@
 }
 
 .consentBox {
+  position: relative;
   display: grid;
   gap: 14px;
   padding: 20px;
-  border-radius: 24px;
+  border-radius: 0;
   background:
     radial-gradient(circle at left top, rgba(232, 24, 26, 0.18), transparent 46%),
     rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.consentBox::before {
+  content: "";
+  position: absolute;
+  top: -1px;
+  right: -1px;
+  width: 56px;
+  height: 1px;
+  background: var(--fighter-accent-line);
+  pointer-events: none;
 }
 
 .consentLabel {
@@ -218,10 +256,32 @@
 }
 
 .checkbox {
+  appearance: none;
+  position: relative;
+  flex: none;
   width: 18px;
   height: 18px;
   margin-top: 3px;
-  accent-color: var(--accent);
+  border: 1px solid rgba(255, 255, 255, 0.34);
+  background: rgba(255, 255, 255, 0.04);
+  cursor: pointer;
+}
+
+.checkbox:focus-visible {
+  outline: 2px solid rgba(232, 24, 26, 0.82);
+  outline-offset: 3px;
+}
+
+.checkbox:checked {
+  border-color: rgba(232, 24, 26, 0.92);
+  background: rgba(232, 24, 26, 0.92);
+}
+
+.checkbox:checked::after {
+  content: "";
+  position: absolute;
+  inset: 3px;
+  background: #ffffff;
 }
 
 .actions {
@@ -233,11 +293,12 @@
 }
 
 .button {
+  position: relative;
   min-width: 220px;
   min-height: 58px;
   padding: 0 24px;
   border: 0;
-  border-radius: 18px;
+  border-radius: 0;
   background: linear-gradient(135deg, #ff2c30 0%, #b01013 100%);
   color: #ffffff;
   font-family: var(--font-title);
@@ -251,6 +312,18 @@
     box-shadow 180ms ease,
     opacity 160ms ease;
   box-shadow: 0 22px 46px rgba(232, 24, 26, 0.26);
+}
+
+.button::after {
+  content: "";
+  position: absolute;
+  right: -1px;
+  bottom: -1px;
+  width: 18px;
+  height: 18px;
+  border-right: 1px solid rgba(255, 255, 255, 0.44);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.44);
+  pointer-events: none;
 }
 
 .button:hover,
@@ -301,7 +374,6 @@
 @media (max-width: 640px) {
   .shell {
     padding: 22px 18px;
-    border-radius: 26px;
   }
 
   .sectionTitle {
