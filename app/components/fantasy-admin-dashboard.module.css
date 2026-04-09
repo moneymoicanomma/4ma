@@ -1,0 +1,437 @@
+.dashboard {
+  display: grid;
+  grid-template-columns: minmax(260px, 300px) minmax(0, 1fr);
+  gap: 22px;
+  align-items: start;
+}
+
+.sidebar,
+.commandBar,
+.section,
+.overviewCard {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.018) 0%, rgba(255, 255, 255, 0.01) 100%),
+    rgba(7, 7, 7, 0.92);
+}
+
+.sidebar {
+  position: sticky;
+  top: 92px;
+  display: grid;
+  gap: 18px;
+  padding: 20px;
+}
+
+.sidebarHeader,
+.sectionHeader,
+.commandBar,
+.fightEditorHeader,
+.resultHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.sidebarHeader h2,
+.commandBar h2,
+.sectionHeader h3,
+.fightEditorHeader h4 {
+  margin: 8px 0 0;
+  color: #ffffff;
+  font-family: var(--font-title);
+  font-weight: 700;
+  line-height: 0.96;
+  letter-spacing: -1px;
+  text-transform: uppercase;
+}
+
+.sidebarHeader h2,
+.commandBar h2 {
+  font-size: clamp(26px, 3vw, 36px);
+}
+
+.sectionHeader h3,
+.fightEditorHeader h4 {
+  font-size: clamp(22px, 2vw, 28px);
+}
+
+.kicker {
+  color: rgba(232, 24, 26, 0.92);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1.8px;
+  text-transform: uppercase;
+}
+
+.primaryButton,
+.secondaryButton,
+.ghostButton,
+.inlineButton,
+.toggleButton,
+.roundButton {
+  min-height: 42px;
+  padding: 0 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+  transition:
+    transform 160ms ease,
+    border-color 160ms ease,
+    background-color 160ms ease,
+    color 160ms ease;
+}
+
+.primaryButton {
+  border-color: rgba(232, 24, 26, 0.76);
+  background: linear-gradient(135deg, #ff2c30 0%, #b01013 100%);
+  color: #ffffff;
+}
+
+.secondaryButton {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.ghostButton,
+.inlineButton,
+.toggleButton,
+.roundButton {
+  background: rgba(255, 255, 255, 0.015);
+}
+
+.primaryButton:hover,
+.primaryButton:focus-visible,
+.secondaryButton:hover,
+.secondaryButton:focus-visible,
+.ghostButton:hover,
+.ghostButton:focus-visible,
+.inlineButton:hover,
+.inlineButton:focus-visible,
+.toggleButton:hover,
+.toggleButton:focus-visible,
+.roundButton:hover,
+.roundButton:focus-visible {
+  transform: translateY(-1px);
+  border-color: rgba(232, 24, 26, 0.3);
+}
+
+.toggleButtonSelected {
+  border-color: rgba(232, 24, 26, 0.82);
+  background: rgba(232, 24, 26, 0.92);
+  color: #ffffff;
+}
+
+.eventList {
+  display: grid;
+  gap: 10px;
+}
+
+.eventCard {
+  display: grid;
+  gap: 8px;
+  padding: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.015);
+  text-align: left;
+}
+
+.eventCardSelected {
+  border-color: rgba(232, 24, 26, 0.5);
+  background:
+    radial-gradient(circle at top left, rgba(232, 24, 26, 0.14), transparent 40%),
+    rgba(255, 255, 255, 0.02);
+}
+
+.eventCardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.eventStatus,
+.eventCount {
+  color: rgba(255, 255, 255, 0.46);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+}
+
+.eventCard strong {
+  color: #ffffff;
+  font-family: var(--font-title);
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 0.95;
+  letter-spacing: -0.9px;
+  text-transform: uppercase;
+}
+
+.eventCard small {
+  color: rgba(255, 255, 255, 0.56);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.main {
+  display: grid;
+  gap: 18px;
+}
+
+.commandBar,
+.section {
+  padding: 20px;
+}
+
+.commandBar p {
+  margin: 10px 0 0;
+  color: rgba(227, 226, 225, 0.68);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.commandActions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.overviewGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.overviewCard {
+  display: grid;
+  gap: 8px;
+  padding: 18px;
+}
+
+.overviewCard span {
+  color: rgba(255, 255, 255, 0.52);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+}
+
+.overviewCard strong {
+  color: #ffffff;
+  font-family: var(--font-title);
+  font-size: 42px;
+  font-weight: 700;
+  line-height: 0.9;
+  letter-spacing: -1px;
+}
+
+.overviewCard small {
+  color: rgba(227, 226, 225, 0.66);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.field {
+  display: grid;
+  gap: 8px;
+}
+
+.fieldWide {
+  grid-column: 1 / -1;
+}
+
+.field span,
+.resultLabel {
+  color: rgba(255, 255, 255, 0.52);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+}
+
+.field input,
+.field textarea,
+.field select {
+  width: 100%;
+  min-height: 48px;
+  padding: 0 14px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.02);
+  color: #ffffff;
+  font-family: var(--font-body);
+  font-size: 15px;
+}
+
+.field textarea {
+  min-height: 110px;
+  padding-top: 12px;
+  resize: vertical;
+}
+
+.toggleRow,
+.roundRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.roundButton {
+  min-width: 62px;
+}
+
+.fightList {
+  display: grid;
+  gap: 16px;
+  margin-top: 18px;
+}
+
+.fightEditor {
+  display: grid;
+  gap: 18px;
+  padding: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background:
+    radial-gradient(circle at top left, rgba(232, 24, 26, 0.1), transparent 38%),
+    rgba(255, 255, 255, 0.014);
+}
+
+.resultBlock {
+  display: grid;
+  gap: 14px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.resultRow {
+  display: grid;
+  gap: 10px;
+}
+
+.leaderboardTable {
+  display: grid;
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.leaderboardRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 14px 16px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.015);
+}
+
+.leaderboardIdentity {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 12px;
+  align-items: center;
+}
+
+.leaderboardRank {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 42px;
+  min-height: 34px;
+  border: 1px solid rgba(232, 24, 26, 0.3);
+  background: rgba(232, 24, 26, 0.08);
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.leaderboardIdentity strong {
+  display: block;
+  color: #ffffff;
+  font-family: var(--font-title);
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 0.95;
+  letter-spacing: -0.8px;
+  text-transform: uppercase;
+}
+
+.leaderboardIdentity small {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.leaderboardScore {
+  color: rgba(232, 24, 26, 0.96);
+  font-family: var(--font-title);
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 0.95;
+  letter-spacing: -1px;
+  white-space: nowrap;
+}
+
+.emptyState {
+  margin: 18px 0 0;
+  color: rgba(227, 226, 225, 0.66);
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+@media (max-width: 1180px) {
+  .dashboard {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    position: static;
+  }
+
+  .overviewGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .commandBar,
+  .sectionHeader,
+  .fightEditorHeader,
+  .resultHeader {
+    display: grid;
+  }
+
+  .commandActions,
+  .formGrid,
+  .overviewGrid,
+  .leaderboardRow {
+    grid-template-columns: 1fr;
+  }
+
+  .commandActions {
+    display: grid;
+  }
+
+  .formGrid {
+    display: grid;
+  }
+
+  .fieldWide {
+    grid-column: auto;
+  }
+
+  .leaderboardRow {
+    align-items: flex-start;
+  }
+}

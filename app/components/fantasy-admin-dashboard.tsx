@@ -1,0 +1,711 @@
+"use client";
+
+import { startTransition, useState } from "react";
+
+import type { FantasyRound, FantasyVictoryMethod } from "@/lib/contracts/fantasy";
+import {
+  calculateFantasyLeaderboard,
+  countFantasyOfficialResults,
+  getFantasyCurrentEvent,
+  getFantasyStatusTone,
+  type FantasyMockEvent,
+  type FantasyMockFight,
+  type FantasyScoringRules
+} from "@/lib/fantasy/mock-data";
+
+import styles from "./fantasy-admin-dashboard.module.css";
+
+type FantasyAdminDashboardProps = {
+  initialEvents: FantasyMockEvent[];
+  scoringRules: FantasyScoringRules;
+};
+
+const statusOptions = [
+  { value: "draft", label: "Rascunho" },
+  { value: "published", label: "Aberto" },
+  { value: "locked", label: "Travado" },
+  { value: "finished", label: "Encerrado" }
+] as const;
+
+const methodOptions: Array<{
+  value: FantasyVictoryMethod;
+  label: string;
+}> = [
+  { value: "decisao", label: "Decisão" },
+  { value: "finalizacao", label: "Finalização" },
+  { value: "nocaute", label: "Nocaute" }
+];
+
+function formatDateTimeInput(value: string) {
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+
+  const year = date.getFullYear();
+  const month = `${date.getMonth() + 1}`.padStart(2, "0");
+  const day = `${date.getDate()}`.padStart(2, "0");
+  const hours = `${date.getHours()}`.padStart(2, "0");
+  const minutes = `${date.getMinutes()}`.padStart(2, "0");
+
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
+}
+
+function parseDateTimeInput(value: string) {
+  return value ? new Date(value).toISOString() : "";
+}
+
+function formatDate(value: string) {
+  return new Intl.DateTimeFormat("pt-BR", {
+    dateStyle: "medium",
+    timeStyle: "short"
+  }).format(new Date(value));
+}
+
+function createDraftFight(seed: number, order: number): FantasyMockFight {
+  return {
+    id: `fight-draft-${seed}-${order}`,
+    order,
+    label: "Peso leve",
+    maxRound: 3,
+    redCorner: {
+      id: `fighter-red-${seed}-${order}`,
+      name: "Corner vermelho",
+      country: "Brasil",
+      imageUrl: ""
+    },
+    blueCorner: {
+      id: `fighter-blue-${seed}-${order}`,
+      name: "Corner azul",
+      country: "Brasil",
+      imageUrl: ""
+    },
+    result: {
+      winnerId: null,
+      victoryMethod: null,
+      round: null
+    }
+  };
+}
+
+function createDraftEvent(seed: number): FantasyMockEvent {
+  return {
+    id: `event-draft-${seed}`,
+    slug: `novo-fantasy-${seed}`,
+    name: "Novo evento fantasy",
+    startsAt: "2026-06-27T20:00:00-03:00",
+    lockAt: "2026-06-27T19:30:00-03:00",
+    status: "draft",
+    venue: "Cornerman",
+    cityLabel: "São Paulo, SP",
+    heroLabel: "Fantasy oficial do card",
+    broadcastLabel: "Canal Money Moicano",
+    statusText: "Configure o evento, monte o card e publique quando o deadline estiver validado.",
+    fights: [createDraftFight(seed, 1)],
+    entries: []
+  };
+}
+
+export function FantasyAdminDashboard({
+  initialEvents,
+  scoringRules
+}: Readonly<FantasyAdminDashboardProps>) {
+  const [events, setEvents] = useState(initialEvents);
+  const [selectedEventId, setSelectedEventId] = useState(getFantasyCurrentEvent(initialEvents).id);
+  const [notice, setNotice] = useState(
+    "Interface do admin pronta para ligar nas APIs de evento, lutas e resultados."
+  );
+
+  const selectedEvent = events.find((event) => event.id === selectedEventId) ?? events[0];
+  const leaderboardRows = calculateFantasyLeaderboard(selectedEvent, scoringRules);
+  const officialResultCount = countFantasyOfficialResults(selectedEvent);
+
+  function updateSelectedEvent(mutator: (event: FantasyMockEvent) => FantasyMockEvent) {
+    setEvents((current) =>
+      current.map((event) => (event.id === selectedEventId ? mutator(event) : event))
+    );
+  }
+
+  function addEvent() {
+    const seed = Date.now();
+    const newEvent = createDraftEvent(seed);
+
+    setEvents((current) => [newEvent, ...current]);
+    startTransition(() => {
+      setSelectedEventId(newEvent.id);
+    });
+    setNotice("Novo evento criado como rascunho. Agora é só ajustar o card e publicar.");
+  }
+
+  function deleteSelectedEvent() {
+    if (events.length === 1) {
+      setNotice("Mantenha pelo menos um evento no painel antes de excluir o atual.");
+      return;
+    }
+
+    const remainingEvents = events.filter((event) => event.id !== selectedEventId);
+    const fallbackEvent = remainingEvents[0];
+
+    setEvents(remainingEvents);
+    startTransition(() => {
+      setSelectedEventId(fallbackEvent.id);
+    });
+    setNotice("Evento removido da interface. Quando a API entrar, esta ação pode virar delete real.");
+  }
+
+  function addFight() {
+    const seed = Date.now();
+
+    updateSelectedEvent((event) => ({
+      ...event,
+      fights: [...event.fights, createDraftFight(seed, event.fights.length + 1)]
+    }));
+    setNotice("Nova luta adicionada ao card do evento selecionado.");
+  }
+
+  function removeFight(fightId: string) {
+    updateSelectedEvent((event) => ({
+      ...event,
+      fights: event.fights
+        .filter((fight) => fight.id !== fightId)
+        .map((fight, index) => ({
+          ...fight,
+          order: index + 1
+        }))
+    }));
+    setNotice("Luta removida do card.");
+  }
+
+  function updateFight(fightId: string, mutator: (fight: FantasyMockFight) => FantasyMockFight) {
+    updateSelectedEvent((event) => ({
+      ...event,
+      fights: event.fights.map((fight) => (fight.id === fightId ? mutator(fight) : fight))
+    }));
+  }
+
+  function updateFightResult(
+    fightId: string,
+    patch: Partial<FantasyMockFight["result"]>
+  ) {
+    updateFight(fightId, (fight) => ({
+      ...fight,
+      result: {
+        ...fight.result,
+        ...patch
+      }
+    }));
+  }
+
+  function clearFightResult(fightId: string) {
+    updateFightResult(fightId, {
+      winnerId: null,
+      victoryMethod: null,
+      round: null
+    });
+  }
+
+  return (
+    <div className={styles.dashboard}>
+      <aside className={styles.sidebar}>
+        <div className={styles.sidebarHeader}>
+          <div>
+            <span className={styles.kicker}>Eventos</span>
+            <h2>Card + histórico</h2>
+          </div>
+          <button className={styles.primaryButton} type="button" onClick={addEvent}>
+            Novo evento
+          </button>
+        </div>
+
+        <div className={styles.eventList}>
+          {events.map((event) => {
+            const selected = event.id === selectedEventId;
+
+            return (
+              <button
+                className={selected ? `${styles.eventCard} ${styles.eventCardSelected}` : styles.eventCard}
+                key={event.id}
+                type="button"
+                onClick={() => {
+                  startTransition(() => {
+                    setSelectedEventId(event.id);
+                  });
+                }}
+              >
+                <div className={styles.eventCardHeader}>
+                  <span className={styles.eventStatus}>{getFantasyStatusTone(event.status)}</span>
+                  <span className={styles.eventCount}>{event.fights.length} lutas</span>
+                </div>
+                <strong>{event.name}</strong>
+                <small>{formatDate(event.startsAt)}</small>
+              </button>
+            );
+          })}
+        </div>
+      </aside>
+
+      <div className={styles.main}>
+        <section className={styles.commandBar}>
+          <div>
+            <span className={styles.kicker}>Evento selecionado</span>
+            <h2>{selectedEvent.name}</h2>
+            <p>{notice}</p>
+          </div>
+
+          <div className={styles.commandActions}>
+            <button
+              className={styles.secondaryButton}
+              type="button"
+              onClick={() => {
+                setNotice(
+                  "Tudo o que está na tela já está pronto para ser persistido quando conectarmos as rotas admin."
+                );
+              }}
+            >
+              Salvar estrutura
+            </button>
+            <button className={styles.ghostButton} type="button" onClick={deleteSelectedEvent}>
+              Deletar evento
+            </button>
+          </div>
+        </section>
+
+        <section className={styles.overviewGrid}>
+          <div className={styles.overviewCard}>
+            <span>Status</span>
+            <strong>{getFantasyStatusTone(selectedEvent.status)}</strong>
+            <small>{selectedEvent.statusText}</small>
+          </div>
+          <div className={styles.overviewCard}>
+            <span>Inscrições</span>
+            <strong>{selectedEvent.entries.length}</strong>
+            <small>leads vinculados ao evento</small>
+          </div>
+          <div className={styles.overviewCard}>
+            <span>Lutas</span>
+            <strong>{selectedEvent.fights.length}</strong>
+            <small>slots ativos no card</small>
+          </div>
+          <div className={styles.overviewCard}>
+            <span>Resultados oficiais</span>
+            <strong>{officialResultCount}</strong>
+            <small>lançados para o ranking</small>
+          </div>
+        </section>
+
+        <section className={styles.section}>
+          <div className={styles.sectionHeader}>
+            <div>
+              <span className={styles.kicker}>Configuração</span>
+              <h3>Evento e deadline</h3>
+            </div>
+          </div>
+
+          <div className={styles.formGrid}>
+            <label className={styles.field}>
+              <span>Nome do evento</span>
+              <input
+                type="text"
+                value={selectedEvent.name}
+                onChange={(event) => {
+                  updateSelectedEvent((current) => ({
+                    ...current,
+                    name: event.currentTarget.value
+                  }));
+                }}
+              />
+            </label>
+
+            <label className={styles.field}>
+              <span>Slug</span>
+              <input
+                type="text"
+                value={selectedEvent.slug}
+                onChange={(event) => {
+                  updateSelectedEvent((current) => ({
+                    ...current,
+                    slug: event.currentTarget.value
+                  }));
+                }}
+              />
+            </label>
+
+            <label className={styles.field}>
+              <span>Venue</span>
+              <input
+                type="text"
+                value={selectedEvent.venue}
+                onChange={(event) => {
+                  updateSelectedEvent((current) => ({
+                    ...current,
+                    venue: event.currentTarget.value
+                  }));
+                }}
+              />
+            </label>
+
+            <label className={styles.field}>
+              <span>Cidade / Estado</span>
+              <input
+                type="text"
+                value={selectedEvent.cityLabel}
+                onChange={(event) => {
+                  updateSelectedEvent((current) => ({
+                    ...current,
+                    cityLabel: event.currentTarget.value
+                  }));
+                }}
+              />
+            </label>
+
+            <label className={styles.field}>
+              <span>Início do evento</span>
+              <input
+                type="datetime-local"
+                value={formatDateTimeInput(selectedEvent.startsAt)}
+                onChange={(event) => {
+                  updateSelectedEvent((current) => ({
+                    ...current,
+                    startsAt: parseDateTimeInput(event.currentTarget.value)
+                  }));
+                }}
+              />
+            </label>
+
+            <label className={styles.field}>
+              <span>Lock das picks</span>
+              <input
+                type="datetime-local"
+                value={formatDateTimeInput(selectedEvent.lockAt)}
+                onChange={(event) => {
+                  updateSelectedEvent((current) => ({
+                    ...current,
+                    lockAt: parseDateTimeInput(event.currentTarget.value)
+                  }));
+                }}
+              />
+            </label>
+
+            <label className={`${styles.field} ${styles.fieldWide}`}>
+              <span>Status operacional</span>
+              <div className={styles.toggleRow}>
+                {statusOptions.map((statusOption) => {
+                  const selected = selectedEvent.status === statusOption.value;
+
+                  return (
+                    <button
+                      className={
+                        selected ? `${styles.toggleButton} ${styles.toggleButtonSelected}` : styles.toggleButton
+                      }
+                      key={statusOption.value}
+                      type="button"
+                      onClick={() => {
+                        updateSelectedEvent((current) => ({
+                          ...current,
+                          status: statusOption.value
+                        }));
+                      }}
+                    >
+                      {statusOption.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </label>
+
+            <label className={`${styles.field} ${styles.fieldWide}`}>
+              <span>Mensagem de status</span>
+              <textarea
+                value={selectedEvent.statusText}
+                onChange={(event) => {
+                  updateSelectedEvent((current) => ({
+                    ...current,
+                    statusText: event.currentTarget.value
+                  }));
+                }}
+              />
+            </label>
+          </div>
+        </section>
+
+        <section className={styles.section}>
+          <div className={styles.sectionHeader}>
+            <div>
+              <span className={styles.kicker}>Card</span>
+              <h3>Lutas e resultado oficial</h3>
+            </div>
+            <button className={styles.secondaryButton} type="button" onClick={addFight}>
+              Adicionar luta
+            </button>
+          </div>
+
+          <div className={styles.fightList}>
+            {selectedEvent.fights.map((fight) => (
+              <article className={styles.fightEditor} key={fight.id}>
+                <div className={styles.fightEditorHeader}>
+                  <div>
+                    <span className={styles.kicker}>Luta {fight.order}</span>
+                    <h4>{fight.label}</h4>
+                  </div>
+                  <button
+                    className={styles.ghostButton}
+                    type="button"
+                    onClick={() => {
+                      removeFight(fight.id);
+                    }}
+                  >
+                    Remover
+                  </button>
+                </div>
+
+                <div className={styles.formGrid}>
+                  <label className={styles.field}>
+                    <span>Categoria</span>
+                    <input
+                      type="text"
+                      value={fight.label}
+                      onChange={(event) => {
+                        updateFight(fight.id, (currentFight) => ({
+                          ...currentFight,
+                          label: event.currentTarget.value
+                        }));
+                      }}
+                    />
+                  </label>
+
+                  <label className={styles.field}>
+                    <span>Rounds máximos</span>
+                    <select
+                      value={fight.maxRound}
+                      onChange={(event) => {
+                        const nextMaxRound = Number(event.currentTarget.value) as 3 | 5;
+
+                        updateFight(fight.id, (currentFight) => ({
+                          ...currentFight,
+                          maxRound: nextMaxRound,
+                          result:
+                            currentFight.result.round && currentFight.result.round > nextMaxRound
+                              ? {
+                                  ...currentFight.result,
+                                  round: nextMaxRound
+                                }
+                              : currentFight.result
+                        }));
+                      }}
+                    >
+                      <option value={3}>3</option>
+                      <option value={5}>5</option>
+                    </select>
+                  </label>
+
+                  <label className={styles.field}>
+                    <span>Corner vermelho</span>
+                    <input
+                      type="text"
+                      value={fight.redCorner.name}
+                      onChange={(event) => {
+                        updateFight(fight.id, (currentFight) => ({
+                          ...currentFight,
+                          redCorner: {
+                            ...currentFight.redCorner,
+                            name: event.currentTarget.value
+                          }
+                        }));
+                      }}
+                    />
+                  </label>
+
+                  <label className={styles.field}>
+                    <span>País vermelho</span>
+                    <input
+                      type="text"
+                      value={fight.redCorner.country}
+                      onChange={(event) => {
+                        updateFight(fight.id, (currentFight) => ({
+                          ...currentFight,
+                          redCorner: {
+                            ...currentFight.redCorner,
+                            country: event.currentTarget.value
+                          }
+                        }));
+                      }}
+                    />
+                  </label>
+
+                  <label className={styles.field}>
+                    <span>Corner azul</span>
+                    <input
+                      type="text"
+                      value={fight.blueCorner.name}
+                      onChange={(event) => {
+                        updateFight(fight.id, (currentFight) => ({
+                          ...currentFight,
+                          blueCorner: {
+                            ...currentFight.blueCorner,
+                            name: event.currentTarget.value
+                          }
+                        }));
+                      }}
+                    />
+                  </label>
+
+                  <label className={styles.field}>
+                    <span>País azul</span>
+                    <input
+                      type="text"
+                      value={fight.blueCorner.country}
+                      onChange={(event) => {
+                        updateFight(fight.id, (currentFight) => ({
+                          ...currentFight,
+                          blueCorner: {
+                            ...currentFight.blueCorner,
+                            country: event.currentTarget.value
+                          }
+                        }));
+                      }}
+                    />
+                  </label>
+                </div>
+
+                <div className={styles.resultBlock}>
+                  <div className={styles.resultHeader}>
+                    <span className={styles.kicker}>Resultado oficial</span>
+                    <button
+                      className={styles.inlineButton}
+                      type="button"
+                      onClick={() => {
+                        clearFightResult(fight.id);
+                      }}
+                    >
+                      Limpar resultado
+                    </button>
+                  </div>
+
+                  <div className={styles.resultRow}>
+                    <span className={styles.resultLabel}>Vencedor</span>
+                    <div className={styles.toggleRow}>
+                      {[fight.redCorner, fight.blueCorner].map((fighter) => {
+                        const selected = fight.result.winnerId === fighter.id;
+
+                        return (
+                          <button
+                            className={
+                              selected
+                                ? `${styles.toggleButton} ${styles.toggleButtonSelected}`
+                                : styles.toggleButton
+                            }
+                            key={fighter.id}
+                            type="button"
+                            onClick={() => {
+                              updateFightResult(fight.id, {
+                                winnerId: fighter.id
+                              });
+                            }}
+                          >
+                            {fighter.name}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div className={styles.resultRow}>
+                    <span className={styles.resultLabel}>Método</span>
+                    <div className={styles.toggleRow}>
+                      {methodOptions.map((methodOption) => {
+                        const selected = fight.result.victoryMethod === methodOption.value;
+
+                        return (
+                          <button
+                            className={
+                              selected
+                                ? `${styles.toggleButton} ${styles.toggleButtonSelected}`
+                                : styles.toggleButton
+                            }
+                            key={methodOption.value}
+                            type="button"
+                            onClick={() => {
+                              updateFightResult(fight.id, {
+                                victoryMethod: methodOption.value
+                              });
+                            }}
+                          >
+                            {methodOption.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div className={styles.resultRow}>
+                    <span className={styles.resultLabel}>Round</span>
+                    <div className={styles.roundRow}>
+                      {Array.from({ length: fight.maxRound }, (_, index) => (index + 1) as FantasyRound).map(
+                        (round) => {
+                          const selected = fight.result.round === round;
+
+                          return (
+                            <button
+                              className={
+                                selected
+                                  ? `${styles.roundButton} ${styles.toggleButtonSelected}`
+                                  : styles.roundButton
+                              }
+                              key={round}
+                              type="button"
+                              onClick={() => {
+                                updateFightResult(fight.id, {
+                                  round
+                                });
+                              }}
+                            >
+                              R{round}
+                            </button>
+                          );
+                        }
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section className={styles.section}>
+          <div className={styles.sectionHeader}>
+            <div>
+              <span className={styles.kicker}>Leaderboard</span>
+              <h3>Prévia do ranking público</h3>
+            </div>
+          </div>
+
+          {leaderboardRows.length ? (
+            <div className={styles.leaderboardTable}>
+              {leaderboardRows.map((row) => (
+                <div className={styles.leaderboardRow} key={row.id}>
+                  <div className={styles.leaderboardIdentity}>
+                    <span className={styles.leaderboardRank}>#{row.rank}</span>
+                    <div>
+                      <strong>{row.displayName}</strong>
+                      <small>
+                        {row.picksSubmitted} picks · {row.perfectPicks} perfeitas
+                      </small>
+                    </div>
+                  </div>
+                  <span className={styles.leaderboardScore}>{row.score} pts</span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className={styles.emptyState}>
+              Sem inscrições neste evento ainda. Quando as entradas chegarem, o ranking aparece aqui
+              com base nos resultados oficiais lançados acima.
+            </p>
+          )}
+        </section>
+      </div>
+    </div>
+  );
+}
