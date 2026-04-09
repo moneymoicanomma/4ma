@@ -31,7 +31,7 @@ type PartnerInquiryParseResult =
 const MAX_SHORT_TEXT_LENGTH = 160;
 const MAX_PHONE_LENGTH = 40;
 const MAX_PROFILE_LENGTH = 220;
-const MAX_INTENT_LENGTH = 2400;
+const MAX_INTENT_LENGTH = 600;
 
 function normalizeShortText(input: unknown) {
   return typeof input === "string" ? input.trim().replace(/\s+/g, " ") : "";
@@ -149,16 +149,10 @@ export function parsePartnerInquiry(input: unknown): PartnerInquiryParseResult {
     };
   }
 
-  const intentError = validateRequiredText(partnershipIntent, {
-    label: "Como sua marca quer participar",
-    minLength: 24,
-    maxLength: MAX_INTENT_LENGTH
-  });
-
-  if (intentError) {
+  if (partnershipIntent.length > MAX_INTENT_LENGTH) {
     return {
       ok: false,
-      message: intentError
+      message: "Mensagem opcional está grande demais."
     };
   }
 

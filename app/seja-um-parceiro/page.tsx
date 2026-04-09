@@ -64,9 +64,9 @@ export default function SejaUmParceiroPage() {
               <span className={styles.titleAccent}>no MMMMA</span>
             </h1>
             <p className={styles.heroBody}>
-              Se a sua empresa quer entrar em arena, transmissão, conteúdo e ativações
-              com uma marca que fala com o público de MMA sem filtro, manda o briefing.
-              A equipe avalia formato, aderência e próxima conversa comercial.
+              Se a sua empresa quer conversar sobre patrocínio, ativações ou presença de
+              marca no evento, deixe seu contato. A equipe avalia o encaixe e retorna para
+              seguir a conversa comercial.
             </p>
 
             <div className={styles.heroPoints}>
@@ -87,16 +87,16 @@ export default function SejaUmParceiroPage() {
 
           <aside className={styles.heroAside} data-reveal>
             <span className={styles.asideKicker}>Importante</span>
-            <h2 className={styles.asideTitle}>Briefing claro acelera a conversa.</h2>
+            <h2 className={styles.asideTitle}>Primeiro contato tem que ser simples.</h2>
             <p className={styles.asideBody}>
-              Quanto mais claro estiver quem é a marca, qual objetivo comercial existe e
-              que tipo de presença faz sentido, mais fácil fica avaliar o encaixe com o evento.
+              A ideia aqui não é pedir proposta completa. Basta a equipe saber quem é a marca,
+              com quem falar e ter um contexto rápido para dar sequência.
             </p>
 
             <ul className={styles.asideList}>
-              <li>Conta o que sua empresa vende e que público quer alcançar.</li>
-              <li>Descreve a entrega imaginada: arena, transmissão, conteúdo ou experiência.</li>
-              <li>Se tiver site ou Instagram da empresa, manda para dar contexto rápido.</li>
+              <li>Nome, empresa, cargo e contato já resolvem o primeiro passo.</li>
+              <li>Se tiver site ou Instagram da empresa, melhor ainda.</li>
+              <li>Se fizer sentido, a conversa comercial aprofunda depois.</li>
             </ul>
           </aside>
         </div>
@@ -105,10 +105,10 @@ export default function SejaUmParceiroPage() {
       <section className={styles.formSection} id="formulario">
         <div className={styles.formIntro} data-reveal>
           <p className={styles.formKicker}>Formulário comercial</p>
-          <h2 className={styles.formTitle}>Manda um contato que a equipe consegue trabalhar.</h2>
+          <h2 className={styles.formTitle}>Deixe um contato direto e seguimos dali.</h2>
           <p className={styles.formBody}>
-            Esse formulário organiza a pessoa de contato, a marca e o objetivo da parceria
-            para a equipe comercial avaliar com rapidez.
+            Esse formulário serve para abrir a conversa. Sem briefing obrigatório, sem fricção
+            desnecessária no primeiro contato.
           </p>
 
           <div className={styles.steps}>
@@ -118,7 +118,7 @@ export default function SejaUmParceiroPage() {
             </div>
             <div className={styles.step}>
               <span className={styles.stepBadge}>2</span>
-              <p>Explique onde sua marca quer aparecer e o que imagina como entrega.</p>
+              <p>Se quiser, deixe uma mensagem curta com o interesse da marca.</p>
             </div>
             <div className={styles.step}>
               <span className={styles.stepBadge}>3</span>

@@ -88,8 +88,8 @@ export function PartnerInquiryForm() {
             <span className={styles.sectionKicker}>Contato comercial</span>
             <h2 className={styles.sectionTitle}>Quem está puxando essa conversa</h2>
             <p className={styles.sectionCopy}>
-              Preencha do jeito que a equipe consegue identificar rápido a empresa e falar
-              com a pessoa certa.
+              Deixe os dados principais para a equipe identificar a empresa e retornar
+              para a pessoa certa sem enrolação.
             </p>
           </div>
 
@@ -178,32 +178,19 @@ export function PartnerInquiryForm() {
                 Campo opcional, mas ajuda bastante a equipe a entender o posicionamento da marca.
               </p>
             </label>
-          </div>
-        </section>
 
-        <section className={styles.section}>
-          <div className={styles.sectionHeader}>
-            <span className={styles.sectionKicker}>Objetivo da parceria</span>
-            <h2 className={styles.sectionTitle}>Como sua marca quer entrar no evento</h2>
-            <p className={styles.sectionCopy}>
-              Vale explicar interesse em arena, transmissão, conteúdo, ação de marca,
-              experiência VIP ou qualquer outro formato que faça sentido.
-            </p>
+            <label className={`${styles.field} ${styles.fullWidth}`}>
+              <span className={styles.label}>Mensagem opcional</span>
+              <textarea
+                className={`${styles.textarea} ${styles.textareaCompact}`}
+                name="partnershipIntent"
+                placeholder="Se quiser, deixe um contexto rápido sobre interesse em patrocínio, ativação ou parceria."
+              />
+              <p className={styles.helper}>
+                Não precisa mandar briefing agora. Se fizer sentido, a equipe aprofunda a conversa depois.
+              </p>
+            </label>
           </div>
-
-          <label className={`${styles.field} ${styles.fullWidth}`}>
-            <span className={styles.label}>Como sua marca quer participar</span>
-            <textarea
-              className={styles.textarea}
-              minLength={24}
-              name="partnershipIntent"
-              placeholder="Conta o objetivo da marca, o tipo de entrega que você imagina, o público que quer alcançar e qualquer contexto que ajude a equipe a avaliar o encaixe."
-              required
-            />
-            <p className={styles.helper}>
-              Quanto mais claro o briefing, mais rápido a equipe consegue avaliar formato e aderência.
-            </p>
-          </label>
         </section>
 
         <section className={styles.section}>
@@ -233,8 +220,7 @@ export function PartnerInquiryForm() {
                 </p>
               ) : (
                 <p className={styles.finePrint}>
-                  Se já tiver ideia de cota, ativação ou entrega, descreva no campo acima para
-                  acelerar a conversa.
+                  Nome, empresa e contato já bastam para abrir a conversa. O resto a equipe alinha depois.
                 </p>
               )}
             </div>

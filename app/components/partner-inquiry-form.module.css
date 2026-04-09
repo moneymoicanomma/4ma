@@ -79,7 +79,7 @@
 }
 
 .fullWidth {
-  width: 100%;
+  grid-column: 1 / -1;
 }
 
 .field {
@@ -130,6 +130,10 @@
   padding: 16px 18px;
   line-height: 1.62;
   resize: vertical;
+}
+
+.textareaCompact {
+  min-height: 118px;
 }
 
 .input::placeholder,
@@ -271,6 +275,10 @@
 
   .textarea {
     min-height: 176px;
+  }
+
+  .textareaCompact {
+    min-height: 112px;
   }
 
   .actions {
