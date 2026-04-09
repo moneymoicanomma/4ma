@@ -2,8 +2,8 @@
   position: relative;
   min-height: 100vh;
   background:
-    radial-gradient(circle at top, rgba(232, 24, 26, 0.12), transparent 28%),
-    linear-gradient(180deg, #060606 0%, #030303 100%);
+    radial-gradient(circle at top, rgba(232, 24, 26, 0.14), transparent 28%),
+    linear-gradient(180deg, #060606 0%, #020202 100%);
 }
 
 .page::before {
@@ -13,8 +13,8 @@
   background-image:
     linear-gradient(rgba(255, 255, 255, 0.018) 1px, transparent 1px),
     linear-gradient(90deg, rgba(255, 255, 255, 0.018) 1px, transparent 1px);
-  background-size: 60px 60px;
-  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.8), transparent 88%);
+  background-size: 64px 64px;
+  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.78), transparent 90%);
   pointer-events: none;
 }
 
@@ -50,8 +50,7 @@
 }
 
 .backLink,
-.anchorLink,
-.logoutAction {
+.anchorLink {
   position: relative;
   display: inline-flex;
   align-items: center;
@@ -69,8 +68,7 @@
 }
 
 .backLink::after,
-.anchorLink::after,
-.logoutAction::after {
+.anchorLink::after {
   content: "";
   position: absolute;
   right: -1px;
@@ -87,12 +85,6 @@
   color: rgba(255, 255, 255, 0.78);
 }
 
-.logoutAction {
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: transparent;
-  color: rgba(255, 255, 255, 0.78);
-}
-
 .anchorLink {
   background: linear-gradient(135deg, #ff2c30 0%, #b01013 100%);
   color: #ffffff;
@@ -100,28 +92,20 @@
 
 .backLink:hover,
 .backLink:focus-visible,
-.logoutAction:hover,
-.logoutAction:focus-visible,
 .anchorLink:hover,
 .anchorLink:focus-visible {
   transform: translateY(-2px);
 }
 
 .hero {
-  padding: 44px 32px 28px;
-}
-
-.heroGrid,
-.dashboardShell {
-  width: min(100%, 1280px);
+  width: min(100%, 1160px);
   margin: 0 auto;
-}
-
-.heroGrid {
   display: grid;
-  grid-template-columns: minmax(0, 1.1fr) minmax(280px, 0.78fr);
-  gap: 22px;
-  align-items: end;
+  grid-template-columns: minmax(0, 0.96fr) minmax(320px, 0.82fr);
+  gap: 28px;
+  align-items: center;
+  min-height: calc(100vh - 76px);
+  padding: 36px 32px 64px;
 }
 
 .heroCopy {
@@ -151,7 +135,7 @@
   margin: 0;
   color: #ffffff;
   font-family: var(--font-title);
-  font-size: clamp(58px, 10vw, 108px);
+  font-size: clamp(58px, 10vw, 112px);
   font-weight: 700;
   line-height: 0.9;
   letter-spacing: -2px;
@@ -165,47 +149,18 @@
 
 .heroBody {
   margin: 0;
-  max-width: 42rem;
+  max-width: 38rem;
   color: rgba(227, 226, 225, 0.72);
   font-size: 16px;
   line-height: 1.7;
 }
 
-.heroAside {
-  display: grid;
-  gap: 12px;
+.formWrap {
+  min-width: 0;
 }
 
-.heroAsideCard {
-  display: grid;
-  gap: 8px;
-  padding: 18px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background:
-    radial-gradient(circle at top left, rgba(232, 24, 26, 0.16), transparent 38%),
-    rgba(10, 10, 10, 0.92);
-}
-
-.heroAsideCard span {
-  color: rgba(255, 255, 255, 0.5);
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 1.4px;
-  text-transform: uppercase;
-}
-
-.heroAsideCard strong {
-  color: #ffffff;
-  font-size: 18px;
-  line-height: 1.4;
-}
-
-.dashboardSection {
-  padding: 0 32px 88px;
-}
-
-@media (max-width: 1040px) {
-  .heroGrid {
+@media (max-width: 960px) {
+  .hero {
     grid-template-columns: 1fr;
   }
 }
@@ -223,13 +178,11 @@
   }
 
   .backLink,
-  .anchorLink,
-  .logoutAction {
+  .anchorLink {
     width: 100%;
   }
 
-  .hero,
-  .dashboardSection {
+  .hero {
     padding-right: 20px;
     padding-left: 20px;
   }

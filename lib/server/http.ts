@@ -53,3 +53,46 @@ export async function postJsonToUpstream<TPayload>(
     clearTimeout(timeoutId);
   }
 }
+
+export async function postFormDataToUpstream(
+  url: string,
+  payload: FormData,
+  options: {
+    bearerToken: string;
+    timeoutMs: number;
+  }
+) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), options.timeoutMs);
+
+  try {
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        Authorization: `Bearer ${options.bearerToken}`
+      },
+      body: payload,
+      cache: "no-store",
+      signal: controller.signal
+    });
+
+    if (!response.ok) {
+      throw new UpstreamApiError(response.status);
+    }
+
+    return response;
+  } catch (error) {
+    if (error instanceof Error && error.name === "AbortError") {
+      throw new UpstreamApiError(504, "Upstream request timed out");
+    }
+
+    if (error instanceof UpstreamApiError) {
+      throw error;
+    }
+
+    throw new UpstreamApiError(502, "Could not reach upstream API");
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}

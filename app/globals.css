@@ -2,7 +2,7 @@
   --bg: #000000;
   --panel: #0e0e0e;
   --panel-soft: #1c1b1b;
-  --topbar-height: 64px;
+  --topbar-height: 74px;
   --surface: rgba(255, 255, 255, 0.05);
   --surface-border: rgba(255, 255, 255, 0.1);
   --surface-border-soft: rgba(255, 255, 255, 0.05);
@@ -115,10 +115,11 @@ ul {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: 16px;
   min-height: var(--topbar-height);
-  padding: 7px 32px;
-  background: linear-gradient(180deg, rgba(0, 0, 0, 0.98) 0%, rgba(0, 0, 0, 0.94) 100%);
+  padding: 14px 32px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  background: linear-gradient(180deg, rgba(2, 2, 2, 0.92) 0%, rgba(0, 0, 0, 0.9) 100%);
   backdrop-filter: blur(18px);
 }
 
@@ -137,7 +138,7 @@ ul {
 .brand-mark {
   display: flex;
   align-items: center;
-  width: 38px;
+  width: 46px;
   flex: none;
 }
 
@@ -157,7 +158,7 @@ ul {
 }
 
 .topbar__brand-rail {
-  gap: 12px;
+  gap: 16px;
 }
 
 .topbar__actions {
@@ -184,7 +185,7 @@ ul {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 16px;
+  gap: 24px;
   flex: 1 1 auto;
   min-width: 0;
 }
@@ -202,10 +203,10 @@ ul {
   position: relative;
   color: rgba(255, 255, 255, 0.7);
   font-family: var(--font-body);
-  font-size: 10px;
-  font-weight: 500;
-  line-height: 14px;
-  letter-spacing: 0.9px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: 1.4px;
   text-transform: uppercase;
   transition: color 160ms ease;
 }
@@ -225,7 +226,7 @@ ul {
   content: "";
   position: absolute;
   left: 0;
-  bottom: -5px;
+  bottom: -8px;
   width: 100%;
   height: 2px;
   background: transparent;
@@ -339,13 +340,13 @@ ul {
 }
 
 .landing-button--nav {
-  min-width: 90px;
-  min-height: 20px;
-  padding: 4px 8px;
+  min-width: 170px;
+  min-height: 46px;
+  padding: 0 18px;
   font-family: var(--font-body);
-  font-size: 8px;
-  font-weight: 500;
-  letter-spacing: 0.8px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
 }
 
 .landing-button--sheet,
@@ -1288,6 +1289,244 @@ section[id] {
 
 .mobile-sticky-cta {
   display: none;
+}
+
+@media (min-width: 1600px) {
+  .topbar {
+    padding-inline: clamp(40px, 3.8vw, 72px);
+  }
+
+  .hero__image-shell {
+    top: -124px;
+    right: -72px;
+    bottom: -96px;
+    left: clamp(320px, 20vw, 430px);
+    width: auto;
+    height: auto;
+  }
+
+  .hero__content {
+    width: min(100%, 1180px);
+    gap: 18px;
+    padding: clamp(48px, 5.5vh, 82px) clamp(56px, 4.8vw, 84px) 112px;
+  }
+
+  .hero__title {
+    width: min(100%, 1040px);
+    font-size: clamp(112px, 7vw, 148px);
+    line-height: 0.82;
+  }
+
+  .hero__copy {
+    width: min(100%, 740px);
+    font-size: 16px;
+    line-height: 1.5;
+  }
+
+  .hero__actions {
+    gap: 14px;
+  }
+
+  .event-bar {
+    min-height: 84px;
+    padding-inline: clamp(56px, 4.8vw, 84px);
+  }
+
+  .event-bar__facts {
+    gap: 26px;
+  }
+
+  .event-fact {
+    min-width: 182px;
+    padding-right: 26px;
+  }
+
+  .event-fact__label {
+    font-size: 13px;
+  }
+
+  .event-fact__value {
+    font-size: 22px;
+  }
+
+  .section--proof,
+  .section--casters,
+  .section--tickets,
+  .section--cta,
+  .section--sponsors,
+  .footer {
+    padding-inline: clamp(56px, 4.8vw, 84px);
+  }
+
+  .section--proof,
+  .section--casters,
+  .section--tickets {
+    gap: 48px;
+    padding-block: 80px;
+  }
+
+  .display-title--proof {
+    width: min(100%, 1360px);
+    font-size: clamp(96px, 5.8vw, 122px);
+  }
+
+  .body-copy--lead {
+    width: min(100%, 980px);
+    font-size: clamp(20px, 1.15vw, 23px);
+  }
+
+  .feature-grid {
+    width: min(100%, 1600px);
+    gap: 28px;
+    margin-inline: auto;
+  }
+
+  .feature-card {
+    min-height: 252px;
+    padding: 24px;
+  }
+
+  .section--transmission {
+    width: min(100%, 1600px);
+    grid-template-columns: minmax(380px, 0.72fr) minmax(760px, 1fr);
+    gap: clamp(40px, 4vw, 72px);
+    padding: 80px clamp(56px, 4.8vw, 84px);
+  }
+
+  .transmission-copy {
+    gap: 24px;
+  }
+
+  .display-title--closing {
+    font-size: clamp(62px, 4.1vw, 84px);
+  }
+
+  .transmission-gallery {
+    grid-template-columns: minmax(280px, 0.48fr) minmax(360px, 0.72fr);
+    gap: 18px;
+  }
+
+  .transmission-tile {
+    min-height: 236px;
+  }
+
+  .transmission-tile--fight {
+    min-height: 490px;
+  }
+
+  .transmission-tile__title {
+    right: 28px;
+    bottom: 24px;
+    left: 28px;
+    font-size: 15px;
+  }
+
+  .casters-grid {
+    width: min(100%, 1200px);
+    gap: 32px;
+  }
+
+  .caster-card__visual {
+    min-height: 520px;
+  }
+
+  .ticket-grid {
+    width: min(100%, 1500px);
+    gap: 32px;
+  }
+
+  .ticket-card {
+    min-height: 500px;
+    padding: 36px;
+  }
+
+  .ticket-card__price {
+    font-size: 64px;
+  }
+
+  .section--audience {
+    max-width: 1680px;
+    grid-template-columns: minmax(600px, 1.06fr) minmax(560px, 0.94fr);
+    gap: 72px;
+    padding: 84px clamp(56px, 4.8vw, 84px) 72px;
+  }
+
+  .audience-media {
+    min-height: 620px;
+  }
+
+  .audience-copy {
+    gap: 24px;
+    width: min(100%, 780px);
+    max-width: 780px;
+  }
+
+  .display-title--audience {
+    width: min(100%, 1100px);
+    font-size: clamp(78px, 4.9vw, 102px);
+  }
+
+  .section--cta {
+    padding-top: 80px;
+  }
+
+  .newsletter-panel {
+    padding: 52px 56px 48px;
+  }
+
+  .newsletter-panel__copy {
+    max-width: 1280px;
+    gap: 18px;
+  }
+
+  .display-title--newsletter {
+    font-size: clamp(48px, 3.4vw, 70px);
+  }
+
+  .newsletter-panel__text {
+    max-width: 1280px;
+    font-size: clamp(15px, 0.95vw, 18px);
+  }
+
+  .newsletter-form {
+    max-width: 1480px;
+    grid-template-columns: minmax(0, 1fr) 228px;
+  }
+
+  .section--sponsors {
+    gap: 36px;
+    padding-bottom: 84px;
+  }
+
+  .partners-row {
+    width: min(100%, 1440px);
+    gap: clamp(56px, 6vw, 132px);
+  }
+
+  .partner-logo {
+    width: min(100%, 250px);
+    min-height: 100px;
+  }
+
+  .partner-logo img {
+    height: 64px;
+  }
+
+  .footer {
+    gap: 56px;
+    padding-top: 56px;
+  }
+
+  .footer__row {
+    width: min(100%, 1600px);
+    margin-inline: auto;
+    gap: 48px;
+  }
+
+  .footer__wordmark {
+    width: min(100%, 1600px);
+    margin-inline: auto;
+  }
 }
 
 @media (max-width: 1220px) {

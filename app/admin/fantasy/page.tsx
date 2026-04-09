@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import { AdminLogoutButton } from "@/app/components/admin-logout-button";
 import { FantasyAdminDashboard } from "@/app/components/fantasy-admin-dashboard";
 import { LandingMotionController } from "@/app/components/landing-motion-controller";
 import { FANTASY_SCORING_RULES, cloneFantasyMockEvents } from "@/lib/fantasy/mock-data";
@@ -42,9 +43,10 @@ export default function FantasyAdminPage() {
           <Link className={styles.backLink} href="/fantasy">
             Ver fantasy
           </Link>
-          <Link className={styles.anchorLink} href="/">
+          <Link className={styles.backLink} href="/">
             Voltar ao site
           </Link>
+          <AdminLogoutButton className={styles.logoutAction} />
         </div>
       </header>
 

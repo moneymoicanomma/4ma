@@ -74,20 +74,20 @@ const transmissionTiles = [
     title: "Comentários nada técnicos",
     image: transmissionOverlayImage,
     className: "transmission-tile transmission-tile--comments",
-    sizes: "(max-width: 780px) 100vw, 319px"
+    sizes: "(max-width: 780px) 72vw, (min-width: 1600px) 18vw, 319px"
   },
   {
     title: "Torcida maluca",
     image: r2Asset("torcida-maluca.webp"),
     className: "transmission-tile transmission-tile--crowd",
-    sizes: "(max-width: 780px) 100vw, 319px"
+    sizes: "(max-width: 780px) 72vw, (min-width: 1600px) 18vw, 319px"
   },
   {
     title: "Certeza de luta boa",
     titleSecondary: "(Isso realmente aconteceu)",
     image: r2Asset("luta-boa.webp"),
     className: "transmission-tile transmission-tile--fight",
-    sizes: "(max-width: 780px) 100vw, 299px"
+    sizes: "(max-width: 780px) 74vw, (min-width: 1600px) 24vw, 299px"
   }
 ];
 
@@ -267,7 +267,7 @@ export default function Home() {
             className="hero__image"
             alt=""
             priority
-            sizes="(max-width: 780px) 100vw, 1273px"
+            sizes="(max-width: 780px) 100vw, (min-width: 1600px) 80vw, 1273px"
             src={heroImage}
           />
         </div>
@@ -418,7 +418,7 @@ export default function Home() {
                     alt={caster.name}
                     className="caster-card__image"
                     fill
-                    sizes="(max-width: 780px) 100vw, 352px"
+                    sizes="(max-width: 780px) 72vw, (min-width: 1600px) 32vw, 352px"
                     src={caster.image}
                     style={{ objectPosition: caster.imagePosition }}
                   />
@@ -493,7 +493,7 @@ export default function Home() {
             alt="Audiência internacional do Money Moicano MMA"
             className="audience-media__image"
             fill
-            sizes="(max-width: 980px) 100vw, 535px"
+            sizes="(max-width: 980px) 100vw, (min-width: 1600px) 42vw, 535px"
             src={r2Asset("audiencia-internacional.webp")}
           />
         </div>
