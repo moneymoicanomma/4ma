@@ -130,6 +130,7 @@ const ticketTiers = [
 ];
 
 const footerLinks = [
+  { label: "Lute no MMMMA", href: "/lute-no-mmmma" },
   { label: "Imprensa", href: "#" },
   { label: "Termos de Uso", href: "#" },
   { label: "Política de Privacidade", href: "#" },
