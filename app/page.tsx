@@ -202,6 +202,22 @@ function LandingButton({
   );
 }
 
+function MobileRailShell({
+  children
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
+  return (
+    <div className="mobile-rail-shell" data-rail-shell>
+      <div aria-hidden="true" className="mobile-rail-shell__hint">
+        <span>Arraste pro lado</span>
+        <span className="mobile-rail-shell__hint-arrow" />
+      </div>
+      <div className="mobile-rail-shell__frame">{children}</div>
+    </div>
+  );
+}
+
 function BrandMark({
   wide = false,
   className = "",
@@ -331,15 +347,17 @@ export default function Home() {
           </p>
         </div>
 
-        <div className="feature-grid" data-rail>
-          {featureCards.map((feature) => (
-            <article className="feature-card" data-rail-item data-reveal key={feature.title}>
-              <AssetImage className="feature-card__icon" src={feature.icon} alt="" />
-              <h3 className="feature-card__title">{feature.title}</h3>
-              <p className="feature-card__copy">{feature.copy}</p>
-            </article>
-          ))}
-        </div>
+        <MobileRailShell>
+          <div className="feature-grid" data-rail>
+            {featureCards.map((feature) => (
+              <article className="feature-card" data-rail-item data-reveal key={feature.title}>
+                <AssetImage className="feature-card__icon" src={feature.icon} alt="" />
+                <h3 className="feature-card__title">{feature.title}</h3>
+                <p className="feature-card__copy">{feature.copy}</p>
+              </article>
+            ))}
+          </div>
+        </MobileRailShell>
 
         <LandingButton href="#ingressos" size="large">
           Garantir Ingresso
@@ -363,30 +381,32 @@ export default function Home() {
           </p>
         </div>
 
-        <div className="transmission-gallery" aria-label="Momentos da transmissão" data-rail>
-          {transmissionTiles.map((tile) => (
-            <article className={tile.className} data-rail-item data-reveal key={tile.title}>
-              <div className="transmission-tile__media">
-                <Image
-                  alt=""
-                  className="transmission-tile__image"
-                  fill
-                  sizes={tile.sizes}
-                  src={tile.image}
-                />
-                <span className="transmission-tile__overlay" />
-              </div>
-              <h3 className="transmission-tile__title">
-                <span>{tile.title}</span>
-                {tile.titleSecondary ? (
-                  <span className="transmission-tile__title-secondary">
-                    {tile.titleSecondary}
-                  </span>
-                ) : null}
-              </h3>
-            </article>
-          ))}
-        </div>
+        <MobileRailShell>
+          <div className="transmission-gallery" aria-label="Momentos da transmissão" data-rail>
+            {transmissionTiles.map((tile) => (
+              <article className={tile.className} data-rail-item data-reveal key={tile.title}>
+                <div className="transmission-tile__media">
+                  <Image
+                    alt=""
+                    className="transmission-tile__image"
+                    fill
+                    sizes={tile.sizes}
+                    src={tile.image}
+                  />
+                  <span className="transmission-tile__overlay" />
+                </div>
+                <h3 className="transmission-tile__title">
+                  <span>{tile.title}</span>
+                  {tile.titleSecondary ? (
+                    <span className="transmission-tile__title-secondary">
+                      {tile.titleSecondary}
+                    </span>
+                  ) : null}
+                </h3>
+              </article>
+            ))}
+          </div>
+        </MobileRailShell>
       </section>
 
       <section className="section section--casters" data-nav-section="transmissao" id="casters">
@@ -397,26 +417,28 @@ export default function Home() {
           </h2>
         </div>
 
-        <div className="casters-grid" data-rail>
-          {casterCards.map((caster) => (
-            <article className="caster-card" data-rail-item data-reveal key={caster.name}>
-              <div className="caster-card__visual">
-                <Image
-                  alt={caster.name}
-                  className="caster-card__image"
-                  fill
-                  sizes="(max-width: 780px) 100vw, 352px"
-                  src={caster.image}
-                  style={{ objectPosition: caster.imagePosition }}
-                />
-              </div>
-              <div className="caster-card__copy">
-                <h3 className="caster-card__name">{caster.name}</h3>
-                <p className="caster-card__text">{caster.copy}</p>
-              </div>
-            </article>
-          ))}
-        </div>
+        <MobileRailShell>
+          <div className="casters-grid" data-rail>
+            {casterCards.map((caster) => (
+              <article className="caster-card" data-rail-item data-reveal key={caster.name}>
+                <div className="caster-card__visual">
+                  <Image
+                    alt={caster.name}
+                    className="caster-card__image"
+                    fill
+                    sizes="(max-width: 780px) 100vw, 352px"
+                    src={caster.image}
+                    style={{ objectPosition: caster.imagePosition }}
+                  />
+                </div>
+                <div className="caster-card__copy">
+                  <h3 className="caster-card__name">{caster.name}</h3>
+                  <p className="caster-card__text">{caster.copy}</p>
+                </div>
+              </article>
+            ))}
+          </div>
+        </MobileRailShell>
       </section>
 
       <section
@@ -436,39 +458,41 @@ export default function Home() {
           </p>
         </div>
 
-        <div className="ticket-grid" data-rail>
-          {ticketTiers.map((tier) => (
-            <article
-              data-rail-item
-              data-reveal
-              className={tier.featured ? "ticket-card ticket-card--featured" : "ticket-card"}
-              key={tier.name}
-            >
-              <span className="ticket-card__label">{tier.label}</span>
-
-              <div className="ticket-card__price-block">
-                <h3 className="ticket-card__name">{tier.name}</h3>
-                <p className="ticket-card__price">{tier.price}</p>
-              </div>
-
-              <ul className="ticket-card__list">
-                {tier.features.map((feature) => (
-                  <li className="ticket-card__item" key={feature}>
-                    {feature}
-                  </li>
-                ))}
-              </ul>
-
-              <LandingButton
-                href="#evento"
-                size="large"
-                variant={tier.featured ? "light" : "secondary"}
+        <MobileRailShell>
+          <div className="ticket-grid" data-rail>
+            {ticketTiers.map((tier) => (
+              <article
+                data-rail-item
+                data-reveal
+                className={tier.featured ? "ticket-card ticket-card--featured" : "ticket-card"}
+                key={tier.name}
               >
-                {tier.buttonLabel}
-              </LandingButton>
-            </article>
-          ))}
-        </div>
+                <span className="ticket-card__label">{tier.label}</span>
+
+                <div className="ticket-card__price-block">
+                  <h3 className="ticket-card__name">{tier.name}</h3>
+                  <p className="ticket-card__price">{tier.price}</p>
+                </div>
+
+                <ul className="ticket-card__list">
+                  {tier.features.map((feature) => (
+                    <li className="ticket-card__item" key={feature}>
+                      {feature}
+                    </li>
+                  ))}
+                </ul>
+
+                <LandingButton
+                  href="#evento"
+                  size="large"
+                  variant={tier.featured ? "light" : "secondary"}
+                >
+                  {tier.buttonLabel}
+                </LandingButton>
+              </article>
+            ))}
+          </div>
+        </MobileRailShell>
       </section>
 
       <section className="section section--audience" data-nav-section="publico" id="publico">

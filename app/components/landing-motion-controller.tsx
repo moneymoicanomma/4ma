@@ -8,6 +8,25 @@ function clearRailActiveState(items: readonly HTMLElement[]) {
   }
 }
 
+function syncRailShellState(rail: HTMLElement, hasOverflow: boolean) {
+  const maxScroll = Math.max(rail.scrollWidth - rail.clientWidth, 0);
+  const canScrollPrev = hasOverflow && rail.scrollLeft > 18;
+  const canScrollNext = hasOverflow && maxScroll - rail.scrollLeft > 18;
+  const shell = rail.closest<HTMLElement>("[data-rail-shell]");
+
+  rail.dataset.railOverflow = hasOverflow ? "true" : "false";
+  rail.dataset.railPrev = canScrollPrev ? "true" : "false";
+  rail.dataset.railNext = canScrollNext ? "true" : "false";
+
+  if (!shell) {
+    return;
+  }
+
+  shell.dataset.railOverflow = rail.dataset.railOverflow;
+  shell.dataset.railPrev = rail.dataset.railPrev;
+  shell.dataset.railNext = rail.dataset.railNext;
+}
+
 function syncRailActiveState(rail: HTMLElement) {
   const items = Array.from(rail.querySelectorAll<HTMLElement>("[data-rail-item]"));
 
@@ -16,6 +35,7 @@ function syncRailActiveState(rail: HTMLElement) {
   }
 
   const hasOverflow = rail.scrollWidth - rail.clientWidth > 24;
+  syncRailShellState(rail, hasOverflow);
 
   if (window.innerWidth > 780 || !hasOverflow) {
     clearRailActiveState(items);
