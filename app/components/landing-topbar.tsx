@@ -34,7 +34,6 @@ export function LandingTopbar({
     }
 
     let frame = 0;
-    let footerVisible = false;
     let sectionOffsets = sections.map((section) => ({
       sectionId: section.dataset.navSection ?? navItems[0].sectionId,
       top: section.getBoundingClientRect().top + window.scrollY
@@ -43,6 +42,8 @@ export function LandingTopbar({
     const syncViewportState = () => {
       const sectionThreshold = window.scrollY + Math.max(120, window.innerHeight * 0.34);
       const ctaThreshold = Math.max(220, window.innerHeight * 0.38);
+      const footerTop = footer?.getBoundingClientRect().top ?? Number.POSITIVE_INFINITY;
+      const footerReached = footerTop <= window.innerHeight - 24;
       let nextActive = navItems[0].sectionId;
 
       for (const section of sectionOffsets) {
@@ -55,7 +56,7 @@ export function LandingTopbar({
 
       setActiveSection((current) => (current === nextActive ? current : nextActive));
       document.body.dataset.mobileCta =
-        window.scrollY > ctaThreshold && !footerVisible ? "visible" : "hidden";
+        window.scrollY > ctaThreshold && !footerReached ? "visible" : "hidden";
     };
 
     const requestSync = () => {
@@ -77,26 +78,10 @@ export function LandingTopbar({
       frame = window.requestAnimationFrame(refreshSectionOffsets);
     };
 
-    const footerObserver = footer
-      ? new IntersectionObserver(
-          ([entry]) => {
-            footerVisible = entry?.isIntersecting ?? false;
-            requestSync();
-          },
-          {
-            threshold: 0.05,
-            rootMargin: "0px 0px -28px 0px"
-          }
-        )
-      : null;
-
     let cancelled = false;
 
     requestRefresh();
 
-    if (footer && footerObserver) {
-      footerObserver.observe(footer);
-    }
     window.addEventListener("scroll", requestSync, { passive: true });
     window.addEventListener("resize", requestRefresh);
     window.addEventListener("load", requestRefresh);
@@ -116,7 +101,6 @@ export function LandingTopbar({
     return () => {
       cancelled = true;
       window.cancelAnimationFrame(frame);
-      footerObserver?.disconnect();
       window.removeEventListener("scroll", requestSync);
       window.removeEventListener("resize", requestRefresh);
       window.removeEventListener("load", requestRefresh);

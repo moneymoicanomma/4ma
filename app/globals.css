@@ -2181,7 +2181,7 @@ section[id] {
   }
 
   .feature-card {
-    flex: 0 0 min(84vw, 310px);
+    flex: 0 0 min(80vw, 296px);
     min-height: 220px;
     border-color: rgba(255, 255, 255, 0.08);
     background:
@@ -2226,14 +2226,14 @@ section[id] {
 
   .transmission-tile,
   .transmission-tile--fight {
-    flex: 0 0 min(84vw, 320px);
+    flex: 0 0 min(80vw, 304px);
     min-height: 360px;
     scroll-snap-align: center;
   }
 
   .transmission-tile--fight {
     order: -1;
-    flex-basis: min(88vw, 340px);
+    flex-basis: min(82vw, 316px);
     min-height: 420px;
   }
 
@@ -2276,7 +2276,7 @@ section[id] {
   }
 
   .caster-card {
-    flex: 0 0 min(82vw, 320px);
+    flex: 0 0 min(79vw, 304px);
     gap: 16px;
     scroll-snap-align: center;
   }
@@ -2306,7 +2306,7 @@ section[id] {
   }
 
   .ticket-card {
-    flex: 0 0 min(84vw, 330px);
+    flex: 0 0 min(80vw, 312px);
     min-height: 470px;
     scroll-snap-align: center;
   }
@@ -2668,7 +2668,7 @@ section[id] {
   .caster-card,
   .ticket-card,
   .sponsor-slot {
-    flex-basis: 88vw;
+    flex-basis: 80vw;
   }
 
   .audience-media {
