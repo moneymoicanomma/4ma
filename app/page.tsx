@@ -26,6 +26,7 @@ const instagramIcon = r2Asset("instagram_logo.svg");
 const youtubeIcon = r2Asset("youtube_logo.svg");
 const xIcon = r2Asset("x_logo.svg.svg");
 const ticketBackgroundImage = r2Asset("ingressos-bg.webp");
+const transmissionOverlayImage = "https://moneymoicanomma.com.br/transmissao-overlay.webp";
 
 const navItems = [
   { label: "O Evento", href: "#evento", sectionId: "evento" },
@@ -71,7 +72,7 @@ const featureCards = [
 const transmissionTiles = [
   {
     title: "Comentários nada técnicos",
-    image: r2Asset("transmissao-overlay.webp"),
+    image: transmissionOverlayImage,
     className: "transmission-tile transmission-tile--comments",
     sizes: "(max-width: 780px) 100vw, 319px"
   },
