@@ -192,19 +192,21 @@ export default async function AtletasDaEdicaoPage() {
         </section>
       ) : null}
 
-      <section className={styles.ctaSection} data-reveal>
-        <div className={styles.ctaCard}>
-          <span className={styles.ctaKicker}>Não sabe como chegou aqui?</span>
-          <h2 className={styles.ctaTitle}>Se você ainda quer lutar no MMMMA, use o formulário aberto.</h2>
-          <p className={styles.ctaBody}>
-            Esta rota é só para atletas já confirmados nesta edição. Se você está tentando
-            entrar no radar do card, o caminho certo é o formulário público.
-          </p>
-          <Link className={styles.ctaLink} href="/lute-no-mmmma">
-            Ir para o lute-no-mmmma
-          </Link>
-        </div>
-      </section>
+      {!authenticatedEmail ? (
+        <section className={styles.ctaSection} data-reveal>
+          <div className={styles.ctaCard}>
+            <span className={styles.ctaKicker}>Não sabe como chegou aqui?</span>
+            <h2 className={styles.ctaTitle}>Se você ainda quer lutar no MMMMA, use o formulário aberto.</h2>
+            <p className={styles.ctaBody}>
+              Esta rota é só para atletas já confirmados nesta edição. Se você está tentando
+              entrar no radar do card, o caminho certo é o formulário público.
+            </p>
+            <Link className={styles.ctaLink} href="/lute-no-mmmma">
+              Ir para o lute-no-mmmma
+            </Link>
+          </div>
+        </section>
+      ) : null}
     </main>
   );
 }

@@ -18,20 +18,9 @@ export function EventFighterLogoutButton({
       className={className ? `${styles.button} ${className}` : styles.button}
       disabled={isSubmitting}
       type="button"
-      onClick={async () => {
+      onClick={() => {
         setIsSubmitting(true);
-
-        try {
-          await fetch("/api/event-fighter-access/session", {
-            method: "DELETE",
-            headers: {
-              Accept: "application/json"
-            },
-            cache: "no-store"
-          });
-        } finally {
-          window.location.replace("/atletas-da-edicao#acesso");
-        }
+        window.location.assign("/atletas-da-edicao/sair");
       }}
     >
       <svg
