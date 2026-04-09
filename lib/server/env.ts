@@ -5,6 +5,7 @@ export type ServerEnv = {
   upstreamApiBearerToken: string | null;
   newsletterSubscribePath: string;
   fighterApplicationSubmitPath: string;
+  partnerInquirySubmitPath: string;
   upstreamRequestTimeoutMs: number;
   allowedFormOrigins: ReadonlySet<string>;
 };
@@ -30,6 +31,10 @@ function createServerEnv(): ServerEnv {
     fighterApplicationSubmitPath: normalizePath(
       process.env.UPSTREAM_FIGHTER_APPLICATION_PATH ?? "",
       "/v1/fighter-applications"
+    ),
+    partnerInquirySubmitPath: normalizePath(
+      process.env.UPSTREAM_PARTNER_INQUIRY_PATH ?? "",
+      "/v1/partner-inquiries"
     ),
     upstreamRequestTimeoutMs: Number.isFinite(timeout) && timeout > 0 ? timeout : 10000,
     allowedFormOrigins: new Set(

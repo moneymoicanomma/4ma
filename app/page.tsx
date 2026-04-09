@@ -556,7 +556,7 @@ export default function Home() {
           ))}
         </div>
 
-        <LandingButton href="#contato" size="large" variant="secondary">
+        <LandingButton href="/seja-um-parceiro" size="large" variant="secondary">
           Quero ser um parceiro
         </LandingButton>
       </section>
