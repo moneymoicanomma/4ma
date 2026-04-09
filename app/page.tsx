@@ -30,6 +30,7 @@ const ticketBackgroundImage = r2Asset("ingressos-bg.webp");
 const navItems = [
   { label: "O Evento", href: "#evento", sectionId: "evento" },
   { label: "A Transmissão", href: "#transmissao", sectionId: "transmissao" },
+  { label: "Lute no MMMMA", href: "/lute-no-mmmma", sectionId: "lute-no-mmmma" },
   { label: "Ingressos", href: "#ingressos", sectionId: "ingressos" },
   { label: "Público", href: "#publico", sectionId: "publico" }
 ];
