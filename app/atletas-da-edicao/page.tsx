@@ -122,7 +122,7 @@ export default async function AtletasDaEdicaoPage() {
             <div className={styles.heroPoints}>
               <div className={styles.heroPoint}>
                 <span className={styles.heroPointNumber}>01</span>
-                <p>Use o mesmo email do acesso para manter o cadastro consistente.</p>
+                <p>Entre com o seu próprio email e preencha a ficha com esse mesmo contato.</p>
               </div>
               <div className={styles.heroPoint}>
                 <span className={styles.heroPointNumber}>02</span>
@@ -146,7 +146,7 @@ export default async function AtletasDaEdicaoPage() {
                 <h2 className={styles.asideTitle}>Ficha pronta para preenchimento.</h2>
                 <p className={styles.asideBody}>
                   Sessão ativa para <strong>{authenticatedEmail}</strong>. Se precisar
-                  trocar o email, encerre a sessão e entre de novo.
+                  trocar para outro email pessoal, encerre a sessão e entre de novo.
                 </p>
 
                 <ul className={styles.asideList}>
@@ -163,8 +163,8 @@ export default async function AtletasDaEdicaoPage() {
                   <span className={styles.asideKicker}>Login rápido</span>
                   <h2 className={styles.asideTitle}>Primeiro valida o acesso.</h2>
                   <p className={styles.asideBody}>
-                    Depois do login, a ficha completa abre logo abaixo e o envio fica
-                    protegido por sessão.
+                    Entre com o email do atleta e a senha desta edição. Depois do login,
+                    a ficha completa abre logo abaixo e o envio fica protegido por sessão.
                   </p>
                 </div>
 

@@ -1,7 +1,6 @@
 "use client";
 
-import { startTransition, type FormEvent, useState } from "react";
-import { useRouter } from "next/navigation";
+import { type FormEvent, useState } from "react";
 
 import type { EventFighterSessionResponse } from "@/lib/contracts/event-fighter-session";
 
@@ -18,7 +17,6 @@ const initialState: LoginState = {
 };
 
 export function EventFighterAccessForm() {
-  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [state, setState] = useState<LoginState>(initialState);
@@ -55,10 +53,9 @@ export function EventFighterAccessForm() {
         return;
       }
 
-      startTransition(() => {
-        router.replace(payload.redirectTo ?? "/atletas-da-edicao");
-        router.refresh();
-      });
+      const redirectUrl = new URL(payload.redirectTo ?? "/atletas-da-edicao", window.location.origin);
+      redirectUrl.hash = "formulario";
+      window.location.replace(redirectUrl.toString());
     } catch {
       setState({
         status: "error",
@@ -74,9 +71,24 @@ export function EventFighterAccessForm() {
           <span className={styles.kicker}>Acesso restrito</span>
           <h2>Entrar na ficha do atleta</h2>
           <p>
-            Use o email combinado com a equipe e a senha padrão enviada no briefing
-            desta edição.
+            Use o seu próprio email e a senha desta edição enviada pela equipe
+            para os atletas confirmados.
           </p>
+        </div>
+
+        <div className={styles.infoStrip}>
+          <div className={styles.infoItem}>
+            <strong>1</strong>
+            <span>Valida o acesso</span>
+          </div>
+          <div className={styles.infoItem}>
+            <strong>2</strong>
+            <span>Abre direto na ficha</span>
+          </div>
+          <div className={styles.infoItem}>
+            <strong>3</strong>
+            <span>Envia tudo de uma vez</span>
+          </div>
         </div>
 
         <div className={styles.fieldGrid}>

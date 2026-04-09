@@ -1,7 +1,6 @@
 "use client";
 
-import { startTransition, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 import styles from "./event-fighter-logout-button.module.css";
 
@@ -12,7 +11,6 @@ type EventFighterLogoutButtonProps = {
 export function EventFighterLogoutButton({
   className = ""
 }: Readonly<EventFighterLogoutButtonProps>) {
-  const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   return (
@@ -32,10 +30,7 @@ export function EventFighterLogoutButton({
             cache: "no-store"
           });
         } finally {
-          startTransition(() => {
-            router.replace("/atletas-da-edicao");
-            router.refresh();
-          });
+          window.location.replace("/atletas-da-edicao#acesso");
         }
       }}
     >

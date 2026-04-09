@@ -176,7 +176,9 @@ export function EventFighterIntakeForm({
                 readOnly
                 type="email"
               />
-              <p className={styles.helper}>Usamos o mesmo email do acesso para manter a ficha consistente.</p>
+              <p className={styles.helper}>
+                Esse é o email pessoal usado no acesso, para manter a ficha consistente.
+              </p>
             </label>
 
             <label className={styles.field}>

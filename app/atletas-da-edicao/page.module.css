@@ -153,7 +153,7 @@
   display: grid;
   grid-template-columns: minmax(0, 1.1fr) minmax(320px, 0.82fr);
   gap: clamp(36px, 4vw, 56px);
-  align-items: end;
+  align-items: start;
 }
 
 .heroCopy {
@@ -253,6 +253,11 @@
   box-shadow: 0 28px 70px rgba(0, 0, 0, 0.32);
 }
 
+.heroAside,
+.authenticatedAside {
+  align-content: start;
+}
+
 .heroAside::after,
 .authenticatedAside::after,
 .ctaCard::after {
@@ -315,7 +320,7 @@
 .formSection {
   display: grid;
   gap: 28px;
-  padding: 0 32px 48px;
+  padding: 18px 32px 48px;
 }
 
 .formIntro {
