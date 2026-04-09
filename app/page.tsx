@@ -210,8 +210,8 @@ function MobileRailShell({
   return (
     <div className="mobile-rail-shell" data-rail-shell>
       <div aria-hidden="true" className="mobile-rail-shell__hint">
-        <span>Arraste pro lado</span>
         <span className="mobile-rail-shell__hint-arrow" />
+        <span className="mobile-rail-shell__hint-arrow mobile-rail-shell__hint-arrow--offset" />
       </div>
       <div className="mobile-rail-shell__frame">{children}</div>
     </div>
