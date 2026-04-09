@@ -2,7 +2,7 @@ import type { PublicMutationResponse } from "@/lib/contracts/public-mutation";
 import {
   isValidEventFighterEmail,
   normalizeEventFighterEmail
-} from "@/lib/event-fighter/auth";
+} from "@/lib/event-fighter/shared";
 
 export const EVENT_FIGHTER_INTAKE_SOURCE = "money-moicano-atletas-da-edicao";
 export const PIX_KEY_TYPES = ["cpf", "email", "phone", "random"] as const;

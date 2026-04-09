@@ -1,3 +1,12 @@
+import "server-only";
+
+import { createHash, createHmac, timingSafeEqual } from "node:crypto";
+
+import {
+  isValidEventFighterEmail,
+  normalizeEventFighterEmail
+} from "@/lib/event-fighter/shared";
+
 export const EVENT_FIGHTER_ACCESS_PATH = "/atletas-da-edicao";
 export const EVENT_FIGHTER_SESSION_COOKIE_NAME = "mmmma_event_fighter_session";
 export const EVENT_FIGHTER_SESSION_MAX_AGE_SECONDS = 60 * 60 * 12;
@@ -16,34 +25,23 @@ export type EventFighterAuthConfig = {
   sessionSecret: string;
 };
 
-const textEncoder = new TextEncoder();
-const textDecoder = new TextDecoder();
-
 function normalizeEnvValue(value: string | undefined) {
   return value?.trim() ?? "";
 }
 
 function bytesToBase64Url(bytes: Uint8Array) {
-  let binary = "";
-
-  for (const byte of bytes) {
-    binary += String.fromCharCode(byte);
-  }
-
-  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+  return Buffer.from(bytes)
+    .toString("base64")
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/g, "");
 }
 
 function base64UrlToBytes(value: string) {
   const paddedValue = value + "=".repeat((4 - (value.length % 4 || 4)) % 4);
   const base64 = paddedValue.replace(/-/g, "+").replace(/_/g, "/");
-  const binary = atob(base64);
-  const bytes = new Uint8Array(binary.length);
 
-  for (let index = 0; index < binary.length; index += 1) {
-    bytes[index] = binary.charCodeAt(index);
-  }
-
-  return bytes;
+  return Uint8Array.from(Buffer.from(base64, "base64"));
 }
 
 function constantTimeEquals(left: Uint8Array, right: Uint8Array) {
@@ -51,55 +49,26 @@ function constantTimeEquals(left: Uint8Array, right: Uint8Array) {
     return false;
   }
 
-  let difference = 0;
-
-  for (let index = 0; index < left.length; index += 1) {
-    difference |= left[index] ^ right[index];
-  }
-
-  return difference === 0;
+  return timingSafeEqual(Buffer.from(left), Buffer.from(right));
 }
 
 function normalizeFallbackSecret(password: string) {
   return `event-fighter-session:${password}`;
 }
 
-async function importHmacKey(secret: string) {
-  return crypto.subtle.importKey(
-    "raw",
-    textEncoder.encode(secret),
-    {
-      name: "HMAC",
-      hash: "SHA-256"
-    },
-    false,
-    ["sign"]
-  );
+function signValue(value: string, secret: string) {
+  return createHmac("sha256", secret).update(value).digest("base64url");
 }
 
-async function signValue(value: string, secret: string) {
-  const key = await importHmacKey(secret);
-  const signatureBuffer = await crypto.subtle.sign("HMAC", key, textEncoder.encode(value));
-
-  return bytesToBase64Url(new Uint8Array(signatureBuffer));
+function sha256Base64Url(value: string) {
+  return createHash("sha256").update(value).digest("base64url");
 }
 
-async function sha256Base64Url(value: string) {
-  const digestBuffer = await crypto.subtle.digest("SHA-256", textEncoder.encode(value));
-
-  return bytesToBase64Url(new Uint8Array(digestBuffer));
-}
-
-export function normalizeEventFighterEmail(value: string) {
-  return value.trim().toLowerCase();
-}
-
-export function isValidEventFighterEmail(value: string) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
-}
+export { isValidEventFighterEmail, normalizeEventFighterEmail };
 
 export function getEventFighterAuthConfig(): EventFighterAuthConfig {
-  const password = normalizeEnvValue(process.env.ATHLETE_FORM_PASSWORD) || DEFAULT_EVENT_FIGHTER_PASSWORD;
+  const password =
+    normalizeEnvValue(process.env.ATHLETE_FORM_PASSWORD) || DEFAULT_EVENT_FIGHTER_PASSWORD;
   const sessionSecret =
     normalizeEnvValue(process.env.ATHLETE_FORM_SESSION_SECRET) ||
     normalizeEnvValue(process.env.ADMIN_SESSION_SECRET) ||
@@ -111,11 +80,11 @@ export function getEventFighterAuthConfig(): EventFighterAuthConfig {
   };
 }
 
-export async function createEventFighterCredentialFingerprint(email: string, password: string) {
+export function createEventFighterCredentialFingerprint(email: string, password: string) {
   return sha256Base64Url(`${normalizeEventFighterEmail(email)}:${password}`);
 }
 
-export async function createEventFighterSessionToken(
+export function createEventFighterSessionToken(
   email: string,
   secret: string,
   credentialFingerprint: string,
@@ -130,30 +99,30 @@ export async function createEventFighterSessionToken(
     cf: credentialFingerprint
   };
 
-  const encodedPayload = bytesToBase64Url(textEncoder.encode(JSON.stringify(payload)));
-  const signature = await signValue(encodedPayload, secret);
+  const encodedPayload = bytesToBase64Url(
+    Uint8Array.from(Buffer.from(JSON.stringify(payload), "utf-8"))
+  );
+  const signature = signValue(encodedPayload, secret);
 
   return `${encodedPayload}.${signature}`;
 }
 
-export async function verifyEventFighterSessionToken(token: string, secret: string) {
+export function verifyEventFighterSessionToken(token: string, secret: string) {
   const [encodedPayload, signature] = token.split(".");
 
   if (!encodedPayload || !signature) {
     return null;
   }
 
-  const expectedSignature = await signValue(encodedPayload, secret);
+  const expectedSignature = signValue(encodedPayload, secret);
 
-  if (
-    !constantTimeEquals(base64UrlToBytes(signature), base64UrlToBytes(expectedSignature))
-  ) {
+  if (!constantTimeEquals(base64UrlToBytes(signature), base64UrlToBytes(expectedSignature))) {
     return null;
   }
 
   try {
     const payload = JSON.parse(
-      textDecoder.decode(base64UrlToBytes(encodedPayload))
+      Buffer.from(base64UrlToBytes(encodedPayload)).toString("utf-8")
     ) as Partial<EventFighterSessionPayload>;
 
     if (

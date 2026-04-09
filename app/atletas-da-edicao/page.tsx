@@ -46,13 +46,13 @@ async function resolveAuthenticatedEmail() {
     return null;
   }
 
-  const session = await verifyEventFighterSessionToken(sessionToken, authConfig.sessionSecret);
+  const session = verifyEventFighterSessionToken(sessionToken, authConfig.sessionSecret);
 
   if (!session) {
     return null;
   }
 
-  const credentialFingerprint = await createEventFighterCredentialFingerprint(
+  const credentialFingerprint = createEventFighterCredentialFingerprint(
     session.sub,
     authConfig.password
   );

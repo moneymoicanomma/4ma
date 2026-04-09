@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const session = await verifyEventFighterSessionToken(sessionToken, authConfig.sessionSecret);
+  const session = verifyEventFighterSessionToken(sessionToken, authConfig.sessionSecret);
 
   if (!session) {
     return publicApiResponse(
@@ -76,7 +76,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const credentialFingerprint = await createEventFighterCredentialFingerprint(
+  const credentialFingerprint = createEventFighterCredentialFingerprint(
     session.sub,
     authConfig.password
   );

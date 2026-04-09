@@ -135,11 +135,11 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const credentialFingerprint = await createEventFighterCredentialFingerprint(
+  const credentialFingerprint = createEventFighterCredentialFingerprint(
     email,
     config.password
   );
-  const sessionToken = await createEventFighterSessionToken(
+  const sessionToken = createEventFighterSessionToken(
     email,
     config.sessionSecret,
     credentialFingerprint

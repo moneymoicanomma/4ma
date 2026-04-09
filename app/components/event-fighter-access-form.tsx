@@ -16,6 +16,8 @@ const initialState: LoginState = {
   message: ""
 };
 
+const LOGIN_TIMEOUT_MS = 12000;
+
 export function EventFighterAccessForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -23,6 +25,8 @@ export function EventFighterAccessForm() {
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(() => controller.abort(), LOGIN_TIMEOUT_MS);
 
     setState({
       status: "submitting",
@@ -36,6 +40,7 @@ export function EventFighterAccessForm() {
           Accept: "application/json",
           "Content-Type": "application/json"
         },
+        signal: controller.signal,
         body: JSON.stringify({
           email,
           password
@@ -56,11 +61,16 @@ export function EventFighterAccessForm() {
       const redirectUrl = new URL(payload.redirectTo ?? "/atletas-da-edicao", window.location.origin);
       redirectUrl.hash = "formulario";
       window.location.replace(redirectUrl.toString());
-    } catch {
+    } catch (error) {
       setState({
         status: "error",
-        message: "Não foi possível autenticar agora."
+        message:
+          error instanceof DOMException && error.name === "AbortError"
+            ? "O acesso demorou demais para responder. Tenta de novo em alguns segundos."
+            : "Não foi possível autenticar agora."
       });
+    } finally {
+      window.clearTimeout(timeoutId);
     }
   }
 
