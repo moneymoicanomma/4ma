@@ -202,7 +202,7 @@ export default async function AtletasDaEdicaoPage() {
               entrar no radar do card, o caminho certo é o formulário público.
             </p>
             <Link className={styles.ctaLink} href="/lute-no-mmmma">
-              Ir para o lute-no-mmmma
+              Lute no MMMMA
             </Link>
           </div>
         </section>
