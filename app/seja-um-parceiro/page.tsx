@@ -84,21 +84,6 @@ export default function SejaUmParceiroPage() {
               </div>
             </div>
           </div>
-
-          <aside className={styles.heroAside} data-reveal>
-            <span className={styles.asideKicker}>Importante</span>
-            <h2 className={styles.asideTitle}>Primeiro contato tem que ser simples.</h2>
-            <p className={styles.asideBody}>
-              A ideia aqui não é pedir proposta completa. Basta a equipe saber quem é a marca,
-              com quem falar e ter um contexto rápido para dar sequência.
-            </p>
-
-            <ul className={styles.asideList}>
-              <li>Nome, empresa, cargo e contato já resolvem o primeiro passo.</li>
-              <li>Se tiver site ou Instagram da empresa, melhor ainda.</li>
-              <li>Se fizer sentido, a conversa comercial aprofunda depois.</li>
-            </ul>
-          </aside>
         </div>
       </section>
 
