@@ -4,6 +4,7 @@ import { type FormEvent, useState } from "react";
 
 import {
   FIGHTER_SPECIALTIES,
+  type FighterSpecialty,
   type FighterApplicationPublicResponse
 } from "@/lib/contracts/fighter-application";
 
@@ -19,20 +20,33 @@ const initialState: FormState = {
   message: ""
 };
 
+const defaultSpecialty: FighterSpecialty = "mma";
+
 const specialtyCopy: Record<(typeof FIGHTER_SPECIALTIES)[number], string> = {
   "jiu-jitsu": "Seu jogo gira mais em torno de grappling, finalização e controle.",
   mma: "Sua principal identidade competitiva hoje já é MMA.",
-  "muay-thai": "Seu diferencial começa na trocação, pressão e striking."
+  "muay-thai": "Seu diferencial começa na trocação, pressão e striking.",
+  boxe: "Sua mão é o cartão de visita e a leitura de distância pesa a seu favor.",
+  kickboxing: "Sua base mistura trocação, volume e variações de chute com ritmo forte.",
+  judo: "Seu jogo passa por queda, clinch e controle corporal de alto nível.",
+  sanda: "Sua base mistura trocação e projeção com uma leitura pouco comum no card.",
+  other: "Se sua modalidade principal não está aqui, explica qual é."
 };
 
 const specialtyLabel: Record<(typeof FIGHTER_SPECIALTIES)[number], string> = {
   "jiu-jitsu": "Jiu-jitsu",
   mma: "MMA",
-  "muay-thai": "Muay Thai"
+  "muay-thai": "Muay Thai",
+  boxe: "Boxe",
+  kickboxing: "Kickboxing",
+  judo: "Judô",
+  sanda: "Sanda",
+  other: "Outra"
 };
 
 export function FighterApplicationForm() {
   const [state, setState] = useState<FormState>(initialState);
+  const [selectedSpecialty, setSelectedSpecialty] = useState<FighterSpecialty>(defaultSpecialty);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -53,13 +67,15 @@ export function FighterApplicationForm() {
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          name: String(formData.get("name") ?? ""),
+          fullName: String(formData.get("fullName") ?? ""),
+          nickname: String(formData.get("nickname") ?? ""),
           birthDate: String(formData.get("birthDate") ?? ""),
           city: String(formData.get("city") ?? ""),
           team: String(formData.get("team") ?? ""),
           tapology: String(formData.get("tapology") ?? ""),
           instagram: String(formData.get("instagram") ?? ""),
           specialty: String(formData.get("specialty") ?? ""),
+          specialtyOther: String(formData.get("specialtyOther") ?? ""),
           competitionHistory: String(formData.get("competitionHistory") ?? ""),
           martialArtsTitles: String(formData.get("martialArtsTitles") ?? ""),
           curiosities: String(formData.get("curiosities") ?? ""),
@@ -80,6 +96,7 @@ export function FighterApplicationForm() {
       }
 
       form.reset();
+      setSelectedSpecialty(defaultSpecialty);
       setState({
         status: "success",
         message: payload.message
@@ -120,11 +137,28 @@ export function FighterApplicationForm() {
                 className={styles.input}
                 maxLength={160}
                 minLength={5}
-                name="name"
-                placeholder="Nome completo e apelido, se tiver"
+                name="fullName"
+                placeholder="Nome e sobrenome"
                 required
                 type="text"
               />
+            </label>
+
+            <label className={styles.field}>
+              <span className={styles.label}>Apelido</span>
+              <input
+                autoComplete="nickname"
+                className={styles.input}
+                maxLength={160}
+                minLength={2}
+                name="nickname"
+                placeholder='Ex.: "The Spider"'
+                required
+                type="text"
+              />
+              <p className={styles.helper}>
+                Coloca o nome pelo qual você quer ser anunciado ou lembrado.
+              </p>
             </label>
 
             <label className={styles.field}>
@@ -209,12 +243,15 @@ export function FighterApplicationForm() {
           <fieldset className={styles.specialtyGroup}>
             <legend className={styles.label}>Especialidade principal</legend>
             <div className={styles.specialtyGrid}>
-              {FIGHTER_SPECIALTIES.map((specialty, index) => (
+              {FIGHTER_SPECIALTIES.map((specialty) => (
                 <label className={styles.specialtyOption} key={specialty}>
                   <input
+                    checked={selectedSpecialty === specialty}
                     className={styles.specialtyInput}
-                    defaultChecked={index === 1}
                     name="specialty"
+                    onChange={() => {
+                      setSelectedSpecialty(specialty);
+                    }}
                     required
                     type="radio"
                     value={specialty}
@@ -229,6 +266,21 @@ export function FighterApplicationForm() {
           </fieldset>
 
           <div className={styles.grid}>
+            {selectedSpecialty === "other" ? (
+              <label className={`${styles.field} ${styles.fullWidth}`}>
+                <span className={styles.label}>Qual é a outra especialidade?</span>
+                <input
+                  className={styles.input}
+                  maxLength={120}
+                  minLength={2}
+                  name="specialtyOther"
+                  placeholder="Ex.: wrestling, karate, taekwondo, sambo..."
+                  required
+                  type="text"
+                />
+              </label>
+            ) : null}
+
             <label className={`${styles.field} ${styles.fullWidth}`}>
               <span className={styles.label}>Histórico de competição</span>
               <textarea
@@ -286,7 +338,7 @@ export function FighterApplicationForm() {
         <section className={styles.section}>
           <div className={styles.sectionHeader}>
             <span className={styles.sectionKicker}>Confirmação</span>
-            <h2 className={styles.sectionTitle}>Sem ler, sem chorar depois</h2>
+            <h2 className={styles.sectionTitle}>Se não ler, não chora depois</h2>
           </div>
 
           <div className={styles.consentBox}>

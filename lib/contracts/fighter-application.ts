@@ -1,18 +1,29 @@
 import type { PublicMutationResponse } from "@/lib/contracts/public-mutation";
 
 export const FIGHTER_APPLICATION_SOURCE = "money-moicano-lute-no-mmmma";
-export const FIGHTER_SPECIALTIES = ["jiu-jitsu", "mma", "muay-thai"] as const;
+export const FIGHTER_SPECIALTIES = [
+  "jiu-jitsu",
+  "mma",
+  "muay-thai",
+  "boxe",
+  "kickboxing",
+  "judo",
+  "sanda",
+  "other"
+] as const;
 
 export type FighterSpecialty = (typeof FIGHTER_SPECIALTIES)[number];
 
 export type FighterApplicationPayload = {
-  name: string;
+  fullName: string;
+  nickname: string;
   birthDate: string;
   city: string;
   team: string;
   tapology: string;
   instagram: string;
   specialty: FighterSpecialty;
+  specialtyOther: string;
   competitionHistory: string;
   martialArtsTitles: string;
   curiosities: string;
@@ -34,6 +45,7 @@ type FighterApplicationParseResult =
 const MAX_SHORT_TEXT_LENGTH = 160;
 const MAX_PROFILE_FIELD_LENGTH = 220;
 const MAX_LONG_TEXT_LENGTH = 4000;
+const MAX_SPECIALTY_OTHER_LENGTH = 120;
 const specialtySet = new Set<string>(FIGHTER_SPECIALTIES);
 
 function normalizeShortText(input: unknown) {
@@ -97,13 +109,15 @@ function isValidBirthDate(value: string) {
 
 function emptyPayload(): FighterApplicationPayload {
   return {
-    name: "",
+    fullName: "",
+    nickname: "",
     birthDate: "",
     city: "",
     team: "",
     tapology: "",
     instagram: "",
     specialty: "mma",
+    specialtyOther: "",
     competitionHistory: "",
     martialArtsTitles: "",
     curiosities: "",
@@ -133,22 +147,29 @@ export function parseFighterApplication(input: unknown): FighterApplicationParse
     };
   }
 
-  const name = normalizeShortText(record.name);
+  const fullName = normalizeShortText(record.fullName);
+  const nickname = normalizeShortText(record.nickname);
   const birthDate = normalizeShortText(record.birthDate);
   const city = normalizeShortText(record.city);
   const team = normalizeShortText(record.team);
   const tapology = normalizeShortText(record.tapology);
   const instagram = normalizeShortText(record.instagram);
   const specialty = normalizeShortText(record.specialty).toLowerCase();
+  const specialtyOther = normalizeShortText(record.specialtyOther);
   const competitionHistory = normalizeLongText(record.competitionHistory);
   const martialArtsTitles = normalizeLongText(record.martialArtsTitles);
   const curiosities = normalizeLongText(record.curiosities);
   const roastConsent = record.roastConsent === true;
 
   const shortFieldError =
-    validateRequiredText(name, {
-      label: "Nome",
+    validateRequiredText(fullName, {
+      label: "Nome completo",
       minLength: 5,
+      maxLength: MAX_SHORT_TEXT_LENGTH
+    }) ??
+    validateRequiredText(nickname, {
+      label: "Apelido",
+      minLength: 2,
       maxLength: MAX_SHORT_TEXT_LENGTH
     }) ??
     validateRequiredText(birthDate, {
@@ -197,6 +218,21 @@ export function parseFighterApplication(input: unknown): FighterApplicationParse
     };
   }
 
+  if (specialty === "other") {
+    const specialtyOtherError = validateRequiredText(specialtyOther, {
+      label: "Outra especialidade",
+      minLength: 2,
+      maxLength: MAX_SPECIALTY_OTHER_LENGTH
+    });
+
+    if (specialtyOtherError) {
+      return {
+        ok: false,
+        message: specialtyOtherError
+      };
+    }
+  }
+
   const longFieldError =
     validateRequiredText(competitionHistory, {
       label: "Histórico de competição",
@@ -232,13 +268,15 @@ export function parseFighterApplication(input: unknown): FighterApplicationParse
     ok: true,
     honeypotTriggered: false,
     data: {
-      name,
+      fullName,
+      nickname,
       birthDate,
       city,
       team,
       tapology,
       instagram,
       specialty: specialty as FighterSpecialty,
+      specialtyOther: specialty === "other" ? specialtyOther : "",
       competitionHistory,
       martialArtsTitles,
       curiosities,
