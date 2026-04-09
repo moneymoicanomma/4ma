@@ -647,14 +647,9 @@ section[id] {
   color: rgba(229, 226, 225, 0.6);
 }
 
-.mobile-rail-shell,
-.mobile-rail-shell__frame {
+.mobile-rail-shell {
   width: 100%;
   min-width: 0;
-}
-
-.mobile-rail-shell__hint {
-  display: none;
 }
 
 .feature-grid {
@@ -1721,6 +1716,10 @@ section[id] {
   }
 
   .page-shell {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  body[data-mobile-cta="visible"] .page-shell {
     padding-bottom: calc(96px + env(safe-area-inset-bottom));
   }
 
@@ -2119,80 +2118,6 @@ section[id] {
 
   .mobile-rail-shell {
     position: relative;
-  }
-
-  .mobile-rail-shell__hint {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 4px;
-    position: absolute;
-    top: 12px;
-    right: 12px;
-    z-index: 4;
-    width: 42px;
-    height: 42px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    background: rgba(0, 0, 0, 0.72);
-    opacity: 0;
-    transform: translateX(8px);
-    transition:
-      opacity 180ms ease,
-      transform 180ms ease,
-      border-color 180ms ease,
-      background-color 180ms ease;
-  }
-
-  .mobile-rail-shell[data-rail-overflow="true"][data-rail-prev="false"] .mobile-rail-shell__hint {
-    opacity: 1;
-    transform: translateX(0);
-  }
-
-  .mobile-rail-shell__hint-arrow {
-    position: relative;
-    width: 8px;
-    height: 8px;
-    flex: none;
-    border-top: 1px solid rgba(229, 226, 225, 0.76);
-    border-right: 1px solid rgba(229, 226, 225, 0.76);
-    transform: rotate(45deg);
-  }
-
-  .mobile-rail-shell__hint-arrow--offset {
-    opacity: 0.42;
-    transform: translateX(-3px) rotate(45deg);
-  }
-
-  .mobile-rail-shell__frame {
-    position: relative;
-  }
-
-  .mobile-rail-shell__frame::before,
-  .mobile-rail-shell__frame::after {
-    content: "";
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    z-index: 3;
-    width: 18px;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 180ms ease;
-  }
-
-  .mobile-rail-shell__frame::before {
-    left: 0;
-    background: linear-gradient(to right, rgba(0, 0, 0, 0.74) 0%, rgba(0, 0, 0, 0) 100%);
-  }
-
-  .mobile-rail-shell__frame::after {
-    right: 0;
-    background: linear-gradient(to left, rgba(0, 0, 0, 0.74) 0%, rgba(0, 0, 0, 0) 100%);
-  }
-
-  .mobile-rail-shell[data-rail-prev="true"] .mobile-rail-shell__frame::before,
-  .mobile-rail-shell[data-rail-next="true"] .mobile-rail-shell__frame::after {
-    opacity: 1;
   }
 
   .body-copy--lead {
