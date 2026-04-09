@@ -244,7 +244,7 @@ export function LandingTopbar({
 
           <div className="topbar__sheet-footer">
             <span className="topbar__sheet-label">Próxima porrada</span>
-            <p className="topbar__sheet-copy">30 MAIO 2026 · SÃO PAULO · CANAL MONEY MOICANO</p>
+            <p className="topbar__sheet-copy">23 MAIO 2026 · SÃO PAULO · CANAL MONEY MOICANO</p>
             <a className="landing-button landing-button--primary landing-button--sheet" href={ctaHref}>
               {ctaLabel}
             </a>

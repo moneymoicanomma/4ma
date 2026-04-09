@@ -36,7 +36,7 @@ const navItems = [
 ];
 
 const eventFacts = [
-  { label: "Data do Evento", value: "30 Maio 2026" },
+  { label: "Data do Evento", value: "23 Maio 2026" },
   { label: "Localização", value: "Cornerman, São Paulo", icon: cornermanIcon },
   { label: "Transmissão", value: "Canal Money Moicano" }
 ];
