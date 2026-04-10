@@ -105,7 +105,8 @@
 }
 
 .input,
-.textarea {
+.textarea,
+.select {
   width: 100%;
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 0;
@@ -120,7 +121,8 @@
     transform 160ms ease;
 }
 
-.input {
+.input,
+.select {
   min-height: 58px;
   padding: 0 18px;
 }
@@ -132,13 +134,18 @@
   resize: vertical;
 }
 
+.select {
+  appearance: none;
+}
+
 .input::placeholder,
 .textarea::placeholder {
   color: rgba(255, 255, 255, 0.32);
 }
 
 .input:focus-visible,
-.textarea:focus-visible {
+.textarea:focus-visible,
+.select:focus-visible {
   outline: none;
   border-color: rgba(232, 24, 26, 0.85);
   box-shadow: 0 0 0 4px rgba(232, 24, 26, 0.14);

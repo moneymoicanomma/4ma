@@ -11,8 +11,24 @@ export const FIGHTER_SPECIALTIES = [
   "sanda",
   "other"
 ] as const;
+export const FIGHTER_WEIGHT_CLASSES = [
+  "atomo-feminino",
+  "palha-feminino",
+  "mosca-feminino",
+  "galo-feminino",
+  "pena-feminino",
+  "mosca",
+  "galo",
+  "pena",
+  "leve",
+  "meio-medio",
+  "medio",
+  "meio-pesado",
+  "pesado"
+] as const;
 
 export type FighterSpecialty = (typeof FIGHTER_SPECIALTIES)[number];
+export type FighterWeightClass = (typeof FIGHTER_WEIGHT_CLASSES)[number];
 
 export type FighterApplicationPayload = {
   fullName: string;
@@ -20,8 +36,12 @@ export type FighterApplicationPayload = {
   birthDate: string;
   city: string;
   team: string;
+  weightClass: FighterWeightClass;
   tapology: string;
   instagram: string;
+  phoneWhatsapp: string;
+  bookingContactName: string;
+  bookingContactPhoneWhatsapp: string;
   specialty: FighterSpecialty;
   specialtyOther: string;
   competitionHistory: string;
@@ -43,10 +63,12 @@ type FighterApplicationParseResult =
     };
 
 const MAX_SHORT_TEXT_LENGTH = 160;
+const MAX_PHONE_LENGTH = 40;
 const MAX_PROFILE_FIELD_LENGTH = 220;
 const MAX_LONG_TEXT_LENGTH = 4000;
 const MAX_SPECIALTY_OTHER_LENGTH = 120;
 const specialtySet = new Set<string>(FIGHTER_SPECIALTIES);
+const weightClassSet = new Set<string>(FIGHTER_WEIGHT_CLASSES);
 
 function normalizeShortText(input: unknown) {
   return typeof input === "string" ? input.trim().replace(/\s+/g, " ") : "";
@@ -54,6 +76,10 @@ function normalizeShortText(input: unknown) {
 
 function normalizeLongText(input: unknown) {
   return typeof input === "string" ? input.trim().replace(/\r\n/g, "\n") : "";
+}
+
+function digitsOnly(value: string) {
+  return value.replace(/\D+/g, "");
 }
 
 function validateRequiredText(
@@ -114,8 +140,12 @@ function emptyPayload(): FighterApplicationPayload {
     birthDate: "",
     city: "",
     team: "",
+    weightClass: "leve",
     tapology: "",
     instagram: "",
+    phoneWhatsapp: "",
+    bookingContactName: "",
+    bookingContactPhoneWhatsapp: "",
     specialty: "mma",
     specialtyOther: "",
     competitionHistory: "",
@@ -152,8 +182,12 @@ export function parseFighterApplication(input: unknown): FighterApplicationParse
   const birthDate = normalizeShortText(record.birthDate);
   const city = normalizeShortText(record.city);
   const team = normalizeShortText(record.team);
+  const weightClass = normalizeShortText(record.weightClass).toLowerCase();
   const tapology = normalizeShortText(record.tapology);
   const instagram = normalizeShortText(record.instagram);
+  const phoneWhatsapp = normalizeShortText(record.phoneWhatsapp);
+  const bookingContactName = normalizeShortText(record.bookingContactName);
+  const bookingContactPhoneWhatsapp = normalizeShortText(record.bookingContactPhoneWhatsapp);
   const specialty = normalizeShortText(record.specialty).toLowerCase();
   const specialtyOther = normalizeShortText(record.specialtyOther);
   const competitionHistory = normalizeLongText(record.competitionHistory);
@@ -186,6 +220,10 @@ export function parseFighterApplication(input: unknown): FighterApplicationParse
       minLength: 2,
       maxLength: MAX_SHORT_TEXT_LENGTH
     }) ??
+    validateRequiredText(weightClass, {
+      label: "Categoria",
+      maxLength: MAX_SHORT_TEXT_LENGTH
+    }) ??
     validateRequiredText(tapology, {
       label: "Tapology",
       minLength: 3,
@@ -195,6 +233,21 @@ export function parseFighterApplication(input: unknown): FighterApplicationParse
       label: "Instagram",
       minLength: 3,
       maxLength: MAX_PROFILE_FIELD_LENGTH
+    }) ??
+    validateRequiredText(phoneWhatsapp, {
+      label: "Telefone / WhatsApp do atleta",
+      minLength: 10,
+      maxLength: MAX_PHONE_LENGTH
+    }) ??
+    validateRequiredText(bookingContactName, {
+      label: "Nome do responsável pelo fechamento",
+      minLength: 3,
+      maxLength: MAX_SHORT_TEXT_LENGTH
+    }) ??
+    validateRequiredText(bookingContactPhoneWhatsapp, {
+      label: "Telefone / WhatsApp do responsável",
+      minLength: 10,
+      maxLength: MAX_PHONE_LENGTH
     });
 
   if (shortFieldError) {
@@ -208,6 +261,27 @@ export function parseFighterApplication(input: unknown): FighterApplicationParse
     return {
       ok: false,
       message: "Informe uma data de nascimento válida."
+    };
+  }
+
+  if (!weightClassSet.has(weightClass)) {
+    return {
+      ok: false,
+      message: "Selecione uma categoria válida."
+    };
+  }
+
+  if (digitsOnly(phoneWhatsapp).length < 10) {
+    return {
+      ok: false,
+      message: "Informe um telefone / WhatsApp válido para o atleta."
+    };
+  }
+
+  if (digitsOnly(bookingContactPhoneWhatsapp).length < 10) {
+    return {
+      ok: false,
+      message: "Informe um telefone / WhatsApp válido para o responsável."
     };
   }
 
@@ -273,8 +347,12 @@ export function parseFighterApplication(input: unknown): FighterApplicationParse
       birthDate,
       city,
       team,
+      weightClass: weightClass as FighterWeightClass,
       tapology,
       instagram,
+      phoneWhatsapp,
+      bookingContactName,
+      bookingContactPhoneWhatsapp,
       specialty: specialty as FighterSpecialty,
       specialtyOther: specialty === "other" ? specialtyOther : "",
       competitionHistory,

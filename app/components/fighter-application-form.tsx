@@ -4,6 +4,7 @@ import { type FormEvent, useState } from "react";
 
 import {
   FIGHTER_SPECIALTIES,
+  FIGHTER_WEIGHT_CLASSES,
   type FighterSpecialty,
   type FighterApplicationPublicResponse
 } from "@/lib/contracts/fighter-application";
@@ -44,6 +45,22 @@ const specialtyLabel: Record<(typeof FIGHTER_SPECIALTIES)[number], string> = {
   judo: "Judô",
   sanda: "Sanda",
   other: "Outra"
+};
+
+const weightClassLabel: Record<(typeof FIGHTER_WEIGHT_CLASSES)[number], string> = {
+  "atomo-feminino": "Peso átomo feminino (até 47,6 kg)",
+  "palha-feminino": "Peso palha feminino (até 52,2 kg)",
+  "mosca-feminino": "Peso mosca feminino (até 56,7 kg)",
+  "galo-feminino": "Peso galo feminino (até 61,2 kg)",
+  "pena-feminino": "Peso pena feminino (até 65,8 kg)",
+  mosca: "Peso mosca (até 56,7 kg)",
+  galo: "Peso galo (até 61,2 kg)",
+  pena: "Peso pena (até 65,8 kg)",
+  leve: "Peso leve (até 70,3 kg)",
+  "meio-medio": "Peso meio-médio (até 77,1 kg)",
+  medio: "Peso médio (até 83,9 kg)",
+  "meio-pesado": "Peso meio-pesado (até 93,0 kg)",
+  pesado: "Peso pesado (até 120,2 kg)"
 };
 
 export function FighterApplicationForm() {
@@ -87,8 +104,12 @@ export function FighterApplicationForm() {
           birthDate: String(formData.get("birthDate") ?? ""),
           city: String(formData.get("city") ?? ""),
           team: String(formData.get("team") ?? ""),
+          weightClass: String(formData.get("weightClass") ?? ""),
           tapology: String(formData.get("tapology") ?? ""),
           instagram: String(formData.get("instagram") ?? ""),
+          phoneWhatsapp: String(formData.get("phoneWhatsapp") ?? ""),
+          bookingContactName: String(formData.get("bookingContactName") ?? ""),
+          bookingContactPhoneWhatsapp: String(formData.get("bookingContactPhoneWhatsapp") ?? ""),
           specialty: String(formData.get("specialty") ?? ""),
           specialtyOther: String(formData.get("specialtyOther") ?? ""),
           competitionHistory: String(formData.get("competitionHistory") ?? ""),
@@ -224,6 +245,23 @@ export function FighterApplicationForm() {
             </label>
 
             <label className={styles.field}>
+              <span className={styles.label}>Categoria</span>
+              <select className={styles.select} defaultValue="" name="weightClass" required>
+                <option disabled value="">
+                  Selecione sua categoria
+                </option>
+                {FIGHTER_WEIGHT_CLASSES.map((weightClass) => (
+                  <option key={weightClass} value={weightClass}>
+                    {weightClassLabel[weightClass]}
+                  </option>
+                ))}
+              </select>
+              <p className={styles.helper}>
+                Escolhe a divisão em que você realmente compete hoje.
+              </p>
+            </label>
+
+            <label className={styles.field}>
               <span className={styles.label}>Tapology</span>
               <input
                 autoComplete="url"
@@ -248,6 +286,56 @@ export function FighterApplicationForm() {
                 placeholder="@seuusuario ou link do perfil"
                 required
                 type="text"
+              />
+            </label>
+
+            <label className={styles.field}>
+              <span className={styles.label}>Telefone / WhatsApp do atleta</span>
+              <input
+                autoComplete="tel"
+                className={styles.input}
+                inputMode="tel"
+                maxLength={40}
+                minLength={10}
+                name="phoneWhatsapp"
+                placeholder="(11) 99999-0000"
+                required
+                type="tel"
+              />
+              <p className={styles.helper}>
+                Informa o número que a equipe pode usar para falar com você sem intermediário.
+              </p>
+            </label>
+
+            <label className={styles.field}>
+              <span className={styles.label}>Nome do responsável pelo fechamento</span>
+              <input
+                autoComplete="off"
+                className={styles.input}
+                maxLength={160}
+                minLength={3}
+                name="bookingContactName"
+                placeholder="Empresário, treinador ou responsável comercial"
+                required
+                type="text"
+              />
+              <p className={styles.helper}>
+                Pode ser quem negocia sua luta e responde pela parte comercial.
+              </p>
+            </label>
+
+            <label className={styles.field}>
+              <span className={styles.label}>Telefone / WhatsApp do responsável</span>
+              <input
+                autoComplete="tel"
+                className={styles.input}
+                inputMode="tel"
+                maxLength={40}
+                minLength={10}
+                name="bookingContactPhoneWhatsapp"
+                placeholder="(11) 99999-0000"
+                required
+                type="tel"
               />
             </label>
           </div>

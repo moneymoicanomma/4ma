@@ -34,7 +34,7 @@ export async function submitFighterApplication(
           userAgent: requestContext.userAgent
         },
         async (transaction) => {
-          await transaction.query(
+          const fighterApplicationResult = await transaction.query<{ id: string }>(
             `
               insert into app.fighter_applications (
                 full_name,
@@ -42,6 +42,7 @@ export async function submitFighterApplication(
                 birth_date,
                 city,
                 team,
+                weight_class,
                 tapology_profile,
                 instagram_profile,
                 specialty,
@@ -63,10 +64,10 @@ export async function submitFighterApplication(
                 $3::date,
                 $4,
                 $5,
-                $6,
+                $6::app.fighter_weight_class_enum,
                 $7,
-                $8::app.fighter_specialty_enum,
-                $9,
+                $8,
+                $9::app.fighter_specialty_enum,
                 $10,
                 $11,
                 $12,
@@ -76,8 +77,10 @@ export async function submitFighterApplication(
                 $16,
                 $17,
                 $18,
-                $19::jsonb
+                $19,
+                $20::jsonb
               )
+              returning id
             `,
             [
               payload.fullName,
@@ -85,6 +88,7 @@ export async function submitFighterApplication(
               payload.birthDate,
               payload.city,
               payload.team,
+              payload.weightClass,
               payload.tapology,
               payload.instagram,
               payload.specialty,
@@ -100,6 +104,40 @@ export async function submitFighterApplication(
               requestContext.userAgent,
               JSON.stringify({
                 surface: "fighter-application"
+              })
+            ]
+          );
+
+          const fighterApplicationId = fighterApplicationResult.rows[0]!.id;
+
+          await transaction.query(
+            `
+              insert into app.fighter_application_contacts (
+                fighter_application_id,
+                contact_role,
+                contact_name,
+                phone_whatsapp,
+                metadata
+              )
+              values
+                ($1, $2::app.fighter_application_contact_role_enum, $3, $4, $5::jsonb),
+                ($1, $6::app.fighter_application_contact_role_enum, $7, $8, $9::jsonb)
+            `,
+            [
+              fighterApplicationId,
+              "athlete",
+              null,
+              payload.phoneWhatsapp,
+              JSON.stringify({
+                surface: "fighter-application",
+                sourceField: "phoneWhatsapp"
+              }),
+              "booking_contact",
+              payload.bookingContactName,
+              payload.bookingContactPhoneWhatsapp,
+              JSON.stringify({
+                surface: "fighter-application",
+                sourceField: "bookingContact"
               })
             ]
           );
