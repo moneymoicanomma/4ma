@@ -131,6 +131,7 @@ const ticketTiers = [
 
 const footerLinks = [
   { label: "Lute no MMMMA", href: "/lute-no-mmmma" },
+  { label: "Mapa do Site", href: "/mapa-do-site" },
   { label: "Imprensa", href: "#" },
   { label: "Termos de Uso", href: "#" },
   { label: "Política de Privacidade", href: "#" },

@@ -17,7 +17,11 @@ const brandLogoWide = r2Asset("logo money moicano mma extenso.svg");
 
 export const metadata: Metadata = {
   title: "Login Admin | Money Moicano MMA",
-  description: "Acesso administrativo do painel do fantasy do Money Moicano MMA."
+  description: "Acesso administrativo do painel do fantasy do Money Moicano MMA.",
+  robots: {
+    index: false,
+    follow: false
+  }
 };
 
 export const dynamic = "force-dynamic";

@@ -20,7 +20,11 @@ const brandLogoWide = r2Asset("logo money moicano mma extenso.svg");
 export const metadata: Metadata = {
   title: "Admin Fantasy | Money Moicano MMA",
   description:
-    "Painel administrativo para configurar eventos, lutas, resultados e leaderboard do fantasy do Money Moicano MMA."
+    "Painel administrativo para configurar eventos, lutas, resultados e leaderboard do fantasy do Money Moicano MMA.",
+  robots: {
+    index: false,
+    follow: false
+  }
 };
 
 export default function FantasyAdminPage() {
