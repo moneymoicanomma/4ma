@@ -8,6 +8,8 @@ import {
 } from "@/lib/contracts/newsletter";
 import type { PublicMutationResponse } from "@/lib/contracts/public-mutation";
 
+import { FormConfirmationPopup } from "./form-confirmation-popup";
+
 type FormState = {
   invalidEmail: boolean;
   status: "idle" | "submitting" | "success" | "error";
@@ -22,9 +24,11 @@ const initialState: FormState = {
 
 export function NewsletterSignupForm() {
   const [state, setState] = useState<FormState>(initialState);
+  const [confirmationMessage, setConfirmationMessage] = useState("");
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    setConfirmationMessage("");
 
     const form = event.currentTarget;
     const formData = new FormData(form);
@@ -77,6 +81,7 @@ export function NewsletterSignupForm() {
         status: "success",
         message: payload.message
       });
+      setConfirmationMessage(payload.message);
     } catch {
       setState({
         invalidEmail: false,
@@ -101,7 +106,11 @@ export function NewsletterSignupForm() {
         autoComplete="email"
         inputMode="email"
         onInput={() => {
-          setState((current) => (current.invalidEmail ? initialState : current));
+          if (confirmationMessage) {
+            setConfirmationMessage("");
+          }
+
+          setState((current) => (current.status === "idle" ? current : initialState));
         }}
         required
       />
@@ -132,6 +141,14 @@ export function NewsletterSignupForm() {
           {state.message}
         </p>
       ) : null}
+      <FormConfirmationPopup
+        message={confirmationMessage}
+        onClose={() => {
+          setConfirmationMessage("");
+        }}
+        open={Boolean(confirmationMessage)}
+        title="Inscrição confirmada"
+      />
     </form>
   );
 }

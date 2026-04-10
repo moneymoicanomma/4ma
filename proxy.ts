@@ -32,9 +32,14 @@ export async function proxy(request: NextRequest) {
   const isAdminApi = pathname.startsWith("/api/admin");
   const isLoginPage = pathname === ADMIN_LOGIN_PATH;
   const isSessionRoute = pathname === "/api/admin/session";
+  const databaseConfigured = Boolean(process.env.DATABASE_URL?.trim());
   const config = getAdminAuthConfig();
 
   if (isSessionRoute) {
+    return NextResponse.next();
+  }
+
+  if (databaseConfigured) {
     return NextResponse.next();
   }
 

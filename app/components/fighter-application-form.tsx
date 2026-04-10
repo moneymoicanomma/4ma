@@ -8,6 +8,7 @@ import {
   type FighterApplicationPublicResponse
 } from "@/lib/contracts/fighter-application";
 
+import { FormConfirmationPopup } from "./form-confirmation-popup";
 import styles from "./fighter-application-form.module.css";
 
 type FormState = {
@@ -47,9 +48,11 @@ const specialtyLabel: Record<(typeof FIGHTER_SPECIALTIES)[number], string> = {
 export function FighterApplicationForm() {
   const [state, setState] = useState<FormState>(initialState);
   const [selectedSpecialty, setSelectedSpecialty] = useState<FighterSpecialty>(defaultSpecialty);
+  const [confirmationMessage, setConfirmationMessage] = useState("");
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    setConfirmationMessage("");
 
     const form = event.currentTarget;
     const formData = new FormData(form);
@@ -101,6 +104,7 @@ export function FighterApplicationForm() {
         status: "success",
         message: payload.message
       });
+      setConfirmationMessage(payload.message);
     } catch {
       setState({
         status: "error",
@@ -114,6 +118,10 @@ export function FighterApplicationForm() {
       aria-busy={state.status === "submitting"}
       className={styles.form}
       onInput={() => {
+        if (confirmationMessage) {
+          setConfirmationMessage("");
+        }
+
         setState((current) => (current.status === "idle" ? current : initialState));
       }}
       onSubmit={handleSubmit}
@@ -383,6 +391,14 @@ export function FighterApplicationForm() {
           </div>
         </section>
       </div>
+      <FormConfirmationPopup
+        message={confirmationMessage}
+        onClose={() => {
+          setConfirmationMessage("");
+        }}
+        open={Boolean(confirmationMessage)}
+        title="Inscrição recebida"
+      />
     </form>
   );
 }

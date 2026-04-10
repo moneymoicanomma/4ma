@@ -62,7 +62,10 @@ export type FantasyEntryPayload = {
   source: typeof FANTASY_ENTRY_SOURCE;
 };
 
-export type FantasyEntryPublicResponse = PublicMutationResponse;
+export type FantasyEntryPublicResponse = PublicMutationResponse & {
+  referenceCode?: string;
+  submittedAt?: string;
+};
 
 export type FantasyEntrantSummary = {
   id: string;

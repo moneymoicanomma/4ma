@@ -1,10 +1,19 @@
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
 import { AdminLogoutButton } from "@/app/components/admin-logout-button";
 import { FantasyAdminDashboard } from "@/app/components/fantasy-admin-dashboard";
 import { LandingMotionController } from "@/app/components/landing-motion-controller";
+import {
+  ADMIN_LOGIN_PATH,
+  ADMIN_SESSION_COOKIE_NAME
+} from "@/lib/admin/auth";
 import { FANTASY_SCORING_RULES, cloneFantasyMockEvents } from "@/lib/fantasy/mock-data";
+import { getSessionAccountFromToken } from "@/lib/server/auth-store";
+import { getServerEnv, isDatabaseConfigured } from "@/lib/server/env";
+import { loadFantasyEventsFromDatabase } from "@/lib/server/fantasy";
 
 import styles from "./page.module.css";
 
@@ -27,8 +36,34 @@ export const metadata: Metadata = {
   }
 };
 
-export default function FantasyAdminPage() {
-  const initialEvents = cloneFantasyMockEvents();
+export const dynamic = "force-dynamic";
+
+export default async function FantasyAdminPage() {
+  const env = getServerEnv();
+
+  if (isDatabaseConfigured(env)) {
+    const cookieStore = await cookies();
+    const sessionToken = cookieStore.get(ADMIN_SESSION_COOKIE_NAME)?.value;
+
+    if (!sessionToken) {
+      redirect(`${ADMIN_LOGIN_PATH}?next=/admin/fantasy`);
+    }
+
+    const session = await getSessionAccountFromToken({
+      acceptedRoles: ["admin", "operator"],
+      sessionKind: "backoffice",
+      sessionToken
+    }).catch(() => null);
+
+    if (!session) {
+      redirect(`${ADMIN_LOGIN_PATH}?next=/admin/fantasy`);
+    }
+  }
+
+  const databaseFantasy = await loadFantasyEventsFromDatabase(env);
+  const initialEvents =
+    databaseFantasy?.events.length ? databaseFantasy.events : cloneFantasyMockEvents();
+  const scoringRules = databaseFantasy?.scoringRules ?? FANTASY_SCORING_RULES;
 
   return (
     <main className={styles.page}>
@@ -87,7 +122,7 @@ export default function FantasyAdminPage() {
 
       <section className={styles.dashboardSection}>
         <div className={styles.dashboardShell} data-reveal>
-          <FantasyAdminDashboard initialEvents={initialEvents} scoringRules={FANTASY_SCORING_RULES} />
+          <FantasyAdminDashboard initialEvents={initialEvents} scoringRules={scoringRules} />
         </div>
       </section>
     </main>

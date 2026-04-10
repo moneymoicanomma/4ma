@@ -10,6 +10,7 @@ import {
   type PixKeyType
 } from "@/lib/contracts/event-fighter-intake";
 
+import { FormConfirmationPopup } from "./form-confirmation-popup";
 import styles from "./event-fighter-intake-form.module.css";
 
 type EventFighterIntakeFormProps = {
@@ -40,12 +41,14 @@ export function EventFighterIntakeForm({
   authenticatedEmail
 }: Readonly<EventFighterIntakeFormProps>) {
   const [state, setState] = useState<FormState>(initialState);
+  const [confirmationMessage, setConfirmationMessage] = useState("");
   const [hasHealthInsurance, setHasHealthInsurance] = useState<HealthInsuranceOption>(
     initialHealthInsuranceOption
   );
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    setConfirmationMessage("");
 
     const form = event.currentTarget;
     const formData = new FormData(form);
@@ -84,6 +87,7 @@ export function EventFighterIntakeForm({
         status: "success",
         message: payload.message
       });
+      setConfirmationMessage(payload.message);
     } catch {
       setState({
         status: "error",
@@ -97,6 +101,10 @@ export function EventFighterIntakeForm({
       aria-busy={state.status === "submitting"}
       className={styles.form}
       onInput={() => {
+        if (confirmationMessage) {
+          setConfirmationMessage("");
+        }
+
         setState((current) => (current.status === "idle" ? current : initialState));
       }}
       onSubmit={handleSubmit}
@@ -469,6 +477,14 @@ export function EventFighterIntakeForm({
           {state.message}
         </p>
       ) : null}
+      <FormConfirmationPopup
+        message={confirmationMessage}
+        onClose={() => {
+          setConfirmationMessage("");
+        }}
+        open={Boolean(confirmationMessage)}
+        title="Ficha enviada"
+      />
     </form>
   );
 }

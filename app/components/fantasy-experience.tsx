@@ -7,6 +7,7 @@ import {
   FANTASY_VICTORY_METHODS,
   findBrazilianStateSuggestions,
   parseFantasyEntry,
+  type FantasyEntryPublicResponse,
   type FantasyPickPayload,
   type FantasyRound
 } from "@/lib/contracts/fantasy";
@@ -16,6 +17,7 @@ import type {
   FantasyScoringRules
 } from "@/lib/fantasy/mock-data";
 
+import { FormConfirmationPopup } from "./form-confirmation-popup";
 import styles from "./fantasy-experience.module.css";
 
 type FantasyExperienceProps = {
@@ -26,7 +28,7 @@ type FantasyExperienceProps = {
 };
 
 type SubmissionState = {
-  status: "idle" | "success" | "error";
+  status: "idle" | "submitting" | "success" | "error";
   message: string;
 };
 
@@ -125,6 +127,12 @@ function fighterInitials(name: string) {
     .toUpperCase();
 }
 
+function looksLikeUuid(value: string) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+    value
+  );
+}
+
 function FighterPortrait({
   imageUrl,
   name,
@@ -161,6 +169,7 @@ export function FantasyExperience({
   const [submittedEntry, setSubmittedEntry] = useState<SubmittedEntry | null>(null);
   const [pickMap, setPickMap] = useState<Record<string, Partial<FantasyPickPayload>>>({});
   const [statePickerOpen, setStatePickerOpen] = useState(false);
+  const [confirmationMessage, setConfirmationMessage] = useState("");
 
   const deferredStateQuery = useDeferredValue(leadDraft.state);
   const stateSuggestions = findBrazilianStateSuggestions(deferredStateQuery, 7);
@@ -185,6 +194,10 @@ export function FantasyExperience({
     if (submissionState.status !== "idle") {
       setSubmissionState(initialSubmissionState);
     }
+
+    if (confirmationMessage) {
+      setConfirmationMessage("");
+    }
   }
 
   function updateFightPick(fightId: string, patch: Partial<FantasyPickPayload>) {
@@ -200,10 +213,15 @@ export function FantasyExperience({
     if (submissionState.status !== "idle") {
       setSubmissionState(initialSubmissionState);
     }
+
+    if (confirmationMessage) {
+      setConfirmationMessage("");
+    }
   }
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    setConfirmationMessage("");
 
     if (!picksOpen) {
       setSubmissionState({
@@ -259,11 +277,77 @@ export function FantasyExperience({
       return;
     }
 
+    const knownEntrant =
+      currentEvent.entries.some((entry) => entry.email === parsed.data.email) ||
+      submittedEntry?.email === parsed.data.email;
+    const entrantDelta = knownEntrant ? 0 : 1;
+
+    if (looksLikeUuid(currentEvent.id)) {
+      setSubmissionState({
+        status: "submitting",
+        message: "Enviando picks..."
+      });
+
+      try {
+        const response = await fetch("/api/fantasy/entries", {
+          method: "POST",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(parsed.data),
+          cache: "no-store"
+        });
+
+        const payload =
+          (await response.json().catch(() => null)) as FantasyEntryPublicResponse | null;
+
+        if (!response.ok || !payload?.ok) {
+          setSubmissionState({
+            status: "error",
+            message: payload?.message ?? "Não foi possível enviar seus picks agora."
+          });
+          return;
+        }
+
+        startTransition(() => {
+          if (entrantDelta > 0) {
+            setEntrantCount((current) => current + entrantDelta);
+          }
+
+          setSubmittedEntry({
+            referenceCode: payload.referenceCode ?? createReferenceCode(parsed.data.fullName),
+            submittedAt: payload.submittedAt ?? new Date().toISOString(),
+            fullName: parsed.data.fullName,
+            email: parsed.data.email,
+            whatsapp: parsed.data.whatsapp,
+            city: parsed.data.city,
+            state: parsed.data.state,
+            picks: parsed.data.picks
+          });
+          setSubmissionState({
+            status: "success",
+            message: payload.message
+          });
+        });
+      } catch {
+        setSubmissionState({
+          status: "error",
+          message: "Não foi possível enviar seus picks agora."
+        });
+      }
+
+      return;
+    }
+
     const referenceCode = createReferenceCode(parsed.data.fullName);
     const submittedAt = new Date().toISOString();
 
     startTransition(() => {
-      setEntrantCount((current) => current + 1);
+      if (entrantDelta > 0) {
+        setEntrantCount((current) => current + entrantDelta);
+      }
+
       setSubmittedEntry({
         referenceCode,
         submittedAt,
@@ -278,6 +362,9 @@ export function FantasyExperience({
         status: "success",
         message: "Picks enviados. Quando o resultado oficial entrar, o ranking sobe automaticamente."
       });
+      setConfirmationMessage(
+        "Picks enviados. Quando o resultado oficial entrar, o ranking sobe automaticamente."
+      );
     });
   }
 
@@ -572,8 +659,16 @@ export function FantasyExperience({
               </span>
             </label>
 
-            <button className={styles.submitButton} disabled={!picksOpen} type="submit">
-              {picksOpen ? "Enviar fantasy" : "Picks travados"}
+            <button
+              className={styles.submitButton}
+              disabled={!picksOpen || submissionState.status === "submitting"}
+              type="submit"
+            >
+              {submissionState.status === "submitting"
+                ? "Enviando..."
+                : picksOpen
+                  ? "Enviar fantasy"
+                  : "Picks travados"}
             </button>
 
             {submissionState.message ? (
@@ -717,6 +812,14 @@ export function FantasyExperience({
           </div>
         </section>
       </div>
+      <FormConfirmationPopup
+        message={confirmationMessage}
+        onClose={() => {
+          setConfirmationMessage("");
+        }}
+        open={Boolean(confirmationMessage)}
+        title="Picks confirmados"
+      />
     </form>
   );
 }

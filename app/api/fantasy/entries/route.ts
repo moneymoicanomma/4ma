@@ -1,12 +1,12 @@
 import { NextRequest } from "next/server";
 
 import {
-  parseFighterApplication,
-  type FighterApplicationPublicResponse
-} from "@/lib/contracts/fighter-application";
+  parseFantasyEntry,
+  type FantasyEntryPublicResponse
+} from "@/lib/contracts/fantasy";
 import { publicApiResponse } from "@/lib/server/api-response";
 import { getServerEnv } from "@/lib/server/env";
-import { submitFighterApplication } from "@/lib/server/fighter-application";
+import { submitFantasyEntry } from "@/lib/server/fantasy";
 import { buildRequestAuditContext } from "@/lib/server/request-context";
 import {
   getClientIdentifier,
@@ -19,11 +19,11 @@ import { takeRateLimitToken } from "@/lib/server/rate-limit";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const MAX_PUBLIC_MUTATION_BODY_BYTES = 64 * 1024;
+const MAX_PUBLIC_MUTATION_BODY_BYTES = 96 * 1024;
 
-const successPayload: FighterApplicationPublicResponse = {
+const successPayload: FantasyEntryPublicResponse = {
   ok: true,
-  message: "Inscrição recebida. Se fizer sentido para o card, a equipe entra em contato."
+  message: "Picks enviados. Quando o resultado oficial entrar, o ranking sobe automaticamente."
 };
 
 export async function POST(request: NextRequest) {
@@ -44,8 +44,8 @@ export async function POST(request: NextRequest) {
   }
 
   const requester = getClientIdentifier(request);
-  const rateLimit = takeRateLimitToken(`fighter-application:${requester}`, {
-    limit: 3,
+  const rateLimit = takeRateLimitToken(`fantasy-entry:${requester}`, {
+    limit: 4,
     windowMs: 10 * 60 * 1000
   });
 
@@ -84,7 +84,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const parsed = parseFighterApplication(requestBody.data);
+  const parsed = parseFantasyEntry(requestBody.data);
 
   if (!parsed.ok) {
     return publicApiResponse(
@@ -105,26 +105,37 @@ export async function POST(request: NextRequest) {
     });
   }
 
-  const result = await submitFighterApplication(parsed.data, buildRequestAuditContext(request), env);
+  try {
+    const payload = await submitFantasyEntry(parsed.data, buildRequestAuditContext(request), env);
 
-  if (!result.ok) {
-    const status = result.reason === "not_configured" ? 503 : 502;
+    if (!payload) {
+      return publicApiResponse(
+        {
+          ok: false,
+          message: "Serviço temporariamente indisponível. Tenta novamente daqui a pouco."
+        },
+        {
+          status: 503,
+          headers: corsHeaders ?? undefined
+        }
+      );
+    }
 
+    return publicApiResponse(payload, {
+      headers: corsHeaders ?? undefined
+    });
+  } catch {
     return publicApiResponse(
       {
         ok: false,
         message: "Serviço temporariamente indisponível. Tenta novamente daqui a pouco."
       },
       {
-        status,
+        status: 502,
         headers: corsHeaders ?? undefined
       }
     );
   }
-
-  return publicApiResponse(successPayload, {
-    headers: corsHeaders ?? undefined
-  });
 }
 
 export async function OPTIONS(request: NextRequest) {

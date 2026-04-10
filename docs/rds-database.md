@@ -211,6 +211,45 @@ Isso permite sair do modelo atual de senha compartilhada para atletas. A recomen
 7. Substituir o upstream atual pelos inserts/selects reais no Postgres.
 8. Migrar o login do portal de atleta e do admin para `app.accounts` + `app.auth_sessions`.
 
+## Env da aplicacao
+
+Com a integracao direta ativada no app, o caminho principal passa a ser:
+
+- `DATABASE_URL`
+- `DATABASE_POOL_MAX_CONNECTIONS`
+- `DATABASE_SSL_MODE`
+- `APP_ENCRYPTION_KEY`
+
+O ideal e que `DATABASE_URL` aponte para um login herdando pelo menos a role `mmmma_service`.
+Isso permite a aplicacao ler/escrever pelos fluxos atuais sem depender do upstream legado.
+
+Para o intake privado com fotos, alem do banco tambem existe dependencia de bucket S3-compatível:
+
+- `FIGHTER_PHOTOS_STORAGE_PROVIDER`
+- `FIGHTER_PHOTOS_S3_BUCKET`
+- `FIGHTER_PHOTOS_S3_REGION`
+- `FIGHTER_PHOTOS_S3_ENDPOINT` (opcional para R2/S3 compativel)
+- `FIGHTER_PHOTOS_S3_ACCESS_KEY_ID`
+- `FIGHTER_PHOTOS_S3_SECRET_ACCESS_KEY`
+- `FIGHTER_PHOTOS_S3_FORCE_PATH_STYLE`
+
+Observacoes praticas:
+
+- sem `DATABASE_URL`, os formularios publicos ainda podem cair no upstream legado se ele estiver configurado
+- sem bucket configurado, o intake de atleta nao consegue persistir as fotos no fluxo direto
+- sem `APP_ENCRYPTION_KEY`, CPF e Pix do intake nao podem ser gravados pelo schema atual
+
+## Seed de senha
+
+As contas em `app.accounts` esperam `password_hash` no formato scrypt usado pela aplicacao.
+Para gerar um hash compativel localmente:
+
+```bash
+npm run hash-password -- "sua-senha-forte"
+```
+
+Isso serve para popular contas `admin`, `operator` e `fighter` no seed inicial antes de testar login.
+
 ## Lacunas intencionais
 
 Algumas escolhas ficaram propositalmente fora desta primeira migration:

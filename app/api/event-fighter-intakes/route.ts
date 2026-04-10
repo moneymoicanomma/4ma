@@ -5,6 +5,7 @@ import {
   type EventFighterIntakePublicResponse
 } from "@/lib/contracts/event-fighter-intake";
 import { publicApiResponse } from "@/lib/server/api-response";
+import { getSessionAccountFromToken } from "@/lib/server/auth-store";
 import { submitEventFighterIntake } from "@/lib/server/event-fighter-intake";
 import {
   EVENT_FIGHTER_SESSION_COOKIE_NAME,
@@ -17,7 +18,8 @@ import {
   getPublicMutationCorsHeaders,
   isAllowedRequestOrigin
 } from "@/lib/server/request-guards";
-import { getServerEnv } from "@/lib/server/env";
+import { buildRequestAuditContext } from "@/lib/server/request-context";
+import { getServerEnv, isDatabaseConfigured } from "@/lib/server/env";
 import { takeRateLimitToken } from "@/lib/server/rate-limit";
 
 export const runtime = "nodejs";
@@ -61,27 +63,56 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const session = verifyEventFighterSessionToken(sessionToken, authConfig.sessionSecret);
+  let authenticatedAccountId: string | null = null;
+  let authenticatedEmail: string | null = null;
 
-  if (!session) {
-    return publicApiResponse(
-      {
-        ok: false,
-        message: "Sua sessão expirou. Faça login novamente para enviar a ficha."
-      },
-      {
-        status: 401,
-        headers: corsHeaders ?? undefined
-      }
+  if (isDatabaseConfigured(env)) {
+    const databaseSession = await getSessionAccountFromToken({
+      acceptedRoles: ["fighter"],
+      sessionKind: "fighter_portal",
+      sessionToken
+    }).catch(() => null);
+
+    authenticatedAccountId = databaseSession?.accountId ?? null;
+    authenticatedEmail = databaseSession?.email ?? null;
+  } else {
+    const session = verifyEventFighterSessionToken(sessionToken, authConfig.sessionSecret);
+
+    if (!session) {
+      return publicApiResponse(
+        {
+          ok: false,
+          message: "Sua sessão expirou. Faça login novamente para enviar a ficha."
+        },
+        {
+          status: 401,
+          headers: corsHeaders ?? undefined
+        }
+      );
+    }
+
+    const credentialFingerprint = createEventFighterCredentialFingerprint(
+      session.sub,
+      authConfig.password
     );
+
+    if (session.cf !== credentialFingerprint) {
+      return publicApiResponse(
+        {
+          ok: false,
+          message: "Sua sessão expirou. Faça login novamente para enviar a ficha."
+        },
+        {
+          status: 401,
+          headers: corsHeaders ?? undefined
+        }
+      );
+    }
+
+    authenticatedEmail = session.sub;
   }
 
-  const credentialFingerprint = createEventFighterCredentialFingerprint(
-    session.sub,
-    authConfig.password
-  );
-
-  if (session.cf !== credentialFingerprint) {
+  if (!authenticatedEmail) {
     return publicApiResponse(
       {
         ok: false,
@@ -135,7 +166,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const parsed = parseEventFighterIntakeFormData(formData, session.sub);
+  const parsed = parseEventFighterIntakeFormData(formData, authenticatedEmail);
 
   if (!parsed.ok) {
     return publicApiResponse(
@@ -156,7 +187,14 @@ export async function POST(request: NextRequest) {
     });
   }
 
-  const result = await submitEventFighterIntake(parsed.data, env);
+  const result = await submitEventFighterIntake(
+    parsed.data,
+    {
+      authenticatedAccountId,
+      requestContext: buildRequestAuditContext(request)
+    },
+    env
+  );
 
   if (!result.ok) {
     const status = result.reason === "not_configured" ? 503 : 502;

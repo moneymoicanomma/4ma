@@ -4,6 +4,7 @@ import { type FormEvent, useState } from "react";
 
 import type { PartnerInquiryPublicResponse } from "@/lib/contracts/partner-inquiry";
 
+import { FormConfirmationPopup } from "./form-confirmation-popup";
 import styles from "./partner-inquiry-form.module.css";
 
 type FormState = {
@@ -18,9 +19,11 @@ const initialState: FormState = {
 
 export function PartnerInquiryForm() {
   const [state, setState] = useState<FormState>(initialState);
+  const [confirmationMessage, setConfirmationMessage] = useState("");
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    setConfirmationMessage("");
 
     const form = event.currentTarget;
     const formData = new FormData(form);
@@ -65,6 +68,7 @@ export function PartnerInquiryForm() {
         status: "success",
         message: payload.message
       });
+      setConfirmationMessage(payload.message);
     } catch {
       setState({
         status: "error",
@@ -78,6 +82,10 @@ export function PartnerInquiryForm() {
       aria-busy={state.status === "submitting"}
       className={styles.form}
       onInput={() => {
+        if (confirmationMessage) {
+          setConfirmationMessage("");
+        }
+
         setState((current) => (current.status === "idle" ? current : initialState));
       }}
       onSubmit={handleSubmit}
@@ -227,6 +235,14 @@ export function PartnerInquiryForm() {
           </div>
         </section>
       </div>
+      <FormConfirmationPopup
+        message={confirmationMessage}
+        onClose={() => {
+          setConfirmationMessage("");
+        }}
+        open={Boolean(confirmationMessage)}
+        title="Contato enviado"
+      />
     </form>
   );
 }

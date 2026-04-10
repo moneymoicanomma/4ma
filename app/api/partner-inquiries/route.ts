@@ -7,6 +7,7 @@ import {
 import { publicApiResponse } from "@/lib/server/api-response";
 import { getServerEnv } from "@/lib/server/env";
 import { submitPartnerInquiry } from "@/lib/server/partner-inquiry";
+import { buildRequestAuditContext } from "@/lib/server/request-context";
 import {
   getClientIdentifier,
   getPublicMutationCorsHeaders,
@@ -104,7 +105,7 @@ export async function POST(request: NextRequest) {
     });
   }
 
-  const result = await submitPartnerInquiry(parsed.data, env);
+  const result = await submitPartnerInquiry(parsed.data, buildRequestAuditContext(request), env);
 
   if (!result.ok) {
     const status = result.reason === "not_configured" ? 503 : 502;

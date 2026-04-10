@@ -114,7 +114,7 @@ export function FantasyAdminDashboard({
   const [events, setEvents] = useState(initialEvents);
   const [selectedEventId, setSelectedEventId] = useState(getFantasyCurrentEvent(initialEvents).id);
   const [notice, setNotice] = useState(
-    "Interface do admin pronta para ligar nas APIs de evento, lutas e resultados."
+    "Leitura do fantasy já está ligada ao estado atual. A persistência do editor admin é o próximo passo."
   );
 
   const selectedEvent = events.find((event) => event.id === selectedEventId) ?? events[0];
@@ -259,7 +259,7 @@ export function FantasyAdminDashboard({
               type="button"
               onClick={() => {
                 setNotice(
-                  "Tudo o que está na tela já está pronto para ser persistido quando conectarmos as rotas admin."
+                  "Esta tela já ajuda a revisar o estado atual do fantasy. O save persistido do editor admin ainda é o próximo passo."
                 );
               }}
             >

@@ -4,6 +4,10 @@ import { NextRequest, NextResponse } from "next/server";
 
 import type { EventFighterSessionResponse } from "@/lib/contracts/event-fighter-session";
 import {
+  authenticateAccountWithPassword,
+  revokeSessionToken
+} from "@/lib/server/auth-store";
+import {
   EVENT_FIGHTER_ACCESS_PATH,
   EVENT_FIGHTER_SESSION_COOKIE_NAME,
   EVENT_FIGHTER_SESSION_MAX_AGE_SECONDS,
@@ -14,6 +18,8 @@ import {
   isValidEventFighterEmail,
   normalizeEventFighterEmail
 } from "@/lib/event-fighter/auth";
+import { getServerEnv, isDatabaseConfigured } from "@/lib/server/env";
+import { buildRequestAuditContext } from "@/lib/server/request-context";
 import {
   getClientIdentifier,
   readJsonRequestBody
@@ -59,6 +65,7 @@ function buildJsonResponse(payload: EventFighterSessionResponse, status = 200) {
 }
 
 export async function POST(request: NextRequest) {
+  const env = getServerEnv();
   const config = getEventFighterAuthConfig();
   const requester = getClientIdentifier(request);
   const rateLimit = takeRateLimitToken(`event-fighter-auth:${requester}`, {
@@ -125,6 +132,40 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  if (isDatabaseConfigured(env)) {
+    const authenticatedSession = await authenticateAccountWithPassword({
+      acceptedRoles: ["fighter"],
+      email,
+      password,
+      requestContext: buildRequestAuditContext(request),
+      sessionKind: "fighter_portal",
+      sessionMaxAgeSeconds: EVENT_FIGHTER_SESSION_MAX_AGE_SECONDS,
+      sessionMetadata: {
+        surface: "event-fighter-access"
+      }
+    }).catch(() => null);
+
+    if (authenticatedSession) {
+      const response = buildJsonResponse({
+        ok: true,
+        message: "Acesso liberado.",
+        redirectTo
+      });
+
+      response.cookies.set({
+        name: EVENT_FIGHTER_SESSION_COOKIE_NAME,
+        value: authenticatedSession.sessionToken,
+        httpOnly: true,
+        maxAge: EVENT_FIGHTER_SESSION_MAX_AGE_SECONDS,
+        path: "/",
+        sameSite: "lax",
+        secure: process.env.NODE_ENV === "production"
+      });
+
+      return response;
+    }
+  }
+
   if (!safeCompare(password, config.password)) {
     return buildJsonResponse(
       {
@@ -164,7 +205,16 @@ export async function POST(request: NextRequest) {
   return response;
 }
 
-export async function DELETE() {
+export async function DELETE(request: NextRequest) {
+  const env = getServerEnv();
+  const sessionToken = request.cookies.get(EVENT_FIGHTER_SESSION_COOKIE_NAME)?.value;
+
+  if (isDatabaseConfigured(env) && sessionToken) {
+    await revokeSessionToken(sessionToken).catch(() => {
+      // Clearing the cookie is more important than failing logout on a revoke race.
+    });
+  }
+
   const response = buildJsonResponse({
     ok: true,
     message: "Sessão encerrada.",

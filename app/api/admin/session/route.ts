@@ -4,6 +4,10 @@ import { NextRequest, NextResponse } from "next/server";
 
 import type { AdminSessionResponse } from "@/lib/contracts/admin-session";
 import {
+  authenticateAccountWithPassword,
+  revokeSessionToken
+} from "@/lib/server/auth-store";
+import {
   ADMIN_DEFAULT_REDIRECT_PATH,
   ADMIN_SESSION_COOKIE_NAME,
   ADMIN_SESSION_MAX_AGE_SECONDS,
@@ -12,6 +16,8 @@ import {
   getAdminAuthConfig,
   getSafeAdminRedirectPath
 } from "@/lib/admin/auth";
+import { getServerEnv, isDatabaseConfigured } from "@/lib/server/env";
+import { buildRequestAuditContext } from "@/lib/server/request-context";
 import {
   getClientIdentifier,
   readJsonRequestBody
@@ -29,7 +35,7 @@ type AdminSessionRequestBody = {
   next?: string;
 };
 
-function normalizeUsername(input: unknown) {
+function normalizeIdentifier(input: unknown) {
   return typeof input === "string" ? input.trim() : "";
 }
 
@@ -61,9 +67,11 @@ function buildJsonResponse(payload: AdminSessionResponse, status = 200) {
 }
 
 export async function POST(request: NextRequest) {
+  const env = getServerEnv();
   const config = getAdminAuthConfig();
+  const databaseConfigured = isDatabaseConfigured(env);
 
-  if (!config) {
+  if (!databaseConfigured && !config) {
     return buildJsonResponse(
       {
         ok: false,
@@ -111,11 +119,11 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const username = normalizeUsername(requestBody.data.username);
+  const identifier = normalizeIdentifier(requestBody.data.username);
   const password = normalizePassword(requestBody.data.password);
   const redirectTo = getSafeAdminRedirectPath(requestBody.data.next, ADMIN_DEFAULT_REDIRECT_PATH);
 
-  if (!username || !password) {
+  if (!identifier || !password) {
     return buildJsonResponse(
       {
         ok: false,
@@ -125,7 +133,62 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  if (!safeCompare(username, config.username) || !safeCompare(password, config.password)) {
+  if (databaseConfigured) {
+    const auditContext = buildRequestAuditContext(request);
+    const authenticatedSession = await authenticateAccountWithPassword({
+      acceptedRoles: ["admin", "operator"],
+      email: identifier.toLowerCase(),
+      password,
+      requestContext: auditContext,
+      sessionKind: "backoffice",
+      sessionMaxAgeSeconds: ADMIN_SESSION_MAX_AGE_SECONDS,
+      sessionMetadata: {
+        surface: "admin-login"
+      }
+    }).catch(() => null);
+
+    if (!authenticatedSession) {
+      if (!config) {
+        return buildJsonResponse(
+          {
+            ok: false,
+            message: "Credenciais inválidas."
+          },
+          401
+        );
+      }
+    } else {
+      const response = buildJsonResponse({
+        ok: true,
+        message: "Login realizado com sucesso.",
+        redirectTo
+      });
+
+      response.cookies.set({
+        name: ADMIN_SESSION_COOKIE_NAME,
+        value: authenticatedSession.sessionToken,
+        httpOnly: true,
+        maxAge: ADMIN_SESSION_MAX_AGE_SECONDS,
+        path: "/",
+        sameSite: "lax",
+        secure: process.env.NODE_ENV === "production"
+      });
+
+      return response;
+    }
+  }
+
+  if (!config) {
+    return buildJsonResponse(
+      {
+        ok: false,
+        message: "Autenticação do admin ainda não foi configurada no ambiente."
+      },
+      503
+    );
+  }
+
+  if (!safeCompare(identifier, config.username) || !safeCompare(password, config.password)) {
     return buildJsonResponse(
       {
         ok: false,
@@ -164,7 +227,16 @@ export async function POST(request: NextRequest) {
   return response;
 }
 
-export async function DELETE() {
+export async function DELETE(request: NextRequest) {
+  const env = getServerEnv();
+  const sessionToken = request.cookies.get(ADMIN_SESSION_COOKIE_NAME)?.value;
+
+  if (isDatabaseConfigured(env) && sessionToken) {
+    await revokeSessionToken(sessionToken).catch(() => {
+      // Clearing the cookie is more important than failing logout on a revoke race.
+    });
+  }
+
   const response = buildJsonResponse({
     ok: true,
     message: "Sessão encerrada.",

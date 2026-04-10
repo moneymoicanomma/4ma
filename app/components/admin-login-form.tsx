@@ -106,12 +106,12 @@ export function AdminLoginForm({ authConfigured }: Readonly<AdminLoginFormProps>
 
         <div className={styles.fieldGrid}>
           <label className={styles.field}>
-            <span>Usuário</span>
+            <span>Usuário ou email</span>
             <input
               autoComplete="username"
               disabled={!authConfigured || state.status === "submitting"}
               name="username"
-              placeholder="admin"
+              placeholder="admin ou admin@empresa.com"
               required
               type="text"
               value={username}

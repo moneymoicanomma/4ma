@@ -12,6 +12,7 @@ import {
   getFantasyCurrentEvent,
   getLatestFinishedFantasyEvent
 } from "@/lib/fantasy/mock-data";
+import { loadFantasyEventsFromDatabase } from "@/lib/server/fantasy";
 
 import styles from "./page.module.css";
 
@@ -31,11 +32,16 @@ export const metadata: Metadata = {
     "Monte seus picks por luta, escolha vencedor, método e round, e acompanhe o ranking oficial do fantasy do Money Moicano MMA."
 };
 
-export default function FantasyPage() {
-  const events = cloneFantasyMockEvents();
+export const dynamic = "force-dynamic";
+
+export default async function FantasyPage() {
+  const databaseFantasy = await loadFantasyEventsFromDatabase();
+  const events =
+    databaseFantasy?.events.length ? databaseFantasy.events : cloneFantasyMockEvents();
+  const scoringRules = databaseFantasy?.scoringRules ?? FANTASY_SCORING_RULES;
   const currentEvent = getFantasyCurrentEvent(events);
   const latestFinishedEvent = getLatestFinishedFantasyEvent(events);
-  const publishedLeaderboard = calculateFantasyLeaderboard(latestFinishedEvent);
+  const publishedLeaderboard = calculateFantasyLeaderboard(latestFinishedEvent, scoringRules);
   const resolvedFightCount = countFantasyOfficialResults(latestFinishedEvent);
 
   return (
@@ -128,7 +134,7 @@ export default function FantasyPage() {
             currentEvent={currentEvent}
             leaderboardEvent={latestFinishedEvent}
             leaderboardRows={publishedLeaderboard}
-            scoringRules={FANTASY_SCORING_RULES}
+            scoringRules={scoringRules}
           />
         </div>
       </section>

@@ -7,6 +7,8 @@ import { EventFighterAccessForm } from "@/app/components/event-fighter-access-fo
 import { EventFighterIntakeForm } from "@/app/components/event-fighter-intake-form";
 import { EventFighterLogoutButton } from "@/app/components/event-fighter-logout-button";
 import { LandingMotionController } from "@/app/components/landing-motion-controller";
+import { getSessionAccountFromToken } from "@/lib/server/auth-store";
+import { getServerEnv, isDatabaseConfigured } from "@/lib/server/env";
 import {
   EVENT_FIGHTER_SESSION_COOKIE_NAME,
   createEventFighterCredentialFingerprint,
@@ -38,13 +40,26 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 async function resolveAuthenticatedEmail() {
-  const authConfig = getEventFighterAuthConfig();
   const cookieStore = await cookies();
   const sessionToken = cookieStore.get(EVENT_FIGHTER_SESSION_COOKIE_NAME)?.value;
 
   if (!sessionToken) {
     return null;
   }
+
+  const env = getServerEnv();
+
+  if (isDatabaseConfigured(env)) {
+    const session = await getSessionAccountFromToken({
+      acceptedRoles: ["fighter"],
+      sessionKind: "fighter_portal",
+      sessionToken
+    }).catch(() => null);
+
+    return session?.email ?? null;
+  }
+
+  const authConfig = getEventFighterAuthConfig();
 
   const session = verifyEventFighterSessionToken(sessionToken, authConfig.sessionSecret);
 
@@ -163,8 +178,8 @@ export default async function AtletasDaEdicaoPage() {
                   <span className={styles.asideKicker}>Login rápido</span>
                   <h2 className={styles.asideTitle}>Primeiro valida o acesso.</h2>
                   <p className={styles.asideBody}>
-                    Entre com o email do atleta e a senha desta edição. Depois do login,
-                    a ficha completa abre logo abaixo e o envio fica protegido por sessão.
+                    Entre com o email do atleta e a senha da conta liberada pela equipe.
+                    Depois do login, a ficha completa abre logo abaixo e o envio fica protegido por sessão.
                   </p>
                 </div>
 

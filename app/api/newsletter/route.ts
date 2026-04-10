@@ -5,6 +5,7 @@ import type { PublicMutationResponse } from "@/lib/contracts/public-mutation";
 import { publicApiResponse } from "@/lib/server/api-response";
 import { getServerEnv } from "@/lib/server/env";
 import { subscribeToNewsletter } from "@/lib/server/newsletter";
+import { buildRequestAuditContext } from "@/lib/server/request-context";
 import {
   getClientIdentifier,
   getPublicMutationCorsHeaders,
@@ -105,7 +106,7 @@ export async function POST(request: NextRequest) {
     });
   }
 
-  const result = await subscribeToNewsletter(parsed.data, env);
+  const result = await subscribeToNewsletter(parsed.data, buildRequestAuditContext(request), env);
 
   if (!result.ok) {
     const status = result.reason === "not_configured" ? 503 : 502;
