@@ -18,6 +18,7 @@ export type ServerEnv = {
   upstreamApiBaseUrl: string | null;
   upstreamApiBearerToken: string | null;
   newsletterSubscribePath: string;
+  contactMessageSubmitPath: string;
   fighterApplicationSubmitPath: string;
   eventFighterIntakeSubmitPath: string;
   partnerInquirySubmitPath: string;
@@ -65,6 +66,10 @@ function createServerEnv(): ServerEnv {
     newsletterSubscribePath: normalizePath(
       process.env.UPSTREAM_NEWSLETTER_PATH ?? "",
       "/v1/newsletter/subscriptions"
+    ),
+    contactMessageSubmitPath: normalizePath(
+      process.env.UPSTREAM_CONTACT_MESSAGE_PATH ?? "",
+      "/v1/contact-messages"
     ),
     fighterApplicationSubmitPath: normalizePath(
       process.env.UPSTREAM_FIGHTER_APPLICATION_PATH ?? "",

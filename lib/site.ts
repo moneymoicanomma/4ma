@@ -48,12 +48,36 @@ export const publicSiteRoutes: PublicSiteRoute[] = [
     priority: 0.7
   },
   {
-    href: "/mapa-do-site",
-    title: "Mapa do site",
+    href: "/imprensa",
+    title: "Imprensa",
     description:
-      "Índice público com os acessos principais do Money Moicano MMA.",
+      "Cadastro da lista de imprensa para receber novidades, avisos e materiais oficiais do Money Moicano MMA.",
+    changeFrequency: "weekly",
+    priority: 0.7
+  },
+  {
+    href: "/contato",
+    title: "Contato",
+    description:
+      "Canal direto para enviar mensagens gerais à equipe do Money Moicano MMA.",
     changeFrequency: "monthly",
-    priority: 0.5
+    priority: 0.6
+  },
+  {
+    href: "/politica-de-privacidade",
+    title: "Política de privacidade",
+    description:
+      "Regras de coleta, uso e proteção de dados do site e dos formulários do Money Moicano MMA.",
+    changeFrequency: "monthly",
+    priority: 0.4
+  },
+  {
+    href: "/termos-de-uso",
+    title: "Termos de uso",
+    description:
+      "Condições de uso do site, formulários e materiais enviados ao Money Moicano MMA.",
+    changeFrequency: "monthly",
+    priority: 0.4
   }
 ];
 
@@ -83,5 +107,5 @@ export const homepageSectionLinks = [
 export const restrictedAreaNotes = [
   "A área privada dos atletas confirmados fica fora do índice público.",
   "As rotas administrativas do fantasy não entram em sitemap nem navegação aberta.",
-  "Endpoints de API e sessões operacionais ficam bloqueados para indexação."
+  "Endpoints de API, sessões operacionais e o mapa interno do site ficam bloqueados para indexação."
 ] as const;

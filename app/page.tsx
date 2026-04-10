@@ -11,7 +11,7 @@ const r2Asset = (fileName: string) =>
     .map((segment) => encodeURIComponent(segment))
     .join("/")}`;
 
-const heroImage = r2Asset("hero-main-v3.webp");
+const heroImage = r2Asset("hero-main-v4.webp");
 const brandLogo = r2Asset("logo money moicano mma.svg");
 const brandLogoWide = r2Asset("logo money moicano mma extenso.svg");
 const streamIcon = r2Asset("Video-Game-Logo-Streamplay--Streamline-Ultimate.svg");
@@ -121,6 +121,7 @@ const ticketTiers = [
   {
     label: "Pra quem tá liso",
     name: "VIP Fighting",
+    description: "Experiência VIP para ver a luta de perto e sentir a energia de cada golpe.",
     price: "R$ 300",
     features: ["Acesso ao setor pista", "Bares exclusivos", "Visão frontal"],
     buttonLabel: "Em breve",
@@ -129,6 +130,8 @@ const ticketTiers = [
   {
     label: "Pra quem tá rico e quer uma experiência f#d@",
     name: "VIP Networking",
+    description:
+      "Experiência VIP para assistir colado na grade, com visão privilegiada e acesso ao lounge exclusivo com empresários, influencers e lutadores.",
     price: "R$ 800",
     features: [
       "Cadeira ao lado da grade",
@@ -144,11 +147,10 @@ const ticketTiers = [
 
 const footerLinks = [
   { label: "Lute no MMMMA", href: "/lute-no-mmmma" },
-  { label: "Mapa do Site", href: "/mapa-do-site" },
-  { label: "Imprensa", href: "#" },
-  { label: "Termos de Uso", href: "#" },
-  { label: "Política de Privacidade", href: "#" },
-  { label: "Contato", href: "#" }
+  { label: "Imprensa", href: "/imprensa" },
+  { label: "Termos de Uso", href: "/termos-de-uso" },
+  { label: "Política de Privacidade", href: "/politica-de-privacidade" },
+  { label: "Contato", href: "/contato" }
 ];
 
 const socialLinks = [
@@ -490,6 +492,7 @@ export default function Home() {
 
                 <div className="ticket-card__price-block">
                   <h3 className="ticket-card__name">{tier.name}</h3>
+                  <p className="ticket-card__description">{tier.description}</p>
                   <p className="ticket-card__price">{tier.price}</p>
                 </div>
 

@@ -1,8 +1,13 @@
 export const NEWSLETTER_SOURCE = "money-moicano-landing";
+export const PRESS_NEWSLETTER_SOURCE = "money-moicano-imprensa";
+export const NEWSLETTER_SOURCES = [NEWSLETTER_SOURCE, PRESS_NEWSLETTER_SOURCE] as const;
+
+export type NewsletterSource = (typeof NEWSLETTER_SOURCES)[number];
 
 export type NewsletterSubscriptionPayload = {
   email: string;
-  source: typeof NEWSLETTER_SOURCE;
+  name: string;
+  source: NewsletterSource;
 };
 
 type NewsletterParseResult =
@@ -17,11 +22,16 @@ type NewsletterParseResult =
     };
 
 export const MAX_NEWSLETTER_EMAIL_LENGTH = 160;
+export const MAX_NEWSLETTER_NAME_LENGTH = 160;
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export function normalizeNewsletterEmail(input: unknown) {
   return typeof input === "string" ? input.trim().toLowerCase() : "";
+}
+
+export function normalizeNewsletterName(input: unknown) {
+  return typeof input === "string" ? input.trim().replace(/\s+/g, " ") : "";
 }
 
 export function isValidNewsletterEmail(email: string) {
@@ -32,6 +42,14 @@ export function isValidNewsletterEmail(email: string) {
   );
 }
 
+export function isValidNewsletterName(name: string) {
+  return name.length >= 2 && name.length <= MAX_NEWSLETTER_NAME_LENGTH;
+}
+
+function normalizeNewsletterSource(input: unknown): NewsletterSource {
+  return input === PRESS_NEWSLETTER_SOURCE ? PRESS_NEWSLETTER_SOURCE : NEWSLETTER_SOURCE;
+}
+
 export function parseNewsletterSubscription(input: unknown): NewsletterParseResult {
   if (typeof input !== "object" || input === null) {
     return { ok: false, message: "Corpo da requisição inválido." };
@@ -39,6 +57,8 @@ export function parseNewsletterSubscription(input: unknown): NewsletterParseResu
 
   const record = input as Record<string, unknown>;
   const email = normalizeNewsletterEmail(record.email);
+  const name = normalizeNewsletterName(record.name);
+  const source = normalizeNewsletterSource(record.source);
   const website = typeof record.website === "string" ? record.website.trim() : "";
 
   if (website) {
@@ -47,7 +67,8 @@ export function parseNewsletterSubscription(input: unknown): NewsletterParseResu
       honeypotTriggered: true,
       data: {
         email: "",
-        source: NEWSLETTER_SOURCE
+        name: "",
+        source
       }
     };
   }
@@ -59,12 +80,27 @@ export function parseNewsletterSubscription(input: unknown): NewsletterParseResu
     };
   }
 
+  if (name && !isValidNewsletterName(name)) {
+    return {
+      ok: false,
+      message: "Informe seu nome."
+    };
+  }
+
+  if (source === PRESS_NEWSLETTER_SOURCE && !isValidNewsletterName(name)) {
+    return {
+      ok: false,
+      message: "Informe seu nome."
+    };
+  }
+
   return {
     ok: true,
     honeypotTriggered: false,
     data: {
       email,
-      source: NEWSLETTER_SOURCE
+      name,
+      source
     }
   };
 }

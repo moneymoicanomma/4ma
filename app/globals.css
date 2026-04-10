@@ -927,6 +927,17 @@ section[id] {
   gap: 11px;
 }
 
+.ticket-card__description {
+  margin: 0;
+  max-width: 30ch;
+  color: rgba(229, 226, 225, 0.78);
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.45;
+  text-align: center;
+}
+
 .ticket-card__price {
   margin: 0;
   color: var(--text-strong);
@@ -959,6 +970,7 @@ section[id] {
 
 .ticket-card--featured .ticket-card__item,
 .ticket-card--featured .ticket-card__name,
+.ticket-card--featured .ticket-card__description,
 .ticket-card--featured .ticket-card__price {
   color: #ffffff;
 }

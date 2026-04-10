@@ -24,11 +24,15 @@ const heroImage = r2Asset("hero-main-v3.webp");
 const publicEntryPoints = publicSiteRoutes.filter((route) => route.href !== "/mapa-do-site");
 
 export const metadata: Metadata = {
-  title: "Mapa do Site | Money Moicano MMA",
+  title: "Mapa Interno do Site | Money Moicano MMA",
   description:
-    "Índice público com os principais acessos e seções navegáveis do Money Moicano MMA.",
+    "Índice interno com os acessos abertos e arquivos técnicos do Money Moicano MMA.",
   alternates: {
     canonical: "/mapa-do-site"
+  },
+  robots: {
+    index: false,
+    follow: false
   }
 };
 
@@ -71,20 +75,20 @@ export default function SiteMapPage() {
 
         <div className={styles.heroGrid}>
           <div className={styles.heroCopy} data-reveal>
-            <p className={styles.eyebrow}>Índice público do projeto</p>
+            <p className={styles.eyebrow}>Índice interno do projeto</p>
             <h1 className={styles.title}>
-              Mapa do
-              <span className={styles.titleAccent}>Site</span>
+              Mapa
+              <span className={styles.titleAccent}>Interno</span>
             </h1>
             <p className={styles.heroBody}>
-              Esta página concentra os acessos públicos do Money Moicano MMA para
-              facilitar navegação, descoberta de conteúdo e leitura do projeto por
-              pessoas e buscadores.
+              Esta área existe só para consulta interna rápida. Ela organiza os acessos
+              abertos e os arquivos técnicos sem expor esse índice na navegação pública
+              do site.
             </p>
 
             <div className={styles.heroActions}>
               <a className={styles.anchorLink} href="#paginas">
-                Abrir indice
+                Abrir índice
               </a>
               <Link className={styles.backLink} href="/#ingressos">
                 Ir para ingressos
@@ -115,8 +119,8 @@ export default function SiteMapPage() {
             </dl>
 
             <p className={styles.asideBody}>
-              Rotas privadas, operacionais e administrativas ficam fora deste mapa
-              para manter a indexação pública limpa.
+              Rotas privadas, operacionais e administrativas ficam fora da indexação
+              pública. Este mapa também não entra mais como atalho no footer.
             </p>
           </aside>
         </div>
@@ -171,11 +175,11 @@ export default function SiteMapPage() {
         <div className={styles.technicalGrid}>
           <div className={styles.technicalCopy} data-reveal>
             <p className={styles.sectionKicker}>Indexação técnica</p>
-            <h2 className={styles.sectionTitle}>Descoberta organizada para busca</h2>
+            <h2 className={styles.sectionTitle}>Indexação organizada sem expor o índice</h2>
             <p className={styles.technicalBody}>
-              O site agora expõe um mapa público visível, um <code>sitemap.xml</code> com
-              as rotas abertas e um <code>robots.txt</code> que bloqueia áreas privadas.
-              Isso deixa a navegação mais clara sem misturar público com operação interna.
+              O site mantém um <code>sitemap.xml</code> com as rotas abertas e um
+              <code>robots.txt</code> que bloqueia áreas privadas. Este índice serve só
+              como apoio interno e não entra na descoberta pública.
             </p>
             <p className={styles.technicalMeta}>Domínio canônico: {siteUrl}</p>
           </div>

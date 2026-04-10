@@ -1,14 +1,7 @@
 import "server-only";
 
-import {
-  NEWSLETTER_SOURCE,
-  PRESS_NEWSLETTER_SOURCE,
-  type NewsletterSubscriptionPayload
-} from "@/lib/contracts/newsletter";
-
-import {
-  withDatabaseTransaction
-} from "@/lib/server/database";
+import type { ContactMessagePayload } from "@/lib/contracts/contact-message";
+import { withDatabaseTransaction } from "@/lib/server/database";
 import {
   getServerEnv,
   isDatabaseConfigured,
@@ -18,23 +11,18 @@ import {
 import { postJsonToUpstream } from "@/lib/server/http";
 import type { RequestAuditContext } from "@/lib/server/request-context";
 
-type NewsletterSubscribeResult =
+type ContactMessageSubmitResult =
   | { ok: true }
   | {
       ok: false;
       reason: "not_configured" | "upstream_error";
     };
 
-export async function subscribeToNewsletter(
-  payload: NewsletterSubscriptionPayload,
+export async function submitContactMessage(
+  payload: ContactMessagePayload,
   requestContext: RequestAuditContext,
   env: ServerEnv = getServerEnv()
-): Promise<NewsletterSubscribeResult> {
-  const metadata = {
-    surface: payload.source === PRESS_NEWSLETTER_SOURCE ? "press-newsletter" : "newsletter-signup",
-    ...(payload.name ? { fullName: payload.name } : {})
-  };
-
+): Promise<ContactMessageSubmitResult> {
   if (isDatabaseConfigured(env)) {
     try {
       await withDatabaseTransaction(
@@ -49,8 +37,12 @@ export async function subscribeToNewsletter(
         async (transaction) => {
           await transaction.query(
             `
-              insert into app.newsletter_subscriptions (
+              insert into app.contact_messages (
+                recipient_email,
+                full_name,
                 email,
+                subject,
+                message,
                 source,
                 request_id,
                 request_origin,
@@ -58,40 +50,41 @@ export async function subscribeToNewsletter(
                 user_agent,
                 metadata
               )
-              values ($1, $2, $3, $4, $5, $6, $7::jsonb)
-              on conflict (email) do update
-              set
-                source = excluded.source,
-                status = 'subscribed',
-                request_id = excluded.request_id,
-                request_origin = excluded.request_origin,
-                request_ip_hash = excluded.request_ip_hash,
-                user_agent = excluded.user_agent,
-                metadata = app.newsletter_subscriptions.metadata || excluded.metadata,
-                unsubscribed_at = null,
-                updated_at = now()
+              values (
+                $1,
+                $2,
+                $3,
+                $4,
+                $5,
+                $6,
+                $7,
+                $8,
+                $9,
+                $10,
+                $11::jsonb
+              )
             `,
             [
+              payload.recipientEmail,
+              payload.fullName,
               payload.email,
+              payload.subject,
+              payload.message,
               payload.source,
               requestContext.requestId,
               requestContext.requestOrigin,
               requestContext.requestIpHash,
               requestContext.userAgent,
-              JSON.stringify(metadata)
+              JSON.stringify({
+                surface: "contact-page"
+              })
             ]
           );
         }
       );
 
       return { ok: true };
-    } catch (error) {
-      console.error("newsletter database insert failed", {
-        error,
-        email: payload.email,
-        requestId: requestContext.requestId
-      });
-
+    } catch {
       if (!isUpstreamConfigured(env)) {
         return {
           ok: false,
@@ -110,11 +103,8 @@ export async function subscribeToNewsletter(
 
   try {
     await postJsonToUpstream(
-      `${env.upstreamApiBaseUrl}${env.newsletterSubscribePath}`,
-      {
-        email: payload.email,
-        source: NEWSLETTER_SOURCE
-      },
+      `${env.upstreamApiBaseUrl}${env.contactMessageSubmitPath}`,
+      payload,
       {
         bearerToken: env.upstreamApiBearerToken!,
         timeoutMs: env.upstreamRequestTimeoutMs
@@ -122,13 +112,7 @@ export async function subscribeToNewsletter(
     );
 
     return { ok: true };
-  } catch (error) {
-    console.error("newsletter upstream request failed", {
-      error,
-      email: payload.email,
-      requestId: requestContext.requestId
-    });
-
+  } catch {
     return {
       ok: false,
       reason: "upstream_error"
