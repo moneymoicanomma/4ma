@@ -9,7 +9,7 @@
     "check": "npm run typecheck && npm run build",
     "dev": "next dev",
     "build": "next build",
-    "start": "next start -p 8080",
+    "start": "next start",
     "lint": "npm run typecheck",
     "hash-password": "node scripts/generate-password-hash.mjs",
     "typecheck": "next typegen && tsc --noEmit"
