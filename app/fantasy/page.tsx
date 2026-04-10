@@ -12,6 +12,7 @@ import {
   getFantasyCurrentEvent,
   getLatestFinishedFantasyEvent
 } from "@/lib/fantasy/mock-data";
+import { createPageMetadata } from "@/lib/seo";
 import { loadFantasyEventsFromDatabase } from "@/lib/server/fantasy";
 
 import styles from "./page.module.css";
@@ -26,11 +27,13 @@ const r2Asset = (fileName: string) =>
 const brandLogoWide = r2Asset("logo money moicano mma extenso.svg");
 const heroImage = r2Asset("luta-boa.webp");
 
-export const metadata: Metadata = {
+export const metadata: Metadata = createPageMetadata({
+  path: "/fantasy",
   title: "Fantasy | Money Moicano MMA",
   description:
-    "Monte seus picks por luta, escolha vencedor, método e round, e acompanhe o ranking oficial do fantasy do Money Moicano MMA."
-};
+    "Monte seus picks por luta, escolha vencedor, metodo e round, e acompanhe o ranking oficial do fantasy do Money Moicano MMA.",
+  keywords: ["fantasy card", "picks de luta", "ranking fantasy MMA"]
+});
 
 export const dynamic = "force-dynamic";
 

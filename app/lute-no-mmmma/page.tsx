@@ -4,6 +4,7 @@ import Link from "next/link";
 
 import { FighterApplicationForm } from "@/app/components/fighter-application-form";
 import { LandingMotionController } from "@/app/components/landing-motion-controller";
+import { createPageMetadata } from "@/lib/seo";
 
 import styles from "./page.module.css";
 
@@ -17,11 +18,13 @@ const r2Asset = (fileName: string) =>
 const brandLogoWide = r2Asset("logo money moicano mma extenso.svg");
 const heroImage = r2Asset("hero-lute.webp");
 
-export const metadata: Metadata = {
+export const metadata: Metadata = createPageMetadata({
+  path: "/lute-no-mmmma",
   title: "Lute no MMMMA | Money Moicano MMA",
   description:
-    "Formulário de inscrição para atletas que querem lutar no Money Moicano MMA."
-};
+    "Formulário oficial para atletas que querem entrar no radar do card do Money Moicano MMA e disputar vaga em uma próxima edicao.",
+  keywords: ["inscricao de atleta", "selecao de lutadores", "evento de MMA em Sao Paulo"]
+});
 
 export default function LuteNoMMMMA() {
   return (

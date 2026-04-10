@@ -31,6 +31,7 @@ const cornermanUrl = "https://cornerman.com.br/";
 const cabmmaUrl = "https://www.instagram.com/cab_mma/";
 const transmissionUrl = "https://www.youtube.com/@RenatoMoneyMoicano";
 const joyaGearUrl = "https://joyagear.com/";
+const fighterSignupUrl = "https://mma.moicano.tv/";
 
 const navItems = [
   { label: "O Evento", href: "#evento", sectionId: "evento" },
@@ -151,9 +152,17 @@ const footerLinks = [
 ];
 
 const socialLinks = [
-  { label: "X", href: "#", icon: xIcon },
-  { label: "Instagram", href: "#", icon: instagramIcon },
-  { label: "YouTube", href: "#", icon: youtubeIcon }
+  { label: "X", href: "https://x.com/MoneyMoicanoMMA", icon: xIcon },
+  {
+    label: "Instagram",
+    href: "https://www.instagram.com/moneymoicano.mma/",
+    icon: instagramIcon
+  },
+  {
+    label: "YouTube",
+    href: "https://www.youtube.com/@RenatoMoneyMoicano",
+    icon: youtubeIcon
+  }
 ];
 
 const partners = [
@@ -272,9 +281,8 @@ export default function Home() {
       <LandingTopbar
         brandLogo={brandLogo}
         navItems={navItems}
-        // Reativar o CTA da navbar quando o link oficial de ingressos estiver pronto.
-        // ctaHref="#ingressos"
-        // ctaLabel="Comprar Ingressos"
+        ctaHref={fighterSignupUrl}
+        ctaLabel="Lute na Rinha de Inscritos"
       />
 
       <section className="hero" data-nav-section="evento" id="evento">
@@ -625,7 +633,14 @@ export default function Home() {
 
           <div className="footer__social" aria-label="Redes sociais">
             {socialLinks.map((item) => (
-              <a className="footer__social-link" href={item.href} key={item.label}>
+              <a
+                className="footer__social-link"
+                href={item.href}
+                key={item.label}
+                target="_blank"
+                rel="noreferrer"
+                aria-label={item.label}
+              >
                 <AssetImage src={item.icon} alt={item.label} />
               </a>
             ))}

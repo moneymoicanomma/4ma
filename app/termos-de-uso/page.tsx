@@ -1,14 +1,14 @@
 import type { Metadata } from "next";
 
 import { SitePageShell } from "@/app/components/site-page-shell";
+import { createPageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = createPageMetadata({
+  path: "/termos-de-uso",
   title: "Termos de Uso | Money Moicano MMA",
-  description: "Termos de uso do site e dos formulários públicos do Money Moicano MMA.",
-  alternates: {
-    canonical: "/termos-de-uso"
-  }
-};
+  description: "Termos de uso do site e dos formularios publicos do Money Moicano MMA.",
+  keywords: ["termos de uso", "regras do site", "condicoes de uso"]
+});
 
 export default function TermosDeUsoPage() {
   return (

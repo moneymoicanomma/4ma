@@ -1,16 +1,9 @@
 import type { Metadata, Viewport } from "next";
-import { siteUrl } from "@/lib/site";
+import { rootMetadata, siteStructuredData } from "@/lib/seo";
 
 import "./globals.css";
 
-export const metadata: Metadata = {
-  metadataBase: new URL(siteUrl),
-  title: "Money Moicano MMA",
-  description: "Landing page do evento Money Moicano MMA.",
-  icons: {
-    icon: "/favicon.svg"
-  }
-};
+export const metadata: Metadata = rootMetadata;
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -30,6 +23,12 @@ export default function RootLayout({
         <link rel="preconnect" href="https://use.typekit.net" />
         <link rel="preconnect" href="https://p.typekit.net" crossOrigin="anonymous" />
         <link rel="stylesheet" href="https://use.typekit.net/wrq6fdd.css" />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(siteStructuredData)
+          }}
+          type="application/ld+json"
+        />
       </head>
       <body>{children}</body>
     </html>

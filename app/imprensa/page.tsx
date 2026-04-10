@@ -2,15 +2,15 @@ import type { Metadata } from "next";
 
 import { PressNewsletterForm } from "@/app/components/press-newsletter-form";
 import { SitePageShell } from "@/app/components/site-page-shell";
+import { createPageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = createPageMetadata({
+  path: "/imprensa",
   title: "Imprensa | Money Moicano MMA",
   description:
-    "Cadastro da lista de imprensa do Money Moicano MMA para receber avisos, materiais e novidades oficiais.",
-  alternates: {
-    canonical: "/imprensa"
-  }
-};
+    "Cadastro da lista de imprensa do Money Moicano MMA para receber releases, avisos de credenciamento e materiais oficiais.",
+  keywords: ["credenciamento de imprensa", "release de MMA", "newsletter de imprensa"]
+});
 
 export default function ImprensaPage() {
   return (

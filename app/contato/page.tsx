@@ -2,15 +2,15 @@ import type { Metadata } from "next";
 
 import { ContactForm } from "@/app/components/contact-form";
 import { SitePageShell } from "@/app/components/site-page-shell";
+import { createPageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = createPageMetadata({
+  path: "/contato",
   title: "Contato | Money Moicano MMA",
   description:
-    "Canal de contato geral para mensagens enviadas à equipe do Money Moicano MMA.",
-  alternates: {
-    canonical: "/contato"
-  }
-};
+    "Canal oficial de contato do Money Moicano MMA para duvidas, mensagens gerais, oportunidades e alinhamentos com a equipe.",
+  keywords: ["contato Money Moicano MMA", "falar com a equipe", "contato evento MMA"]
+});
 
 export default function ContatoPage() {
   return (

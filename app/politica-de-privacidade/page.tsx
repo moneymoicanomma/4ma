@@ -1,15 +1,15 @@
 import type { Metadata } from "next";
 
 import { SitePageShell } from "@/app/components/site-page-shell";
+import { createPageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = createPageMetadata({
+  path: "/politica-de-privacidade",
   title: "Política de Privacidade | Money Moicano MMA",
   description:
-    "Política de privacidade e regras de tratamento de dados do site Money Moicano MMA.",
-  alternates: {
-    canonical: "/politica-de-privacidade"
-  }
-};
+    "Politica de privacidade e regras de tratamento de dados do site oficial do Money Moicano MMA.",
+  keywords: ["privacidade", "tratamento de dados", "LGPD evento"]
+});
 
 export default function PoliticaDePrivacidadePage() {
   return (

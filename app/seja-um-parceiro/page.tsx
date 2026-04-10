@@ -4,6 +4,7 @@ import Link from "next/link";
 
 import { PartnerInquiryForm } from "@/app/components/partner-inquiry-form";
 import { LandingMotionController } from "@/app/components/landing-motion-controller";
+import { createPageMetadata } from "@/lib/seo";
 
 import styles from "./page.module.css";
 
@@ -17,11 +18,13 @@ const r2Asset = (fileName: string) =>
 const brandLogoWide = r2Asset("logo money moicano mma extenso.svg");
 const heroImage = r2Asset("hero-main-v3.webp");
 
-export const metadata: Metadata = {
+export const metadata: Metadata = createPageMetadata({
+  path: "/seja-um-parceiro",
   title: "Seja um parceiro | Money Moicano MMA",
   description:
-    "Formulário comercial para marcas e empresas interessadas em parceria com o Money Moicano MMA."
-};
+    "Canal comercial para marcas e empresas interessadas em patrocinio, ativacoes e parceria com o Money Moicano MMA.",
+  keywords: ["patrocinio esportivo", "parceria comercial", "ativacao de marca em evento"]
+});
 
 export default function SejaUmParceiroPage() {
   return (

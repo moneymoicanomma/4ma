@@ -1,6 +1,23 @@
 import type { MetadataRoute } from "next";
 
+export const siteName = "Money Moicano MMA";
 export const siteUrl = "https://moneymoicanomma.com.br";
+export const siteDescription =
+  "Evento oficial do Money Moicano MMA com card de lutas, transmissao ao vivo, fantasy card, inscricao de atletas, imprensa e parcerias.";
+export const siteLocale = "pt_BR";
+export const siteLanguage = "pt-BR";
+export const defaultOgImagePath = "/opengraph-image";
+export const contactEmail = "contato@moneymoicanomma.com.br";
+export const xHandle = "@MoneyMoicanoMMA";
+export const siteSocialProfiles = [
+  "https://x.com/MoneyMoicanoMMA",
+  "https://www.instagram.com/moneymoicano.mma/",
+  "https://www.youtube.com/@RenatoMoneyMoicano"
+] as const;
+export const eventDateIso = "2026-05-23";
+export const eventDateLabel = "23 de maio de 2026";
+export const eventLocationName = "Cornerman";
+export const eventLocationCity = "Sao Paulo";
 
 type SitemapChangeFrequency = NonNullable<
   MetadataRoute.Sitemap[number]["changeFrequency"]

@@ -1213,6 +1213,11 @@ section[id] {
   object-fit: contain;
 }
 
+.partner-logo--cabmma img {
+  transform: scale(1.14);
+  transform-origin: center;
+}
+
 .transmission-tile:hover,
 .transmission-tile:focus-within,
 .caster-card:hover,
