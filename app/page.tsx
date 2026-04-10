@@ -20,6 +20,7 @@ const stadiumIcon = r2Asset("Stadium-Classic-2--Streamline-Ultimate.svg");
 const microphoneIcon = r2Asset("Microphone-Podcast-2--Streamline-Ultimate.svg");
 const cornermanIcon = r2Asset("cornerman.svg");
 const cornermanSloganLogo = r2Asset("cornerman - slogan.svg");
+const cabmmaLogo = r2Asset("cabmma.svg");
 const joyaGearLogo = r2Asset("joyagear.svg");
 const instagramIcon = r2Asset("instagram_logo.svg");
 const youtubeIcon = r2Asset("youtube_logo.svg");
@@ -27,6 +28,7 @@ const xIcon = r2Asset("x_logo.svg.svg");
 const ticketBackgroundImage = r2Asset("ingressos-bg.webp");
 const transmissionOverlayImage = "https://moneymoicanomma.com.br/transmissao-overlay.webp";
 const cornermanUrl = "https://cornerman.com.br/";
+const cabmmaUrl = "https://www.instagram.com/cab_mma/";
 const transmissionUrl = "https://www.youtube.com/@RenatoMoneyMoicano";
 const joyaGearUrl = "https://joyagear.com/";
 
@@ -123,7 +125,7 @@ const ticketTiers = [
     name: "VIP Fighting",
     description: "Experiência VIP para ver a luta de perto e sentir a energia de cada golpe.",
     price: "R$ 300",
-    features: ["Acesso ao setor pista", "Bares exclusivos", "Visão frontal"],
+    features: [],
     buttonLabel: "Em breve",
     comingSoon: true
   },
@@ -133,12 +135,7 @@ const ticketTiers = [
     description:
       "Experiência VIP para assistir colado na grade, com visão privilegiada e acesso ao lounge exclusivo com empresários, influencers e lutadores.",
     price: "R$ 800",
-    features: [
-      "Cadeira ao lado da grade",
-      "Open bar (cerveja & água)",
-      "Kit Moicano exclusivo",
-      "Entrada sem fila"
-    ],
+    features: [],
     buttonLabel: "Em breve",
     comingSoon: true,
     featured: true
@@ -165,6 +162,12 @@ const partners = [
     logo: cornermanSloganLogo,
     href: cornermanUrl,
     className: "partner-logo partner-logo--cornerman"
+  },
+  {
+    name: "CABMMA",
+    logo: cabmmaLogo,
+    href: cabmmaUrl,
+    className: "partner-logo partner-logo--cabmma"
   },
   {
     name: "Joya Gear",
@@ -496,13 +499,15 @@ export default function Home() {
                   <p className="ticket-card__price">{tier.price}</p>
                 </div>
 
-                <ul className="ticket-card__list">
-                  {tier.features.map((feature) => (
-                    <li className="ticket-card__item" key={feature}>
-                      {feature}
-                    </li>
-                  ))}
-                </ul>
+                {tier.features.length ? (
+                  <ul className="ticket-card__list">
+                    {tier.features.map((feature) => (
+                      <li className="ticket-card__item" key={feature}>
+                        {feature}
+                      </li>
+                    ))}
+                  </ul>
+                ) : null}
 
                 {/* Reativar o botão com o link oficial de ingressos aqui quando ele existir. */}
                 {tier.comingSoon ? (

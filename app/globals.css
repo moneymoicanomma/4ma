@@ -384,8 +384,8 @@ section[id] {
 
 .hero__image-shell {
   position: absolute;
-  top: -85px;
-  left: 237px;
+  top: -96px;
+  left: 252px;
   width: 1273px;
   height: 849px;
 }
@@ -1646,8 +1646,8 @@ section[id] {
   }
 
   .hero__image-shell {
-    top: -10px;
-    left: 42%;
+    top: -24px;
+    left: 43.5%;
     width: 920px;
     height: 100%;
   }
@@ -2255,7 +2255,7 @@ section[id] {
 
   .hero__image {
     transform: none;
-    object-position: 68% center;
+    object-position: 66% 42%;
   }
 
   .hero__scrim {
