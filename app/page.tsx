@@ -26,6 +26,9 @@ const youtubeIcon = r2Asset("youtube_logo.svg");
 const xIcon = r2Asset("x_logo.svg.svg");
 const ticketBackgroundImage = r2Asset("ingressos-bg.webp");
 const transmissionOverlayImage = "https://moneymoicanomma.com.br/transmissao-overlay.webp";
+const cornermanUrl = "https://cornerman.com.br/";
+const transmissionUrl = "https://www.youtube.com/@RenatoMoneyMoicano";
+const joyaGearUrl = "https://joyagear.com/";
 
 const navItems = [
   { label: "O Evento", href: "#evento", sectionId: "evento" },
@@ -37,8 +40,17 @@ const navItems = [
 
 const eventFacts = [
   { label: "Data do Evento", value: "23 Maio 2026" },
-  { label: "Localização", value: "Cornerman, São Paulo", icon: cornermanIcon },
-  { label: "Transmissão", value: "Canal Money Moicano" }
+  {
+    label: "Localização",
+    value: "Cornerman, São Paulo",
+    icon: cornermanIcon,
+    href: cornermanUrl
+  },
+  {
+    label: "Transmissão",
+    value: "Canal Money Moicano",
+    href: transmissionUrl
+  }
 ];
 
 const featureCards = [
@@ -149,11 +161,13 @@ const partners = [
   {
     name: "Cornerman",
     logo: cornermanSloganLogo,
+    href: cornermanUrl,
     className: "partner-logo partner-logo--cornerman"
   },
   {
     name: "Joya Gear",
     logo: joyaGearLogo,
+    href: joyaGearUrl,
     className: "partner-logo partner-logo--joyagear"
   }
 ];
@@ -298,15 +312,34 @@ export default function Home() {
         <div className="event-bar" data-reveal>
           <div className="event-bar__facts" data-rail>
             {eventFacts.map((fact) => (
-              <div className="event-fact" data-rail-item key={fact.label}>
-                <span className="event-fact__label">{fact.label}</span>
-                <span className="event-fact__value">
-                  {fact.icon ? (
-                    <AssetImage className="event-fact__value-icon" lazy={false} src={fact.icon} alt="" />
-                  ) : null}
-                  <span>{fact.value}</span>
-                </span>
-              </div>
+              fact.href ? (
+                <a
+                  className="event-fact event-fact--link"
+                  data-rail-item
+                  href={fact.href}
+                  key={fact.label}
+                  rel="noreferrer"
+                  target="_blank"
+                >
+                  <span className="event-fact__label">{fact.label}</span>
+                  <span className="event-fact__value">
+                    {fact.icon ? (
+                      <AssetImage className="event-fact__value-icon" lazy={false} src={fact.icon} alt="" />
+                    ) : null}
+                    <span>{fact.value}</span>
+                  </span>
+                </a>
+              ) : (
+                <div className="event-fact" data-rail-item key={fact.label}>
+                  <span className="event-fact__label">{fact.label}</span>
+                  <span className="event-fact__value">
+                    {fact.icon ? (
+                      <AssetImage className="event-fact__value-icon" lazy={false} src={fact.icon} alt="" />
+                    ) : null}
+                    <span>{fact.value}</span>
+                  </span>
+                </div>
+              )
             ))}
           </div>
 
@@ -552,9 +585,16 @@ export default function Home() {
 
         <div className="partners-row" aria-label="Parceiros do evento" data-reveal>
           {partners.map((partner) => (
-            <div className={partner.className} data-reveal key={partner.name}>
+            <a
+              className={partner.className}
+              data-reveal
+              href={partner.href}
+              key={partner.name}
+              rel="noreferrer"
+              target="_blank"
+            >
               <AssetImage src={partner.logo} alt={partner.name} />
-            </div>
+            </a>
           ))}
         </div>
 

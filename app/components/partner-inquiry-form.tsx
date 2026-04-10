@@ -5,6 +5,7 @@ import { type FormEvent, useState } from "react";
 import type { PartnerInquiryPublicResponse } from "@/lib/contracts/partner-inquiry";
 
 import { FormConfirmationPopup } from "./form-confirmation-popup";
+import { TurnstileWidget } from "./turnstile-widget";
 import styles from "./partner-inquiry-form.module.css";
 
 type FormState = {
@@ -20,6 +21,9 @@ const initialState: FormState = {
 export function PartnerInquiryForm() {
   const [state, setState] = useState<FormState>(initialState);
   const [confirmationMessage, setConfirmationMessage] = useState("");
+  const [turnstileToken, setTurnstileToken] = useState("");
+  const [turnstileResetSignal, setTurnstileResetSignal] = useState(0);
+  const turnstileEnabled = Boolean(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY?.trim());
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -27,6 +31,14 @@ export function PartnerInquiryForm() {
 
     const form = event.currentTarget;
     const formData = new FormData(form);
+
+    if (turnstileEnabled && !turnstileToken) {
+      setState({
+        status: "error",
+        message: "Confirme que você é humano antes de enviar."
+      });
+      return;
+    }
 
     setState({
       status: "submitting",
@@ -48,7 +60,8 @@ export function PartnerInquiryForm() {
           phone: String(formData.get("phone") ?? ""),
           companyProfile: String(formData.get("companyProfile") ?? ""),
           partnershipIntent: String(formData.get("partnershipIntent") ?? ""),
-          website: String(formData.get("website") ?? "")
+          website: String(formData.get("website") ?? ""),
+          turnstileToken
         }),
         cache: "no-store"
       });
@@ -64,6 +77,8 @@ export function PartnerInquiryForm() {
       }
 
       form.reset();
+      setTurnstileToken("");
+      setTurnstileResetSignal((current) => current + 1);
       setState({
         status: "success",
         message: payload.message
@@ -203,6 +218,15 @@ export function PartnerInquiryForm() {
 
         <section className={styles.section}>
           <div className={styles.finalPanel}>
+            <TurnstileWidget
+              errorMessage={
+                state.status === "error" && state.message === "Confirme que você é humano antes de enviar."
+                  ? state.message
+                  : undefined
+              }
+              onTokenChange={setTurnstileToken}
+              resetSignal={turnstileResetSignal}
+            />
             <input
               aria-hidden="true"
               autoComplete="off"
@@ -213,7 +237,11 @@ export function PartnerInquiryForm() {
             />
 
             <div className={styles.actions}>
-              <button className={styles.button} disabled={state.status === "submitting"} type="submit">
+              <button
+                className={styles.button}
+                disabled={state.status === "submitting" || (turnstileEnabled && !turnstileToken)}
+                type="submit"
+              >
                 {state.status === "submitting" ? "Enviando..." : "Enviar contato"}
               </button>
 

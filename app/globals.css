@@ -567,6 +567,25 @@ section[id] {
   object-fit: contain;
 }
 
+.event-fact--link {
+  color: inherit;
+  text-decoration: none;
+  transition:
+    opacity 180ms ease,
+    transform 180ms ease;
+}
+
+.event-fact--link:hover,
+.event-fact--link:focus-visible {
+  opacity: 1;
+  transform: translateY(-2px);
+}
+
+.event-fact--link:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.44);
+  outline-offset: 8px;
+}
+
 .event-bar__icon {
   width: 32px;
   height: 32px;
@@ -1165,7 +1184,9 @@ section[id] {
   width: min(100%, 220px);
   min-width: 180px;
   min-height: 88px;
+  color: inherit;
   opacity: 0.82;
+  text-decoration: none;
   transition:
     transform 220ms var(--motion-ease-soft),
     opacity 220ms ease,

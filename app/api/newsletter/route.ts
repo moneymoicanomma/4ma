@@ -13,6 +13,7 @@ import {
   readJsonRequestBody
 } from "@/lib/server/request-guards";
 import { takeRateLimitToken } from "@/lib/server/rate-limit";
+import { verifyTurnstileToken } from "@/lib/server/turnstile";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -85,6 +86,32 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  const requestContext = buildRequestAuditContext(request);
+  const requestData = requestBody.data as Record<string, unknown>;
+  const turnstileToken =
+    typeof requestData.turnstileToken === "string" ? requestData.turnstileToken : "";
+  const turnstileResult = await verifyTurnstileToken(
+    turnstileToken,
+    {
+      clientIp: requestContext.clientIp,
+      requestId: requestContext.requestId
+    },
+    env
+  );
+
+  if (!turnstileResult.ok && turnstileResult.reason !== "not_configured") {
+    return publicApiResponse(
+      {
+        ok: false,
+        message: "Confirme que você é humano antes de enviar."
+      },
+      {
+        status: 400,
+        headers: corsHeaders ?? undefined
+      }
+    );
+  }
+
   const parsed = parseNewsletterSubscription(requestBody.data);
 
   if (!parsed.ok) {
@@ -106,7 +133,7 @@ export async function POST(request: NextRequest) {
     });
   }
 
-  const result = await subscribeToNewsletter(parsed.data, buildRequestAuditContext(request), env);
+  const result = await subscribeToNewsletter(parsed.data, requestContext, env);
 
   if (!result.ok) {
     const status = result.reason === "not_configured" ? 503 : 502;

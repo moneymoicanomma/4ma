@@ -9,6 +9,7 @@ import {
 import type { PublicMutationResponse } from "@/lib/contracts/public-mutation";
 
 import { FormConfirmationPopup } from "./form-confirmation-popup";
+import { TurnstileWidget } from "./turnstile-widget";
 
 type FormState = {
   invalidEmail: boolean;
@@ -25,6 +26,9 @@ const initialState: FormState = {
 export function NewsletterSignupForm() {
   const [state, setState] = useState<FormState>(initialState);
   const [confirmationMessage, setConfirmationMessage] = useState("");
+  const [turnstileToken, setTurnstileToken] = useState("");
+  const [turnstileResetSignal, setTurnstileResetSignal] = useState(0);
+  const turnstileEnabled = Boolean(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY?.trim());
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -34,6 +38,15 @@ export function NewsletterSignupForm() {
     const formData = new FormData(form);
     const email = normalizeNewsletterEmail(formData.get("email"));
     const website = String(formData.get("website") ?? "");
+
+    if (turnstileEnabled && !turnstileToken) {
+      setState({
+        invalidEmail: false,
+        status: "error",
+        message: "Confirme que você é humano antes de enviar."
+      });
+      return;
+    }
 
     if (!isValidNewsletterEmail(email)) {
       setState({
@@ -59,7 +72,8 @@ export function NewsletterSignupForm() {
         },
         body: JSON.stringify({
           email,
-          website
+          website,
+          turnstileToken
         }),
         cache: "no-store"
       });
@@ -76,6 +90,8 @@ export function NewsletterSignupForm() {
       }
 
       form.reset();
+      setTurnstileToken("");
+      setTurnstileResetSignal((current) => current + 1);
       setState({
         invalidEmail: false,
         status: "success",
@@ -124,11 +140,20 @@ export function NewsletterSignupForm() {
       />
       <button
         className="newsletter-form__button"
-        disabled={state.status === "submitting"}
+        disabled={state.status === "submitting" || (turnstileEnabled && !turnstileToken)}
         type="submit"
       >
         {state.status === "submitting" ? "Enviando..." : "Inscrever-se"}
       </button>
+      <TurnstileWidget
+        errorMessage={
+          state.status === "error" && state.message === "Confirme que você é humano antes de enviar."
+            ? state.message
+            : undefined
+        }
+        onTokenChange={setTurnstileToken}
+        resetSignal={turnstileResetSignal}
+      />
       {state.message ? (
         <p
           aria-live="polite"

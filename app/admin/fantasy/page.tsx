@@ -8,7 +8,8 @@ import { FantasyAdminDashboard } from "@/app/components/fantasy-admin-dashboard"
 import { LandingMotionController } from "@/app/components/landing-motion-controller";
 import {
   ADMIN_LOGIN_PATH,
-  ADMIN_SESSION_COOKIE_NAME
+  ADMIN_SESSION_COOKIE_NAME,
+  resolveAdminSessionIdentity
 } from "@/lib/admin/auth";
 import { FANTASY_SCORING_RULES, cloneFantasyMockEvents } from "@/lib/fantasy/mock-data";
 import { getSessionAccountFromToken } from "@/lib/server/auth-store";
@@ -40,15 +41,14 @@ export const dynamic = "force-dynamic";
 
 export default async function FantasyAdminPage() {
   const env = getServerEnv();
+  const cookieStore = await cookies();
+  const sessionToken = cookieStore.get(ADMIN_SESSION_COOKIE_NAME)?.value;
+
+  if (!sessionToken) {
+    redirect(`${ADMIN_LOGIN_PATH}?next=/admin/fantasy`);
+  }
 
   if (isDatabaseConfigured(env)) {
-    const cookieStore = await cookies();
-    const sessionToken = cookieStore.get(ADMIN_SESSION_COOKIE_NAME)?.value;
-
-    if (!sessionToken) {
-      redirect(`${ADMIN_LOGIN_PATH}?next=/admin/fantasy`);
-    }
-
     const session = await getSessionAccountFromToken({
       acceptedRoles: ["admin", "operator"],
       sessionKind: "backoffice",
@@ -56,7 +56,11 @@ export default async function FantasyAdminPage() {
     }).catch(() => null);
 
     if (!session) {
-      redirect(`${ADMIN_LOGIN_PATH}?next=/admin/fantasy`);
+      const fallbackSession = await resolveAdminSessionIdentity(sessionToken);
+
+      if (!fallbackSession) {
+        redirect(`${ADMIN_LOGIN_PATH}?next=/admin/fantasy`);
+      }
     }
   }
 

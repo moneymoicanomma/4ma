@@ -9,6 +9,7 @@ import {
 } from "@/lib/contracts/fighter-application";
 
 import { FormConfirmationPopup } from "./form-confirmation-popup";
+import { TurnstileWidget } from "./turnstile-widget";
 import styles from "./fighter-application-form.module.css";
 
 type FormState = {
@@ -49,6 +50,9 @@ export function FighterApplicationForm() {
   const [state, setState] = useState<FormState>(initialState);
   const [selectedSpecialty, setSelectedSpecialty] = useState<FighterSpecialty>(defaultSpecialty);
   const [confirmationMessage, setConfirmationMessage] = useState("");
+  const [turnstileToken, setTurnstileToken] = useState("");
+  const [turnstileResetSignal, setTurnstileResetSignal] = useState(0);
+  const turnstileEnabled = Boolean(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY?.trim());
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -56,6 +60,14 @@ export function FighterApplicationForm() {
 
     const form = event.currentTarget;
     const formData = new FormData(form);
+
+    if (turnstileEnabled && !turnstileToken) {
+      setState({
+        status: "error",
+        message: "Confirme que você é humano antes de enviar."
+      });
+      return;
+    }
 
     setState({
       status: "submitting",
@@ -83,7 +95,8 @@ export function FighterApplicationForm() {
           martialArtsTitles: String(formData.get("martialArtsTitles") ?? ""),
           curiosities: String(formData.get("curiosities") ?? ""),
           roastConsent: formData.get("roastConsent") === "on",
-          website: String(formData.get("website") ?? "")
+          website: String(formData.get("website") ?? ""),
+          turnstileToken
         }),
         cache: "no-store"
       });
@@ -99,6 +112,8 @@ export function FighterApplicationForm() {
       }
 
       form.reset();
+      setTurnstileToken("");
+      setTurnstileResetSignal((current) => current + 1);
       setSelectedSpecialty(defaultSpecialty);
       setState({
         status: "success",
@@ -359,6 +374,16 @@ export function FighterApplicationForm() {
               </span>
             </label>
 
+            <TurnstileWidget
+              errorMessage={
+                state.status === "error" && state.message === "Confirme que você é humano antes de enviar."
+                  ? state.message
+                  : undefined
+              }
+              onTokenChange={setTurnstileToken}
+              resetSignal={turnstileResetSignal}
+            />
+
             <input
               aria-hidden="true"
               autoComplete="off"
@@ -369,7 +394,11 @@ export function FighterApplicationForm() {
             />
 
             <div className={styles.actions}>
-              <button className={styles.button} disabled={state.status === "submitting"} type="submit">
+              <button
+                className={styles.button}
+                disabled={state.status === "submitting" || (turnstileEnabled && !turnstileToken)}
+                type="submit"
+              >
                 {state.status === "submitting" ? "Enviando..." : "Enviar inscrição"}
               </button>
 

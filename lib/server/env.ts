@@ -6,6 +6,8 @@ export type ServerEnv = {
   databaseSslMode: "disable" | "require";
   appEncryptionKey: string | null;
   eventFighterPortalEnabled: boolean;
+  turnstileSecretKey: string | null;
+  turnstileSiteKey: string | null;
   fighterPhotosStorageProvider: string;
   fighterPhotosStorageBucket: string | null;
   fighterPhotosStorageRegion: string;
@@ -47,6 +49,8 @@ function createServerEnv(): ServerEnv {
     databaseSslMode: databaseSslMode === "disable" ? "disable" : "require",
     appEncryptionKey: process.env.APP_ENCRYPTION_KEY?.trim() || null,
     eventFighterPortalEnabled,
+    turnstileSecretKey: process.env.TURNSTILE_SECRET_KEY?.trim() || null,
+    turnstileSiteKey: process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY?.trim() || null,
     fighterPhotosStorageProvider: process.env.FIGHTER_PHOTOS_STORAGE_PROVIDER?.trim() || "s3",
     fighterPhotosStorageBucket: process.env.FIGHTER_PHOTOS_S3_BUCKET?.trim() || null,
     fighterPhotosStorageRegion: process.env.FIGHTER_PHOTOS_S3_REGION?.trim() || "us-east-1",
@@ -96,6 +100,10 @@ export function isDatabaseConfigured(env: ServerEnv) {
 
 export function isEventFighterPortalEnabled(env: ServerEnv) {
   return env.eventFighterPortalEnabled;
+}
+
+export function isTurnstileConfigured(env: ServerEnv) {
+  return Boolean(env.turnstileSecretKey && env.turnstileSiteKey);
 }
 
 export function isFighterPhotoStorageConfigured(env: ServerEnv) {

@@ -172,6 +172,33 @@ export async function verifyAdminSessionToken(token: string, secret: string) {
   }
 }
 
+export async function resolveAdminSessionIdentity(token: string) {
+  const config = getAdminAuthConfig();
+
+  if (!config) {
+    return null;
+  }
+
+  const session = await verifyAdminSessionToken(token, config.sessionSecret);
+
+  if (!session) {
+    return null;
+  }
+
+  const credentialFingerprint = await createAdminCredentialFingerprint(
+    config.username,
+    config.password
+  );
+
+  if (session.sub !== config.username || session.cf !== credentialFingerprint) {
+    return null;
+  }
+
+  return {
+    username: session.sub
+  };
+}
+
 export function getSafeAdminRedirectPath(
   value: string | null | undefined,
   fallback = ADMIN_DEFAULT_REDIRECT_PATH

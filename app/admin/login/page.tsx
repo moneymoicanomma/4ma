@@ -4,7 +4,11 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { AdminLoginForm } from "@/app/components/admin-login-form";
-import { ADMIN_SESSION_COOKIE_NAME, isAdminAuthConfigured } from "@/lib/admin/auth";
+import {
+  ADMIN_SESSION_COOKIE_NAME,
+  isAdminAuthConfigured,
+  resolveAdminSessionIdentity
+} from "@/lib/admin/auth";
 import { getSessionAccountFromToken } from "@/lib/server/auth-store";
 import { getServerEnv, isDatabaseConfigured } from "@/lib/server/env";
 
@@ -33,12 +37,11 @@ export const dynamic = "force-dynamic";
 export default async function AdminLoginPage() {
   const env = getServerEnv();
   const authConfigured = isAdminAuthConfigured() || isDatabaseConfigured(env);
+  const cookieStore = await cookies();
+  const sessionToken = cookieStore.get(ADMIN_SESSION_COOKIE_NAME)?.value;
 
-  if (isDatabaseConfigured(env)) {
-    const cookieStore = await cookies();
-    const sessionToken = cookieStore.get(ADMIN_SESSION_COOKIE_NAME)?.value;
-
-    if (sessionToken) {
+  if (sessionToken) {
+    if (isDatabaseConfigured(env)) {
       const session = await getSessionAccountFromToken({
         acceptedRoles: ["admin", "operator"],
         sessionKind: "backoffice",
@@ -48,6 +51,12 @@ export default async function AdminLoginPage() {
       if (session) {
         redirect("/admin/fantasy");
       }
+    }
+
+    const fallbackSession = await resolveAdminSessionIdentity(sessionToken);
+
+    if (fallbackSession) {
+      redirect("/admin/fantasy");
     }
   }
 
