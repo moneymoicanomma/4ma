@@ -3,7 +3,7 @@ import type { MetadataRoute } from "next";
 export const siteName = "Money Moicano MMA";
 export const siteUrl = "https://moneymoicanomma.com.br";
 export const siteDescription =
-  "Evento oficial do Money Moicano MMA com card de lutas, transmissao ao vivo, fantasy card, inscricao de atletas, imprensa e parcerias.";
+  "Luta de verdade, dinheiro de verdade. Entre no Money Moicano MMA e acompanhe os cards, o fantasy e as transmissões ao vivo.";
 export const siteLocale = "pt_BR";
 export const siteLanguage = "pt-BR";
 export const defaultOgImagePath = "/opengraph-image";
@@ -12,7 +12,7 @@ export const xHandle = "@MoneyMoicanoMMA";
 export const siteSocialProfiles = [
   "https://x.com/MoneyMoicanoMMA",
   "https://www.instagram.com/moneymoicano.mma/",
-  "https://www.youtube.com/@RenatoMoneyMoicano"
+  "https://www.youtube.com/@RenatoMoneyMoicano",
 ] as const;
 export const eventDateIso = "2026-05-23";
 export const eventDateLabel = "23 de maio de 2026";
@@ -38,7 +38,7 @@ export const publicSiteRoutes: PublicSiteRoute[] = [
     description:
       "Landing principal com proposta do evento, transmissão, ingressos, público e newsletter.",
     changeFrequency: "weekly",
-    priority: 1
+    priority: 1,
   },
   {
     href: "/fantasy",
@@ -46,7 +46,7 @@ export const publicSiteRoutes: PublicSiteRoute[] = [
     description:
       "Área pública para montar picks, acompanhar ranking oficial e ver o card atual do fantasy.",
     changeFrequency: "daily",
-    priority: 0.9
+    priority: 0.9,
   },
   {
     href: "/lute-no-mmmma",
@@ -54,7 +54,7 @@ export const publicSiteRoutes: PublicSiteRoute[] = [
     description:
       "Formulário público para atletas interessados entrarem no radar do evento.",
     changeFrequency: "weekly",
-    priority: 0.8
+    priority: 0.8,
   },
   {
     href: "/seja-um-parceiro",
@@ -62,7 +62,7 @@ export const publicSiteRoutes: PublicSiteRoute[] = [
     description:
       "Página comercial para marcas e empresas interessadas em patrocínios e ações com o evento.",
     changeFrequency: "weekly",
-    priority: 0.7
+    priority: 0.7,
   },
   {
     href: "/imprensa",
@@ -70,7 +70,7 @@ export const publicSiteRoutes: PublicSiteRoute[] = [
     description:
       "Cadastro da lista de imprensa para receber novidades, avisos e materiais oficiais do Money Moicano MMA.",
     changeFrequency: "weekly",
-    priority: 0.7
+    priority: 0.7,
   },
   {
     href: "/contato",
@@ -78,7 +78,7 @@ export const publicSiteRoutes: PublicSiteRoute[] = [
     description:
       "Canal direto para enviar mensagens gerais à equipe do Money Moicano MMA.",
     changeFrequency: "monthly",
-    priority: 0.6
+    priority: 0.6,
   },
   {
     href: "/politica-de-privacidade",
@@ -86,7 +86,7 @@ export const publicSiteRoutes: PublicSiteRoute[] = [
     description:
       "Regras de coleta, uso e proteção de dados do site e dos formulários do Money Moicano MMA.",
     changeFrequency: "monthly",
-    priority: 0.4
+    priority: 0.4,
   },
   {
     href: "/termos-de-uso",
@@ -94,35 +94,36 @@ export const publicSiteRoutes: PublicSiteRoute[] = [
     description:
       "Condições de uso do site, formulários e materiais enviados ao Money Moicano MMA.",
     changeFrequency: "monthly",
-    priority: 0.4
-  }
+    priority: 0.4,
+  },
 ];
 
 export const homepageSectionLinks = [
   {
     href: "/#evento",
     label: "O evento",
-    description: "Visão geral do card, data, local e proposta do MMMMA."
+    description: "Visão geral do card, data, local e proposta do MMMMA.",
   },
   {
     href: "/#transmissao",
     label: "A transmissão",
-    description: "Produções, momentos da cobertura e identidade da transmissão."
+    description:
+      "Produções, momentos da cobertura e identidade da transmissão.",
   },
   {
     href: "/#ingressos",
     label: "Ingressos",
-    description: "Setores, faixas de preço e CTA para compra."
+    description: "Setores, faixas de preço e CTA para compra.",
   },
   {
     href: "/#publico",
     label: "Público e parceiros",
-    description: "Audience, newsletter e patrocinadores do evento."
-  }
+    description: "Audience, newsletter e patrocinadores do evento.",
+  },
 ] as const;
 
 export const restrictedAreaNotes = [
   "A área privada dos atletas confirmados fica fora do índice público.",
   "As rotas administrativas do fantasy não entram em sitemap nem navegação aberta.",
-  "Endpoints de API, sessões operacionais e o mapa interno do site ficam bloqueados para indexação."
+  "Endpoints de API, sessões operacionais e o mapa interno do site ficam bloqueados para indexação.",
 ] as const;
