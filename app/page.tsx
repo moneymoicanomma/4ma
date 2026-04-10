@@ -112,7 +112,8 @@ const ticketTiers = [
     name: "VIP Fighting",
     price: "R$ 300",
     features: ["Acesso ao setor pista", "Bares exclusivos", "Visão frontal"],
-    buttonLabel: "Garantir Ingresso"
+    buttonLabel: "Em breve",
+    comingSoon: true
   },
   {
     label: "Pra quem tá rico e quer uma experiência f#d@",
@@ -124,7 +125,8 @@ const ticketTiers = [
       "Kit Moicano exclusivo",
       "Entrada sem fila"
     ],
-    buttonLabel: "Garantir Ingresso",
+    buttonLabel: "Em breve",
+    comingSoon: true,
     featured: true
   }
 ];
@@ -256,9 +258,10 @@ export default function Home() {
       <LandingMotionController />
       <LandingTopbar
         brandLogo={brandLogo}
-        ctaHref="#ingressos"
-        ctaLabel="Comprar Ingressos"
         navItems={navItems}
+        // Reativar o CTA da navbar quando o link oficial de ingressos estiver pronto.
+        // ctaHref="#ingressos"
+        // ctaLabel="Comprar Ingressos"
       />
 
       <section className="hero" data-nav-section="evento" id="evento">
@@ -475,13 +478,23 @@ export default function Home() {
                   ))}
                 </ul>
 
-                <LandingButton
-                  href="#evento"
-                  size="large"
-                  variant={tier.featured ? "light" : "secondary"}
-                >
-                  {tier.buttonLabel}
-                </LandingButton>
+                {/* Reativar o botão com o link oficial de ingressos aqui quando ele existir. */}
+                {tier.comingSoon ? (
+                  <span
+                    aria-disabled="true"
+                    className={`landing-button landing-button--${tier.featured ? "light" : "secondary"} landing-button--large landing-button--disabled`}
+                  >
+                    {tier.buttonLabel}
+                  </span>
+                ) : (
+                  <LandingButton
+                    href="#evento"
+                    size="large"
+                    variant={tier.featured ? "light" : "secondary"}
+                  >
+                    {tier.buttonLabel}
+                  </LandingButton>
+                )}
               </article>
             ))}
           </div>

@@ -6,10 +6,11 @@
     "node": ">=20.9.0"
   },
   "scripts": {
+    "bundle:eb": "bash scripts/create-eb-bundle.sh",
     "check": "npm run typecheck && npm run build",
     "dev": "next dev",
     "build": "next build",
-    "start": "next start",
+    "start": "next start -p 8080",
     "lint": "npm run typecheck",
     "hash-password": "node scripts/generate-password-hash.mjs",
     "typecheck": "next typegen && tsc --noEmit"

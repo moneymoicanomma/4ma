@@ -10,8 +10,9 @@ type NavItem = {
 
 type LandingTopbarProps = {
   brandLogo: string;
-  ctaHref: string;
-  ctaLabel: string;
+  // Opcional: reativar quando o link oficial de ingressos estiver disponível.
+  ctaHref?: string;
+  ctaLabel?: string;
   navItems: readonly NavItem[];
 };
 
@@ -24,6 +25,7 @@ export function LandingTopbar({
   const [activeSection, setActiveSection] = useState(navItems[0]?.sectionId ?? "");
   const [menuOpen, setMenuOpen] = useState(false);
   const activeItem = navItems.find((item) => item.sectionId === activeSection) ?? navItems[0];
+  const hasCta = Boolean(ctaHref && ctaLabel);
 
   useEffect(() => {
     const sections = Array.from(document.querySelectorAll<HTMLElement>("[data-nav-section]"));
@@ -160,10 +162,6 @@ export function LandingTopbar({
       </nav>
 
       <div className="topbar__actions">
-        <a className="landing-button landing-button--nav" href={ctaHref}>
-          {ctaLabel}
-        </a>
-
         <button
           aria-controls="mobile-nav-sheet"
           aria-expanded={menuOpen}
@@ -229,9 +227,11 @@ export function LandingTopbar({
           <div className="topbar__sheet-footer">
             <span className="topbar__sheet-label">Próxima porrada</span>
             <p className="topbar__sheet-copy">23 MAIO 2026 · SÃO PAULO · CANAL MONEY MOICANO</p>
-            <a className="landing-button landing-button--primary landing-button--sheet" href={ctaHref}>
-              {ctaLabel}
-            </a>
+            {hasCta ? (
+              <a className="landing-button landing-button--primary landing-button--sheet" href={ctaHref}>
+                {ctaLabel}
+              </a>
+            ) : null}
           </div>
         </div>
       </div>
