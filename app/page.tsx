@@ -21,7 +21,6 @@ const microphoneIcon = r2Asset("Microphone-Podcast-2--Streamline-Ultimate.svg");
 const cornermanIcon = r2Asset("cornerman.svg");
 const cornermanSloganLogo = r2Asset("cornerman - slogan.svg");
 const joyaGearLogo = r2Asset("joyagear.svg");
-const esportesDaSorteLogo = r2Asset("esportes-da-sorte.svg");
 const instagramIcon = r2Asset("instagram_logo.svg");
 const youtubeIcon = r2Asset("youtube_logo.svg");
 const xIcon = r2Asset("x_logo.svg.svg");
@@ -156,11 +155,6 @@ const partners = [
     name: "Joya Gear",
     logo: joyaGearLogo,
     className: "partner-logo partner-logo--joyagear"
-  },
-  {
-    name: "Esportes da Sorte",
-    logo: esportesDaSorteLogo,
-    className: "partner-logo partner-logo--esportes"
   }
 ];
 
@@ -294,9 +288,7 @@ export default function Home() {
           </p>
 
           <div className="hero__actions">
-            <LandingButton href="#ingressos" size="large">
-              Garantir Ingresso
-            </LandingButton>
+            {/* Reativar o CTA de ingressos no hero quando o link oficial estiver disponível. */}
             <LandingButton href="#transmissao" size="large" variant="secondary">
               Saiba mais
             </LandingButton>
@@ -355,9 +347,7 @@ export default function Home() {
           </div>
         </MobileRailShell>
 
-        <LandingButton href="#ingressos" size="large">
-          Garantir Ingresso
-        </LandingButton>
+        {/* Reativar o CTA de ingressos desta seção quando o link oficial estiver disponível. */}
       </section>
 
       <section className="section section--transmission" data-nav-section="transmissao" id="transmissao">
@@ -529,9 +519,7 @@ export default function Home() {
             prepare, você tem até o dia 23 de maio pra aprender português brasileiro.
           </p>
 
-          <LandingButton href="#ingressos" size="large">
-            Garantir Ingresso
-          </LandingButton>
+          {/* Reativar o CTA de ingressos desta seção quando o link oficial estiver disponível. */}
         </div>
       </section>
 
@@ -599,15 +587,7 @@ export default function Home() {
         <BrandMark className="footer__wordmark" lazy wide />
       </footer>
 
-      <div className="mobile-sticky-cta">
-        <div className="mobile-sticky-cta__copy">
-          <span className="mobile-sticky-cta__label">Ingressos</span>
-          <strong className="mobile-sticky-cta__value">A partir de R$ 300</strong>
-        </div>
-        <a className="landing-button landing-button--primary landing-button--mobile-fixed" href="#ingressos">
-          Garantir
-        </a>
-      </div>
+      {/* Reativar o sticky CTA de ingressos no mobile quando o link oficial estiver disponível. */}
     </main>
   );
 }
