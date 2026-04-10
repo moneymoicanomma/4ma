@@ -9,3 +9,4 @@ yarn-error.log*
 !.env.example
 public/assets/landing/
 mmmma-eb-deploy.zip
+opengraph-image.old.tsx
