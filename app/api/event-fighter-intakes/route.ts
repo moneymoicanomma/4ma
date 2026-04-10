@@ -47,6 +47,20 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  if (!env.eventFighterPortalEnabled) {
+    return publicApiResponse(
+      {
+        ok: false,
+        message:
+          "A ficha privada dos atletas está temporariamente fora do ar enquanto a infraestrutura é finalizada."
+      },
+      {
+        status: 503,
+        headers: corsHeaders ?? undefined
+      }
+    );
+  }
+
   const authConfig = getEventFighterAuthConfig();
   const sessionToken = request.cookies.get(EVENT_FIGHTER_SESSION_COOKIE_NAME)?.value;
 

@@ -6,7 +6,10 @@ import "./globals.css";
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: "Money Moicano MMA",
-  description: "Landing page do evento Money Moicano MMA."
+  description: "Landing page do evento Money Moicano MMA.",
+  icons: {
+    icon: "/favicon.svg"
+  }
 };
 
 export const viewport: Viewport = {

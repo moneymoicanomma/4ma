@@ -66,6 +66,18 @@ function buildJsonResponse(payload: EventFighterSessionResponse, status = 200) {
 
 export async function POST(request: NextRequest) {
   const env = getServerEnv();
+
+  if (!env.eventFighterPortalEnabled) {
+    return buildJsonResponse(
+      {
+        ok: false,
+        message:
+          "A ficha privada dos atletas está temporariamente fora do ar enquanto a infraestrutura é finalizada."
+      },
+      503
+    );
+  }
+
   const config = getEventFighterAuthConfig();
   const requester = getClientIdentifier(request);
   const rateLimit = takeRateLimitToken(`event-fighter-auth:${requester}`, {

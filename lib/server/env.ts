@@ -5,6 +5,7 @@ export type ServerEnv = {
   databasePoolMaxConnections: number;
   databaseSslMode: "disable" | "require";
   appEncryptionKey: string | null;
+  eventFighterPortalEnabled: boolean;
   fighterPhotosStorageProvider: string;
   fighterPhotosStorageBucket: string | null;
   fighterPhotosStorageRegion: string;
@@ -34,6 +35,8 @@ function createServerEnv(): ServerEnv {
   const timeout = Number.parseInt(process.env.UPSTREAM_REQUEST_TIMEOUT_MS ?? "10000", 10);
   const poolMaxConnections = Number.parseInt(process.env.DATABASE_POOL_MAX_CONNECTIONS ?? "10", 10);
   const databaseSslMode = process.env.DATABASE_SSL_MODE?.trim().toLowerCase();
+  const eventFighterPortalEnabled =
+    process.env.EVENT_FIGHTER_PORTAL_ENABLED?.trim().toLowerCase() === "true";
   const fighterPhotosStorageForcePathStyle =
     process.env.FIGHTER_PHOTOS_S3_FORCE_PATH_STYLE?.trim().toLowerCase() === "true";
 
@@ -43,6 +46,7 @@ function createServerEnv(): ServerEnv {
       Number.isFinite(poolMaxConnections) && poolMaxConnections > 0 ? poolMaxConnections : 10,
     databaseSslMode: databaseSslMode === "disable" ? "disable" : "require",
     appEncryptionKey: process.env.APP_ENCRYPTION_KEY?.trim() || null,
+    eventFighterPortalEnabled,
     fighterPhotosStorageProvider: process.env.FIGHTER_PHOTOS_STORAGE_PROVIDER?.trim() || "s3",
     fighterPhotosStorageBucket: process.env.FIGHTER_PHOTOS_S3_BUCKET?.trim() || null,
     fighterPhotosStorageRegion: process.env.FIGHTER_PHOTOS_S3_REGION?.trim() || "us-east-1",
@@ -88,6 +92,10 @@ export function getServerEnv(): ServerEnv {
 
 export function isDatabaseConfigured(env: ServerEnv) {
   return Boolean(env.databaseUrl);
+}
+
+export function isEventFighterPortalEnabled(env: ServerEnv) {
+  return env.eventFighterPortalEnabled;
 }
 
 export function isFighterPhotoStorageConfigured(env: ServerEnv) {
