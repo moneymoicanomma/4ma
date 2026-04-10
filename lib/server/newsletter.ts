@@ -78,7 +78,13 @@ export async function subscribeToNewsletter(
       );
 
       return { ok: true };
-    } catch {
+    } catch (error) {
+      console.error("newsletter database insert failed", {
+        error,
+        email: payload.email,
+        requestId: requestContext.requestId
+      });
+
       if (!isUpstreamConfigured(env)) {
         return {
           ok: false,
@@ -106,7 +112,13 @@ export async function subscribeToNewsletter(
     );
 
     return { ok: true };
-  } catch {
+  } catch (error) {
+    console.error("newsletter upstream request failed", {
+      error,
+      email: payload.email,
+      requestId: requestContext.requestId
+    });
+
     return {
       ok: false,
       reason: "upstream_error"

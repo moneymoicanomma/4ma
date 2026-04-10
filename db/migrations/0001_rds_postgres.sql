@@ -434,7 +434,7 @@ returns text
 language sql
 immutable
 as $$
-  select encode(digest(coalesce(p_value, ''), 'sha256'), 'hex');
+  select encode(extensions.digest(coalesce(p_value, ''), 'sha256'), 'hex');
 $$;
 
 create or replace function app.encrypt_secret(p_value text)
@@ -447,7 +447,11 @@ as $$
   select
     case
       when p_value is null or btrim(p_value) = '' then null
-      else pgp_sym_encrypt(p_value, app.require_encryption_key(), 'cipher-algo=aes256, compress-algo=1')
+      else extensions.pgp_sym_encrypt(
+        p_value::text,
+        app.require_encryption_key()::text,
+        'cipher-algo=aes256, compress-algo=1'::text
+      )
     end;
 $$;
 
@@ -461,7 +465,7 @@ as $$
   select
     case
       when p_value is null then null
-      else pgp_sym_decrypt(p_value, app.require_encryption_key())
+      else extensions.pgp_sym_decrypt(p_value, app.require_encryption_key()::text)
     end;
 $$;
 
