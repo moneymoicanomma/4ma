@@ -1,6 +1,12 @@
 .git
 .gitignore
-.next
+.next/cache
+.next/dev
+.next/diagnostics
+.next/trace
+.next/trace-build
+.next/turbopack
+.next/types
 node_modules
 .idea
 .vscode

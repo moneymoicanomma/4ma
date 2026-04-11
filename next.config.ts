@@ -1,5 +1,7 @@
 import type { NextConfig } from "next";
 
+const repoRoot = process.cwd();
+
 const securityHeaders = [
   {
     key: "Permissions-Policy",
@@ -20,6 +22,10 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  outputFileTracingRoot: repoRoot,
+  turbopack: {
+    root: repoRoot
+  },
   async headers() {
     return [
       {

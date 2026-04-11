@@ -15,6 +15,12 @@ trap 'rm -rf "$staging_dir" "$tmp_file"' EXIT
 mkdir -p "$(dirname "$output_path")"
 rm -f "$output_path"
 
+echo "Building Next.js app locally for Elastic Beanstalk..."
+(
+  cd "$repo_root"
+  NEXT_TELEMETRY_DISABLED=1 npm run build
+)
+
 if [[ -f "$repo_root/.ebignore" ]]; then
   rsync -a --exclude-from="$repo_root/.ebignore" "$repo_root"/ "$staging_dir"/
 else
