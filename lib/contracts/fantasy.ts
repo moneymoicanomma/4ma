@@ -1,47 +1,25 @@
 import {
+  normalizeBrazilianState,
+  type BrazilianStateName
+} from "@/lib/contracts/brazilian-states";
+import {
   isValidNewsletterEmail,
   normalizeNewsletterEmail
 } from "@/lib/contracts/newsletter";
 import type { PublicMutationResponse } from "@/lib/contracts/public-mutation";
 
+export {
+  BRAZILIAN_STATES,
+  findBrazilianStateSuggestions,
+  type BrazilianStateCode,
+  type BrazilianStateName
+} from "@/lib/contracts/brazilian-states";
+
 export const FANTASY_ENTRY_SOURCE = "money-moicano-fantasy";
 export const FANTASY_VICTORY_METHODS = ["decisao", "finalizacao", "nocaute"] as const;
 export const FANTASY_ROUNDS = [1, 2, 3, 4, 5] as const;
-
-export const BRAZILIAN_STATES = [
-  { code: "AC", name: "Acre" },
-  { code: "AL", name: "Alagoas" },
-  { code: "AP", name: "Amapá" },
-  { code: "AM", name: "Amazonas" },
-  { code: "BA", name: "Bahia" },
-  { code: "CE", name: "Ceará" },
-  { code: "DF", name: "Distrito Federal" },
-  { code: "ES", name: "Espírito Santo" },
-  { code: "GO", name: "Goiás" },
-  { code: "MA", name: "Maranhão" },
-  { code: "MT", name: "Mato Grosso" },
-  { code: "MS", name: "Mato Grosso do Sul" },
-  { code: "MG", name: "Minas Gerais" },
-  { code: "PA", name: "Pará" },
-  { code: "PB", name: "Paraíba" },
-  { code: "PR", name: "Paraná" },
-  { code: "PE", name: "Pernambuco" },
-  { code: "PI", name: "Piauí" },
-  { code: "RJ", name: "Rio de Janeiro" },
-  { code: "RN", name: "Rio Grande do Norte" },
-  { code: "RS", name: "Rio Grande do Sul" },
-  { code: "RO", name: "Rondônia" },
-  { code: "RR", name: "Roraima" },
-  { code: "SC", name: "Santa Catarina" },
-  { code: "SP", name: "São Paulo" },
-  { code: "SE", name: "Sergipe" },
-  { code: "TO", name: "Tocantins" }
-] as const;
-
 export type FantasyVictoryMethod = (typeof FANTASY_VICTORY_METHODS)[number];
 export type FantasyRound = (typeof FANTASY_ROUNDS)[number];
-export type BrazilianStateCode = (typeof BRAZILIAN_STATES)[number]["code"];
-export type BrazilianStateName = (typeof BRAZILIAN_STATES)[number]["name"];
 
 export type FantasyPickPayload = {
   fightId: string;
@@ -126,14 +104,6 @@ function normalizeShortText(input: unknown) {
   return typeof input === "string" ? input.trim().replace(/\s+/g, " ") : "";
 }
 
-function normalizeSearchText(input: string) {
-  return input
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .trim();
-}
-
 function validateRequiredText(
   value: string,
   options: {
@@ -157,22 +127,6 @@ function validateRequiredText(
   return null;
 }
 
-function normalizeBrazilianState(input: unknown) {
-  const normalizedInput = normalizeSearchText(normalizeShortText(input));
-
-  if (!normalizedInput) {
-    return "";
-  }
-
-  const match = BRAZILIAN_STATES.find(
-    (state) =>
-      normalizeSearchText(state.name) === normalizedInput ||
-      state.code.toLowerCase() === normalizedInput
-  );
-
-  return match?.name ?? "";
-}
-
 function emptyPayload(): FantasyEntryPayload {
   return {
     eventId: "",
@@ -185,23 +139,6 @@ function emptyPayload(): FantasyEntryPayload {
     picks: [],
     source: FANTASY_ENTRY_SOURCE
   };
-}
-
-export function findBrazilianStateSuggestions(query: string, limit = 6) {
-  const normalizedQuery = normalizeSearchText(query);
-
-  if (!normalizedQuery) {
-    return BRAZILIAN_STATES.slice(0, limit);
-  }
-
-  return BRAZILIAN_STATES.filter((state) => {
-    const normalizedName = normalizeSearchText(state.name);
-    const normalizedCode = state.code.toLowerCase();
-
-    return (
-      normalizedName.includes(normalizedQuery) || normalizedCode.startsWith(normalizedQuery)
-    );
-  }).slice(0, limit);
 }
 
 export function parseFantasyEntry(input: unknown): FantasyEntryParseResult {

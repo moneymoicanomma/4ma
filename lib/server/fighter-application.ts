@@ -1,5 +1,6 @@
 import "server-only";
 
+import { getBrazilianStateCode } from "@/lib/contracts/brazilian-states";
 import type { FighterApplicationPayload } from "@/lib/contracts/fighter-application";
 import { withDatabaseTransaction } from "@/lib/server/database";
 import {
@@ -23,6 +24,8 @@ export async function submitFighterApplication(
   requestContext: RequestAuditContext,
   env: ServerEnv = getServerEnv()
 ): Promise<FighterApplicationSubmitResult> {
+  const stateCode = getBrazilianStateCode(payload.state);
+
   if (isDatabaseConfigured(env)) {
     try {
       await withDatabaseTransaction(
@@ -41,6 +44,7 @@ export async function submitFighterApplication(
                 nickname,
                 birth_date,
                 city,
+                state_code,
                 team,
                 weight_class,
                 tapology_profile,
@@ -63,12 +67,12 @@ export async function submitFighterApplication(
                 $2,
                 $3::date,
                 $4,
-                $5,
-                $6::app.fighter_weight_class_enum,
-                $7,
+                $5::char(2),
+                $6,
+                $7::app.fighter_weight_class_enum,
                 $8,
-                $9::app.fighter_specialty_enum,
-                $10,
+                $9,
+                $10::app.fighter_specialty_enum,
                 $11,
                 $12,
                 $13,
@@ -78,7 +82,8 @@ export async function submitFighterApplication(
                 $17,
                 $18,
                 $19,
-                $20::jsonb
+                $20,
+                $21::jsonb
               )
               returning id
             `,
@@ -87,6 +92,7 @@ export async function submitFighterApplication(
               payload.nickname,
               payload.birthDate,
               payload.city,
+              stateCode,
               payload.team,
               payload.weightClass,
               payload.tapology,

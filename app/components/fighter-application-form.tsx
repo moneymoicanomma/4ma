@@ -2,6 +2,7 @@
 
 import { type FormEvent, useState } from "react";
 
+import { BRAZILIAN_STATES } from "@/lib/contracts/brazilian-states";
 import {
   FIGHTER_SPECIALTIES,
   FIGHTER_WEIGHT_CLASSES,
@@ -103,6 +104,7 @@ export function FighterApplicationForm() {
           nickname: String(formData.get("nickname") ?? ""),
           birthDate: String(formData.get("birthDate") ?? ""),
           city: String(formData.get("city") ?? ""),
+          state: String(formData.get("state") ?? ""),
           team: String(formData.get("team") ?? ""),
           weightClass: String(formData.get("weightClass") ?? ""),
           tapology: String(formData.get("tapology") ?? ""),
@@ -224,10 +226,30 @@ export function FighterApplicationForm() {
                 maxLength={160}
                 minLength={3}
                 name="city"
-                placeholder="Cidade e estado"
+                placeholder="Sua cidade"
                 required
                 type="text"
               />
+            </label>
+
+            <label className={styles.field}>
+              <span className={styles.label}>Estado</span>
+              <select
+                autoComplete="address-level1"
+                className={styles.select}
+                defaultValue=""
+                name="state"
+                required
+              >
+                <option disabled value="">
+                  Selecione seu estado
+                </option>
+                {BRAZILIAN_STATES.map((state) => (
+                  <option key={state.code} value={state.name}>
+                    {state.name} ({state.code})
+                  </option>
+                ))}
+              </select>
             </label>
 
             <label className={styles.field}>

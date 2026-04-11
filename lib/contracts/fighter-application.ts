@@ -1,3 +1,7 @@
+import {
+  normalizeBrazilianState,
+  type BrazilianStateName
+} from "@/lib/contracts/brazilian-states";
 import type { PublicMutationResponse } from "@/lib/contracts/public-mutation";
 
 export const FIGHTER_APPLICATION_SOURCE = "money-moicano-lute-no-mmmma";
@@ -35,6 +39,7 @@ export type FighterApplicationPayload = {
   nickname: string;
   birthDate: string;
   city: string;
+  state: BrazilianStateName;
   team: string;
   weightClass: FighterWeightClass;
   tapology: string;
@@ -139,6 +144,7 @@ function emptyPayload(): FighterApplicationPayload {
     nickname: "",
     birthDate: "",
     city: "",
+    state: "São Paulo",
     team: "",
     weightClass: "leve",
     tapology: "",
@@ -181,6 +187,7 @@ export function parseFighterApplication(input: unknown): FighterApplicationParse
   const nickname = normalizeShortText(record.nickname);
   const birthDate = normalizeShortText(record.birthDate);
   const city = normalizeShortText(record.city);
+  const state = normalizeBrazilianState(record.state);
   const team = normalizeShortText(record.team);
   const weightClass = normalizeShortText(record.weightClass).toLowerCase();
   const tapology = normalizeShortText(record.tapology);
@@ -254,6 +261,13 @@ export function parseFighterApplication(input: unknown): FighterApplicationParse
     return {
       ok: false,
       message: shortFieldError
+    };
+  }
+
+  if (!state) {
+    return {
+      ok: false,
+      message: "Selecione um estado válido."
     };
   }
 
@@ -346,6 +360,7 @@ export function parseFighterApplication(input: unknown): FighterApplicationParse
       nickname,
       birthDate,
       city,
+      state,
       team,
       weightClass: weightClass as FighterWeightClass,
       tapology,

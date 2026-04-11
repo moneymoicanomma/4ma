@@ -10,3 +10,4 @@ yarn-error.log*
 public/assets/landing/
 mmmma-eb-deploy.zip
 opengraph-image.old.tsx
+docs/aws-elastic-beanstalk-migration.local.md
