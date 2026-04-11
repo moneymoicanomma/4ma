@@ -49,19 +49,25 @@ function sha256Hex(buffer: Buffer) {
   return createHash("sha256").update(buffer).digest("hex");
 }
 
-function resolveObjectKey(fileName: string, intakeId: string, fieldName: string) {
+function resolveObjectKey(
+  fileName: string,
+  eventSlug: string,
+  fighterSlug: string,
+  fieldName: string
+) {
   const extension = path.extname(fileName).toLowerCase();
   const normalizedExtension = extension || ".bin";
 
-  return `event-fighter-intakes/${intakeId}/${fieldName}-${randomUUID()}${normalizedExtension}`;
+  return `event-fighter-intakes/${eventSlug}/${fighterSlug}/${fieldName}-${randomUUID()}${normalizedExtension}`;
 }
 
 export async function uploadFighterPhoto(options: {
   bytes: Buffer;
   contentType: string;
+  eventSlug: string;
   fieldName: string;
   fileName: string;
-  intakeId: string;
+  fighterSlug: string;
   env?: ServerEnv;
 }): Promise<StoredFighterPhoto> {
   const env = options.env ?? getServerEnv();
@@ -71,7 +77,12 @@ export async function uploadFighterPhoto(options: {
   }
 
   const bucket = env.fighterPhotosStorageBucket!;
-  const objectKey = resolveObjectKey(options.fileName, options.intakeId, options.fieldName);
+  const objectKey = resolveObjectKey(
+    options.fileName,
+    options.eventSlug,
+    options.fighterSlug,
+    options.fieldName
+  );
 
   await getS3Client(env).send(
     new PutObjectCommand({

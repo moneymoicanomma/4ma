@@ -45,15 +45,21 @@ export async function submitEventFighterIntake(
     try {
       const portalTargetResult = await queryDatabase<{
         eventFighterId: string;
+        eventSlug: string;
+        fighterSlug: string;
         intakeId: string | null;
       }>(
         `
           select
             ef.id as "eventFighterId",
+            e.slug as "eventSlug",
+            f.slug as "fighterSlug",
             i.id as "intakeId"
           from app.event_fighters ef
           join app.events e
             on e.id = ef.event_id
+          join app.fighters f
+            on f.id = ef.fighter_id
           left join app.event_fighter_intakes i
             on i.event_fighter_id = ef.id
           where ef.portal_account_id = $1
@@ -99,9 +105,10 @@ export async function submitEventFighterIntake(
           const storedPhoto = await uploadFighterPhoto({
             bytes,
             contentType: photo.file.type || "application/octet-stream",
+            eventSlug: portalTarget.eventSlug,
             fieldName: photo.fieldName,
             fileName: photo.file.name,
-            intakeId,
+            fighterSlug: portalTarget.fighterSlug,
             env
           });
 
