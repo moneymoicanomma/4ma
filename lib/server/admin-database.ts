@@ -792,6 +792,15 @@ async function loadFantasyEntriesTable() {
 export async function loadAdminDatabaseOverview(
   env: ServerEnv = getServerEnv(),
 ): Promise<AdminDatabaseOverview> {
+  console.log(
+    "[admin/database] DATABASE_URL exists?",
+    Boolean(process.env.DATABASE_URL),
+  );
+  console.log(
+    "[admin/database] env.databaseUrl exists?",
+    Boolean(env.databaseUrl),
+  );
+
   if (!isDatabaseConfigured(env)) {
     return {
       databaseConfigured: false,
