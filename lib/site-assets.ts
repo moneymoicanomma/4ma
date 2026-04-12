@@ -1,6 +1,4 @@
 const defaultSiteAssetBaseUrl = "https://pub-ecc1c3f0770f4d4ebd9b8cc27c8d8bcf.r2.dev";
-const publicLandingAssetBasePath = "/assets/landing";
-const publicLandingAssetRevision = "20260412";
 
 const intrinsicSiteAssetDimensions = {
   "logo money moicano mma.svg": { width: 283, height: 218 },
@@ -65,12 +63,6 @@ export function siteAsset(fileName: string) {
 
 export function fallbackSiteAsset(fileName: string) {
   return `${fallbackSiteAssetBaseUrl}/${encodeAssetPath(fileName)}`;
-}
-
-export function publicSiteAsset(fileName: string, revision = publicLandingAssetRevision) {
-  const assetPath = `${publicLandingAssetBasePath}/${encodeAssetPath(fileName)}`;
-
-  return revision ? `${assetPath}?v=${revision}` : assetPath;
 }
 
 export function getSiteAssetIntrinsicDimensions(assetPath: string) {

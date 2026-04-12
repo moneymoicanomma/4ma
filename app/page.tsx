@@ -3,7 +3,6 @@ import Image from "next/image";
 
 import {
   getSiteAssetIntrinsicDimensions,
-  publicSiteAsset,
   siteAsset
 } from "@/lib/site-assets";
 
@@ -15,21 +14,21 @@ const LandingMotionController = dynamic(() =>
 );
 
 const heroImage = siteAsset("hero-main-v4.webp");
-const brandLogo = publicSiteAsset("logo money moicano mma.svg");
-const brandLogoWide = publicSiteAsset("logo money moicano mma extenso.svg");
-const streamIcon = publicSiteAsset("Video-Game-Logo-Streamplay--Streamline-Ultimate.svg");
-const fightsIcon = publicSiteAsset("Fists-Crashing-Conflict--Streamline-Ultimate.svg");
-const stadiumIcon = publicSiteAsset("Stadium-Classic-2--Streamline-Ultimate.svg");
-const microphoneIcon = publicSiteAsset("Microphone-Podcast-2--Streamline-Ultimate.svg");
-const cornermanIcon = publicSiteAsset("cornerman.svg");
-const cornermanSloganLogo = publicSiteAsset("cornerman - slogan.svg");
+const brandLogo = siteAsset("logo money moicano mma.svg");
+const brandLogoWide = siteAsset("logo money moicano mma extenso.svg");
+const streamIcon = siteAsset("Video-Game-Logo-Streamplay--Streamline-Ultimate.svg");
+const fightsIcon = siteAsset("Fists-Crashing-Conflict--Streamline-Ultimate.svg");
+const stadiumIcon = siteAsset("Stadium-Classic-2--Streamline-Ultimate.svg");
+const microphoneIcon = siteAsset("Microphone-Podcast-2--Streamline-Ultimate.svg");
+const cornermanIcon = siteAsset("cornerman.svg");
+const cornermanSloganLogo = siteAsset("cornerman - slogan.svg");
 const cabmmaLogo = siteAsset("cabmma.svg");
-const joyaGearLogo = publicSiteAsset("joyagear.svg");
-const instagramIcon = publicSiteAsset("instagram_logo.svg");
-const youtubeIcon = publicSiteAsset("youtube_logo.svg");
-const xIcon = publicSiteAsset("x_logo.svg.svg");
-const ticketBackgroundImage = publicSiteAsset("ingressos-bg.webp");
-const transmissionOverlayImage = publicSiteAsset("transmissao-overlay.webp");
+const joyaGearLogo = siteAsset("joyagear.svg");
+const instagramIcon = siteAsset("instagram_logo.svg");
+const youtubeIcon = siteAsset("youtube_logo.svg");
+const xIcon = siteAsset("x_logo.svg.svg");
+const ticketBackgroundImage = siteAsset("ingressos-bg.webp");
+const transmissionOverlayImage = siteAsset("transmissao-overlay.webp");
 const cornermanUrl = "https://cornerman.com.br/";
 const cabmmaUrl = "https://www.instagram.com/cab_mma/";
 const transmissionUrl = "https://www.youtube.com/@RenatoMoneyMoicano";
@@ -95,14 +94,14 @@ const transmissionTiles = [
   },
   {
     title: "Torcida maluca",
-    image: publicSiteAsset("torcida-maluca.webp"),
+    image: siteAsset("torcida-maluca.webp"),
     className: "transmission-tile transmission-tile--crowd",
     sizes: "(max-width: 780px) 72vw, (min-width: 1600px) 18vw, 319px"
   },
   {
     title: "Certeza de luta boa",
     titleSecondary: "(Isso realmente aconteceu)",
-    image: publicSiteAsset("luta-boa.webp"),
+    image: siteAsset("luta-boa.webp"),
     className: "transmission-tile transmission-tile--fight",
     sizes: "(max-width: 780px) 74vw, (min-width: 1600px) 24vw, 299px"
   }
@@ -112,13 +111,13 @@ const casterCards = [
   {
     name: "Renato Money Moicano",
     copy: "Dono dessa parada, lutador do UFC, cansado e calvo.",
-    image: publicSiteAsset("caster-renato-moicano.webp"),
+    image: siteAsset("caster-renato-moicano.webp"),
     imagePosition: "center 24%"
   },
   {
     name: "Tiago Pamplona",
     copy: "Amigo do Moicano, comentarista do UFC e tem um podcast fracassado.",
-    image: publicSiteAsset("caster-tiago-pamplona.webp"),
+    image: siteAsset("caster-tiago-pamplona.webp"),
     imagePosition: "center 18%"
   }
 ];
@@ -580,7 +579,7 @@ export default function Home() {
             fill
             quality={72}
             sizes="(max-width: 980px) 100vw, (min-width: 1600px) 42vw, 535px"
-            src={publicSiteAsset("audiencia-internacional.webp")}
+            src={siteAsset("audiencia-internacional.webp")}
           />
         </div>
 
