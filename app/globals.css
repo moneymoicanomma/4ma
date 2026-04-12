@@ -894,6 +894,8 @@ section[id] {
 }
 
 .section__media-image {
+  position: relative;
+  z-index: 0;
   object-fit: cover;
 }
 
@@ -909,7 +911,7 @@ section[id] {
 .section__media-scrim {
   position: absolute;
   inset: 0;
-  z-index: -1;
+  z-index: 1;
   background:
     linear-gradient(180deg, rgba(12, 12, 12, 0.66) 0%, rgba(12, 12, 12, 0.92) 100%),
     linear-gradient(90deg, rgba(0, 0, 0, 0.2) 12%, rgba(0, 0, 0, 0.5) 100%);
