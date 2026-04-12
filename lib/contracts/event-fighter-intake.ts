@@ -216,6 +216,10 @@ function validateRequiredText(
   }
 
   if (value.length < (options.minLength ?? 1)) {
+    if ((options.minLength ?? 1) > 1) {
+      return `${options.label} precisa ter pelo menos ${options.minLength} caracteres.`;
+    }
+
     return `${options.label} precisa de mais detalhes.`;
   }
 
@@ -319,7 +323,7 @@ function isAcceptedImageFile(file: File) {
   });
 }
 
-function getRequiredImage(formData: FormData, fieldName: EventFighterPhotoFieldName) {
+function getOptionalImage(formData: FormData, fieldName: EventFighterPhotoFieldName) {
   const entry = formData.get(fieldName);
 
   if (!(entry instanceof File) || entry.size <= 0) {
@@ -644,15 +648,6 @@ function parseUploadedPhotos(
     seenFields.add(typedFieldName);
   }
 
-  for (const photoField of EVENT_FIGHTER_PHOTO_FIELDS) {
-    if (!seenFields.has(photoField.fieldName)) {
-      return {
-        ok: false,
-        message: `${photoField.label} é obrigatória.`
-      };
-    }
-  }
-
   return {
     ok: true,
     photos: uploadedPhotos
@@ -711,13 +706,10 @@ export function parseEventFighterIntakeFormData(
   const photos: EventFighterIntakeDraftPhoto[] = [];
 
   for (const photoField of EVENT_FIGHTER_PHOTO_FIELDS) {
-    const file = getRequiredImage(formData, photoField.fieldName);
+    const file = getOptionalImage(formData, photoField.fieldName);
 
     if (!file) {
-      return {
-        ok: false,
-        message: `${photoField.label} é obrigatória.`
-      };
+      continue;
     }
 
     if (!isAcceptedImageFile(file)) {
@@ -841,15 +833,6 @@ export function parseEventFighterIntakeUploadRequest(input: unknown): UploadRequ
     seenFields.add(typedFieldName);
   }
 
-  for (const photoField of EVENT_FIGHTER_PHOTO_FIELDS) {
-    if (!seenFields.has(photoField.fieldName)) {
-      return {
-        ok: false,
-        message: `${photoField.label} é obrigatória.`
-      };
-    }
-  }
-
   return {
     ok: true,
     files
@@ -885,6 +868,12 @@ export function parseEventFighterIntakeJsonSubmission(
   }
 
   const accessEmail = normalizeEventFighterEmail(authenticatedEmail);
+  const hasHealthInsuranceValue =
+    typeof input.payload.hasHealthInsurance === "boolean"
+      ? input.payload.hasHealthInsurance
+        ? "yes"
+        : "no"
+      : normalizeShortText(input.payload.hasHealthInsurance).toLowerCase();
   const payloadResult = getValidatedPayload({
     fullName: normalizeShortText(input.payload.fullName),
     nickname: normalizeShortText(input.payload.nickname),
@@ -892,7 +881,7 @@ export function parseEventFighterIntakeJsonSubmission(
     birthDate: normalizeShortText(input.payload.birthDate),
     pixKeyType: normalizeShortText(input.payload.pixKeyType).toLowerCase(),
     pixKey: normalizeShortText(input.payload.pixKey),
-    hasHealthInsurance: normalizeShortText(input.payload.hasHealthInsurance).toLowerCase(),
+    hasHealthInsurance: hasHealthInsuranceValue,
     healthInsuranceProvider: normalizeShortText(input.payload.healthInsuranceProvider),
     email: normalizeEventFighterEmail(normalizeShortText(input.payload.email)),
     phoneWhatsapp: normalizeShortText(input.payload.phoneWhatsapp),

@@ -937,8 +937,8 @@ async function handleFantasyEntries(event) {
 }
 
 function validateUploadedPhotos(photos) {
-  if (!Array.isArray(photos) || photos.length !== EVENT_FIGHTER_PHOTO_FIELDS.length) {
-    return "As seis fotos obrigatórias precisam ser enviadas antes de concluir a ficha.";
+  if (!Array.isArray(photos)) {
+    return "As fotos chegaram em formato inválido.";
   }
 
   const seenFields = new Set();
@@ -951,7 +951,7 @@ function validateUploadedPhotos(photos) {
     }
 
     if (seenFields.has(fieldName)) {
-      return "Uma das fotos obrigatórias foi enviada mais de uma vez.";
+      return "Uma das fotos foi enviada mais de uma vez.";
     }
 
     seenFields.add(fieldName);
@@ -969,12 +969,6 @@ function validateUploadedPhotos(photos) {
 
     if (!Number.isFinite(photo?.byteSize) || photo.byteSize <= 0) {
       return "Uma das fotos enviadas está com tamanho inválido.";
-    }
-  }
-
-  for (const fieldName of EVENT_FIGHTER_PHOTO_FIELDS) {
-    if (!seenFields.has(fieldName)) {
-      return "As seis fotos obrigatórias precisam ser enviadas antes de concluir a ficha.";
     }
   }
 
@@ -1335,11 +1329,6 @@ async function handleEventFighterIntake(event) {
           ]
         );
 
-        await client.query(
-          "delete from app.event_fighter_intake_photos where intake_id = $1",
-          [intakeId]
-        );
-
         for (const photo of photos) {
           await client.query(
             `
@@ -1365,6 +1354,16 @@ async function handleEventFighterIntake(event) {
                 $8,
                 $9
               )
+              on conflict (intake_id, field_name) do update
+              set
+                storage_provider = excluded.storage_provider,
+                storage_bucket = excluded.storage_bucket,
+                object_key = excluded.object_key,
+                original_file_name = excluded.original_file_name,
+                content_type = excluded.content_type,
+                byte_size = excluded.byte_size,
+                sha256_hex = excluded.sha256_hex,
+                updated_at = now()
             `,
             [
               intakeId,

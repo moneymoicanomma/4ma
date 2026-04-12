@@ -74,10 +74,11 @@ async function persistEventFighterIntakeInDatabase(
   const intakeId = portalTarget.intakeId ?? randomUUID();
   const previousPhotosResult =
     portalTarget.intakeId === null
-      ? { rows: [] as Array<{ bucket: string; objectKey: string }> }
-      : await queryDatabase<{ bucket: string; objectKey: string }>(
+      ? { rows: [] as Array<{ fieldName: string; bucket: string; objectKey: string }> }
+      : await queryDatabase<{ fieldName: string; bucket: string; objectKey: string }>(
           `
             select
+              field_name as "fieldName",
               storage_bucket as bucket,
               object_key as "objectKey"
             from app.event_fighter_intake_photos
@@ -251,10 +252,6 @@ async function persistEventFighterIntakeInDatabase(
         ]
       );
 
-      await transaction.query("delete from app.event_fighter_intake_photos where intake_id = $1", [
-        intakeId
-      ]);
-
       for (const photo of submission.photos) {
         await transaction.query(
           `
@@ -280,6 +277,16 @@ async function persistEventFighterIntakeInDatabase(
               $8,
               $9
             )
+            on conflict (intake_id, field_name) do update
+            set
+              storage_provider = excluded.storage_provider,
+              storage_bucket = excluded.storage_bucket,
+              object_key = excluded.object_key,
+              original_file_name = excluded.original_file_name,
+              content_type = excluded.content_type,
+              byte_size = excluded.byte_size,
+              sha256_hex = excluded.sha256_hex,
+              updated_at = now()
           `,
           [
             intakeId,
@@ -300,7 +307,19 @@ async function persistEventFighterIntakeInDatabase(
     }
   );
 
-  void deleteFighterPhotos(previousPhotosResult.rows, env);
+  const replacedPhotos = previousPhotosResult.rows.filter((previousPhoto) => {
+    const nextPhoto = submission.photos.find((photo) => photo.fieldName === previousPhoto.fieldName);
+
+    if (!nextPhoto) {
+      return false;
+    }
+
+    return (
+      nextPhoto.bucket !== previousPhoto.bucket || nextPhoto.objectKey !== previousPhoto.objectKey
+    );
+  });
+
+  void deleteFighterPhotos(replacedPhotos, env);
 }
 
 export async function submitEventFighterIntake(

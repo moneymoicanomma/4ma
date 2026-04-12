@@ -8,6 +8,7 @@ import {
   parseEventFighterIntakeFormData,
   type EventFighterIntakeDraftSubmission,
   type EventFighterIntakePublicResponse,
+  type EventFighterIntakeUploadedPhoto,
   type EventFighterIntakeUploadInitResponse,
   type HealthInsuranceOption,
   type PixKeyType
@@ -42,6 +43,10 @@ const pixKeyTypeLabels: Record<PixKeyType, string> = {
   random: "Aleatória"
 };
 
+function MinimumCharactersHint({ count }: Readonly<{ count: number }>) {
+  return <p className={styles.helper}>Mínimo de {count} caracteres.</p>;
+}
+
 function arrayBufferToHex(buffer: ArrayBuffer) {
   return Array.from(new Uint8Array(buffer), (byte) => byte.toString(16).padStart(2, "0")).join("");
 }
@@ -53,6 +58,10 @@ async function computeSha256Hex(file: File) {
 }
 
 async function createUploadTargets(submission: EventFighterIntakeDraftSubmission) {
+  if (!submission.photos.length) {
+    return [];
+  }
+
   const response = await fetch("/api/event-fighter-intakes/uploads", {
     method: "POST",
     headers: {
@@ -85,6 +94,10 @@ async function createUploadTargets(submission: EventFighterIntakeDraftSubmission
 }
 
 async function uploadPhotosToR2(submission: EventFighterIntakeDraftSubmission) {
+  if (!submission.photos.length) {
+    return [];
+  }
+
   const uploadTargets = await createUploadTargets(submission);
   const uploadTargetByField = new Map(
     uploadTargets.map((target) => [target.fieldName, target] as const)
@@ -171,12 +184,16 @@ export function EventFighterIntakeForm({
         return;
       }
 
-      setState({
-        status: "submitting",
-        message: "Enviando fotos para o portal..."
-      });
+      let uploadedPhotos: EventFighterIntakeUploadedPhoto[] = [];
 
-      const uploadedPhotos = await uploadPhotosToR2(parsed.data);
+      if (parsed.data.photos.length > 0) {
+        setState({
+          status: "submitting",
+          message: "Enviando fotos para o portal..."
+        });
+
+        uploadedPhotos = await uploadPhotosToR2(parsed.data);
+      }
 
       setState({
         status: "submitting",
@@ -337,7 +354,8 @@ export function EventFighterIntakeForm({
             <h2 className={styles.sectionTitle}>Dados de pagamento e cobertura</h2>
             <p className={styles.sectionCopy}>
               Aqui é onde a equipe resolve o operacional. Chave Pix certa e plano de saúde
-              bem informado evitam retrabalho depois.
+              bem informado evitam retrabalho depois. Quando um campo pedir detalhe,
+              respeite o mínimo de caracteres para a ficha passar.
             </p>
           </div>
 
@@ -399,6 +417,7 @@ export function EventFighterIntakeForm({
                 required={hasHealthInsurance === "yes"}
                 type="text"
               />
+              {hasHealthInsurance === "yes" ? <MinimumCharactersHint count={2} /> : null}
             </label>
           </div>
         </section>
@@ -424,6 +443,7 @@ export function EventFighterIntakeForm({
                 required
                 type="text"
               />
+              <MinimumCharactersHint count={3} />
             </label>
 
             <label className={styles.field}>
@@ -436,6 +456,7 @@ export function EventFighterIntakeForm({
                 required
                 type="text"
               />
+              <MinimumCharactersHint count={2} />
             </label>
 
             <label className={`${styles.field} ${styles.fullWidth}`}>
@@ -447,6 +468,7 @@ export function EventFighterIntakeForm({
                 placeholder="Conte o que também entra no seu jogo e como isso aparece na luta."
                 required
               />
+              <MinimumCharactersHint count={2} />
             </label>
 
             <label className={`${styles.field} ${styles.fullWidth}`}>
@@ -458,6 +480,7 @@ export function EventFighterIntakeForm({
                 placeholder="Detalhe eventos, adversários, datas, resultados, experiências no amador/profissional e qualquer contexto importante."
                 required
               />
+              <MinimumCharactersHint count={40} />
             </label>
 
             <label className={`${styles.field} ${styles.fullWidth}`}>
@@ -469,6 +492,7 @@ export function EventFighterIntakeForm({
                 placeholder="Liste cinturões, torneios, medalhas e onde foram conquistados."
                 required
               />
+              <MinimumCharactersHint count={20} />
             </label>
           </div>
         </section>
@@ -493,6 +517,7 @@ export function EventFighterIntakeForm({
                 placeholder="Conte de onde você veio, o que te trouxe para a luta, desafios vencidos e o que move sua carreira."
                 required
               />
+              <MinimumCharactersHint count={60} />
             </label>
 
             <label className={`${styles.field} ${styles.longField}`}>
@@ -504,6 +529,7 @@ export function EventFighterIntakeForm({
                 placeholder="Bastidor, treino, viagem, corte de peso, algo inusitado que ajude a contar quem você é."
                 required
               />
+              <MinimumCharactersHint count={20} />
             </label>
 
             <label className={`${styles.field} ${styles.longField}`}>
@@ -515,6 +541,7 @@ export function EventFighterIntakeForm({
                 placeholder="Manias, rotina, detalhes fora do comum, qualquer ponto que renda boa apresentação."
                 required
               />
+              <MinimumCharactersHint count={20} />
             </label>
 
             <label className={`${styles.field} ${styles.longField}`}>
@@ -526,6 +553,7 @@ export function EventFighterIntakeForm({
                 placeholder="O que você curte fazer fora da luta?"
                 required
               />
+              <MinimumCharactersHint count={2} />
             </label>
           </div>
         </section>
@@ -536,7 +564,8 @@ export function EventFighterIntakeForm({
             <h2 className={styles.sectionTitle}>Material visual do atleta</h2>
             <p className={styles.sectionCopy}>
               Envie fotos com boa iluminação e boa qualidade. Se possível, fundo limpo e
-              enquadramento sem corte para facilitar uso em card, thumb e transmissão.
+              enquadramento sem corte para facilitar uso em card, thumb e transmissão. Se
+              não tiver tudo agora, pode enviar a ficha e complementar as fotos depois.
             </p>
           </div>
 
@@ -545,12 +574,13 @@ export function EventFighterIntakeForm({
               <label className={styles.photoCard} key={photoField.fieldName}>
                 <span className={styles.photoTitle}>{photoField.label}</span>
                 <span className={styles.photoNote}>{photoField.note}</span>
-                <span className={styles.photoNote}>JPEG, PNG, WEBP ou HEIC, até 10 MB.</span>
+                <span className={styles.photoNote}>
+                  Opcional. JPEG, PNG, WEBP ou HEIC, até 10 MB.
+                </span>
                 <input
                   accept="image/*,.heic,.heif"
                   className={styles.fileInput}
                   name={photoField.fieldName}
-                  required
                   type="file"
                 />
               </label>
