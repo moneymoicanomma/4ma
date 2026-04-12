@@ -12,7 +12,13 @@ import type {
   FantasyScoringRules
 } from "@/lib/fantasy/mock-data";
 import { queryDatabase, withDatabaseTransaction } from "@/lib/server/database";
-import { getServerEnv, isDatabaseConfigured, type ServerEnv } from "@/lib/server/env";
+import {
+  getServerEnv,
+  isDatabaseConfigured,
+  isUpstreamConfigured,
+  type ServerEnv
+} from "@/lib/server/env";
+import { postJsonToUpstream } from "@/lib/server/http";
 import type { RequestAuditContext } from "@/lib/server/request-context";
 
 type EventRow = {
@@ -306,7 +312,30 @@ export async function submitFantasyEntry(
   env: ServerEnv = getServerEnv()
 ): Promise<FantasyEntryPublicResponse | null> {
   if (!isDatabaseConfigured(env)) {
-    return null;
+    if (!isUpstreamConfigured(env)) {
+      return null;
+    }
+
+    try {
+      const response = await postJsonToUpstream(
+        `${env.upstreamApiBaseUrl}${env.fantasyEntrySubmitPath}`,
+        {
+          payload,
+          requestContext
+        },
+        {
+          bearerToken: env.upstreamApiBearerToken!,
+          timeoutMs: env.upstreamRequestTimeoutMs
+        }
+      );
+
+      const upstreamPayload =
+        (await response.json().catch(() => null)) as FantasyEntryPublicResponse | null;
+
+      return upstreamPayload?.ok ? upstreamPayload : null;
+    } catch {
+      return null;
+    }
   }
 
   const stateCode = stateNameToCode.get(payload.state);

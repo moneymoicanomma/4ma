@@ -61,6 +61,14 @@ function resolveObjectKey(
   return `event-fighter-intakes/${eventSlug}/${fighterSlug}/${fieldName}-${randomUUID()}${normalizedExtension}`;
 }
 
+function resolveStagedObjectKey(fileName: string, requestId: string, fieldName: string) {
+  const extension = path.extname(fileName).toLowerCase();
+  const normalizedExtension = extension || ".bin";
+  const safeRequestId = requestId.replace(/[^a-zA-Z0-9_-]+/g, "-").slice(0, 80) || randomUUID();
+
+  return `event-fighter-intakes/staging/${safeRequestId}/${fieldName}-${randomUUID()}${normalizedExtension}`;
+}
+
 export async function uploadFighterPhoto(options: {
   bytes: Buffer;
   contentType: string;
@@ -81,6 +89,46 @@ export async function uploadFighterPhoto(options: {
     options.fileName,
     options.eventSlug,
     options.fighterSlug,
+    options.fieldName
+  );
+
+  await getS3Client(env).send(
+    new PutObjectCommand({
+      Bucket: bucket,
+      Key: objectKey,
+      Body: options.bytes,
+      ContentType: options.contentType
+    })
+  );
+
+  return {
+    bucket,
+    objectKey,
+    sha256Hex: sha256Hex(options.bytes),
+    byteSize: options.bytes.byteLength,
+    contentType: options.contentType,
+    storageProvider: env.fighterPhotosStorageProvider
+  };
+}
+
+export async function uploadStagedFighterPhoto(options: {
+  bytes: Buffer;
+  contentType: string;
+  fieldName: string;
+  fileName: string;
+  requestId: string;
+  env?: ServerEnv;
+}): Promise<StoredFighterPhoto> {
+  const env = options.env ?? getServerEnv();
+
+  if (!isFighterPhotoStorageConfigured(env)) {
+    throw new Error("Fighter photo storage is not configured.");
+  }
+
+  const bucket = env.fighterPhotosStorageBucket!;
+  const objectKey = resolveStagedObjectKey(
+    options.fileName,
+    options.requestId,
     options.fieldName
   );
 

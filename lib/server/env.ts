@@ -24,6 +24,7 @@ export type ServerEnv = {
   fighterApplicationSubmitPath: string;
   eventFighterIntakeSubmitPath: string;
   partnerInquirySubmitPath: string;
+  fantasyEntrySubmitPath: string;
   upstreamRequestTimeoutMs: number;
   allowedFormOrigins: ReadonlySet<string>;
 };
@@ -93,6 +94,10 @@ function createServerEnv(): ServerEnv {
     partnerInquirySubmitPath: normalizePath(
       process.env.UPSTREAM_PARTNER_INQUIRY_PATH ?? "",
       "/v1/partner-inquiries"
+    ),
+    fantasyEntrySubmitPath: normalizePath(
+      process.env.UPSTREAM_FANTASY_ENTRY_PATH ?? "",
+      "/v1/fantasy/entries"
     ),
     upstreamRequestTimeoutMs: Number.isFinite(timeout) && timeout > 0 ? timeout : 10000,
     allowedFormOrigins: new Set(

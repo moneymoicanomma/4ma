@@ -1,7 +1,6 @@
 import "server-only";
 
 import {
-  NEWSLETTER_SOURCE,
   PRESS_NEWSLETTER_SOURCE,
   type NewsletterSubscriptionPayload
 } from "@/lib/contracts/newsletter";
@@ -112,8 +111,12 @@ export async function subscribeToNewsletter(
     await postJsonToUpstream(
       `${env.upstreamApiBaseUrl}${env.newsletterSubscribePath}`,
       {
-        email: payload.email,
-        source: NEWSLETTER_SOURCE
+        payload: {
+          email: payload.email,
+          name: payload.name,
+          source: payload.source
+        },
+        requestContext
       },
       {
         bearerToken: env.upstreamApiBearerToken!,

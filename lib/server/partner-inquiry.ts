@@ -110,7 +110,10 @@ export async function submitPartnerInquiry(
   try {
     await postJsonToUpstream(
       `${env.upstreamApiBaseUrl}${env.partnerInquirySubmitPath}`,
-      payload,
+      {
+        payload,
+        requestContext
+      },
       {
         bearerToken: env.upstreamApiBearerToken!,
         timeoutMs: env.upstreamRequestTimeoutMs

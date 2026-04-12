@@ -60,7 +60,18 @@ export function EventFighterAccessForm() {
 
       const redirectUrl = new URL(payload.redirectTo ?? "/atletas-da-edicao", window.location.origin);
       redirectUrl.hash = "formulario";
-      window.location.replace(redirectUrl.toString());
+
+      // Switching only the hash on the same URL does not re-render the server page
+      // with the newly issued cookie. Force a real navigation when we stay on the
+      // athlete portal route so the form opens immediately after login.
+      if (
+        redirectUrl.pathname === window.location.pathname &&
+        redirectUrl.search === window.location.search
+      ) {
+        redirectUrl.searchParams.set("portal", "1");
+      }
+
+      window.location.assign(redirectUrl.toString());
     } catch (error) {
       setState({
         status: "error",

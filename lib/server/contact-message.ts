@@ -104,7 +104,10 @@ export async function submitContactMessage(
   try {
     await postJsonToUpstream(
       `${env.upstreamApiBaseUrl}${env.contactMessageSubmitPath}`,
-      payload,
+      {
+        payload,
+        requestContext
+      },
       {
         bearerToken: env.upstreamApiBearerToken!,
         timeoutMs: env.upstreamRequestTimeoutMs

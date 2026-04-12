@@ -2,14 +2,13 @@ import "server-only";
 
 import { randomUUID } from "node:crypto";
 
-import {
-  buildEventFighterIntakeUpstreamFormData,
-  type EventFighterIntakeSubmission
-} from "@/lib/contracts/event-fighter-intake";
+import { type EventFighterIntakeSubmission } from "@/lib/contracts/event-fighter-intake";
 import { queryDatabase, withDatabaseTransaction } from "@/lib/server/database";
 import {
   deleteFighterPhotos,
-  uploadFighterPhoto
+  uploadFighterPhoto,
+  uploadStagedFighterPhoto,
+  type StoredFighterPhoto
 } from "@/lib/server/fighter-photo-storage";
 import {
   getServerEnv,
@@ -18,7 +17,6 @@ import {
   isUpstreamConfigured,
   type ServerEnv
 } from "@/lib/server/env";
-import { postFormDataToUpstream } from "@/lib/server/http";
 import type { RequestAuditContext } from "@/lib/server/request-context";
 
 type EventFighterIntakeSubmitResult =
@@ -26,7 +24,14 @@ type EventFighterIntakeSubmitResult =
   | {
       ok: false;
       reason: "not_configured" | "upstream_error";
+      status?: number;
+      message?: string;
     };
+
+type UpstreamUploadedPhotoReference = StoredFighterPhoto & {
+  fieldName: EventFighterIntakeSubmission["photos"][number]["fieldName"];
+  fileName: string;
+};
 
 export async function submitEventFighterIntake(
   submission: EventFighterIntakeSubmission,
@@ -360,28 +365,120 @@ export async function submitEventFighterIntake(
     }
   }
 
-  if (!isUpstreamConfigured(env)) {
+  if (isUpstreamConfigured(env) && isFighterPhotoStorageConfigured(env)) {
+    try {
+      const uploadedPhotos: UpstreamUploadedPhotoReference[] = await Promise.all(
+        submission.photos.map(async (photo) => {
+          const bytes = Buffer.from(await photo.file.arrayBuffer());
+
+          const storedPhoto = await uploadStagedFighterPhoto({
+            bytes,
+            contentType: photo.file.type || "application/octet-stream",
+            fieldName: photo.fieldName,
+            fileName: photo.file.name,
+            requestId: options.requestContext.requestId,
+            env
+          });
+
+          return {
+            ...storedPhoto,
+            fieldName: photo.fieldName,
+            fileName: photo.file.name
+          };
+        })
+      );
+
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), env.upstreamRequestTimeoutMs);
+
+      try {
+        const response = await fetch(
+          `${env.upstreamApiBaseUrl}${env.eventFighterIntakeSubmitPath}`,
+          {
+            method: "POST",
+            headers: {
+              Accept: "application/json",
+              Authorization: `Bearer ${env.upstreamApiBearerToken!}`,
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+              payload: submission.payload,
+              photos: uploadedPhotos,
+              requestContext: {
+                requestId: options.requestContext.requestId,
+                requestOrigin: options.requestContext.requestOrigin,
+                requestIpHash: options.requestContext.requestIpHash,
+                clientIp: options.requestContext.clientIp,
+                userAgent: options.requestContext.userAgent
+              }
+            }),
+            cache: "no-store",
+            signal: controller.signal
+          }
+        );
+
+        const responsePayload =
+          (await response.json().catch(() => null)) as { ok?: boolean; message?: string } | null;
+
+        if (!response.ok || !responsePayload?.ok) {
+          await deleteFighterPhotos(
+            uploadedPhotos.map((photo) => ({
+              bucket: photo.bucket,
+              objectKey: photo.objectKey
+            })),
+            env
+          );
+
+          return {
+            ok: false,
+            reason: "upstream_error",
+            status: response.status || 502,
+            message:
+              responsePayload?.message ??
+              "Serviço temporariamente indisponível. Tenta novamente daqui a pouco."
+          };
+        }
+
+        return { ok: true };
+      } catch (error) {
+        await deleteFighterPhotos(
+          uploadedPhotos.map((photo) => ({
+            bucket: photo.bucket,
+            objectKey: photo.objectKey
+          })),
+          env
+        );
+
+        return {
+          ok: false,
+          reason: "upstream_error",
+          status: error instanceof Error && error.name === "AbortError" ? 504 : 502,
+          message:
+            error instanceof Error && error.name === "AbortError"
+              ? "O envio demorou demais para responder. Tenta novamente em alguns segundos."
+              : "Serviço temporariamente indisponível. Tenta novamente daqui a pouco."
+        };
+      } finally {
+        clearTimeout(timeoutId);
+      }
+    } catch {
+      return {
+        ok: false,
+        reason: "upstream_error"
+      };
+    }
+  }
+
+  if (!isUpstreamConfigured(env) || !isFighterPhotoStorageConfigured(env)) {
     return {
       ok: false,
       reason: "not_configured"
     };
   }
 
-  try {
-    await postFormDataToUpstream(
-      `${env.upstreamApiBaseUrl}${env.eventFighterIntakeSubmitPath}`,
-      buildEventFighterIntakeUpstreamFormData(submission),
-      {
-        bearerToken: env.upstreamApiBearerToken!,
-        timeoutMs: env.upstreamRequestTimeoutMs
-      }
-    );
-
-    return { ok: true };
-  } catch {
-    return {
-      ok: false,
-      reason: "upstream_error"
-    };
-  }
+  return {
+    ok: false,
+    reason: "not_configured",
+    message: "As credenciais de upload do R2 ainda não foram configuradas para o portal."
+  };
 }

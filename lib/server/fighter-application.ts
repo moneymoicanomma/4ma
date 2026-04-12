@@ -195,7 +195,10 @@ export async function submitFighterApplication(
   try {
     await postJsonToUpstream(
       `${env.upstreamApiBaseUrl}${env.fighterApplicationSubmitPath}`,
-      payload,
+      {
+        payload,
+        requestContext
+      },
       {
         bearerToken: env.upstreamApiBearerToken!,
         timeoutMs: env.upstreamRequestTimeoutMs

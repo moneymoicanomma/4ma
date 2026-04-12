@@ -29,6 +29,10 @@ EVENT_FIGHTER_ACCESS_AUTH_MODE=shared_password
 ATHLETE_FORM_PASSWORD=<senha-compartilhada-com-os-atletas>
 ATHLETE_FORM_SESSION_SECRET=<segredo-do-cookie-do-portal>
 APP_ENCRYPTION_KEY=<segredo-longo>
+UPSTREAM_API_BASE_URL=https://sua-function-url.lambda-url.us-east-2.on.aws
+UPSTREAM_API_BEARER_TOKEN=<token-interno-da-lambda>
+UPSTREAM_EVENT_FIGHTER_INTAKE_PATH=/v1/event-fighter-intakes
+UPSTREAM_FANTASY_ENTRY_PATH=/v1/fantasy/entries
 FIGHTER_PHOTOS_STORAGE_PROVIDER=r2
 FIGHTER_PHOTOS_S3_BUCKET=mmmma-fighter-photos
 FIGHTER_PHOTOS_S3_REGION=auto
@@ -45,7 +49,8 @@ FIGHTER_PHOTOS_S3_FORCE_PATH_STYLE=false
 - `FIGHTER_PHOTOS_S3_ENDPOINT` usa o endpoint S3 compatível do R2.
 - `DATABASE_POOL_MAX_CONNECTIONS=5` é um ponto de partida mais seguro para ambiente serverless do que deixar o pool alto por instância.
 - O app continua salvando no banco só os metadados das fotos. Os binários seguem no bucket S3 compatível.
-- `UPSTREAM_*` continua sendo usado para enviar as fichas para a Lambda/RDS privada. O modo de autenticação do portal pode ser separado disso.
+- `UPSTREAM_*` continua sendo usado para enviar os formulários públicos, fantasy e a ficha do atleta para a Lambda/RDS privada. O modo de autenticação do portal pode ser separado disso.
+- No modo com RDS privada, o Vercel ainda precisa das credenciais do R2 para subir as fotos primeiro no bucket. A Lambda recebe só payload e metadados, sem os binários.
 
 ## Checklist
 
