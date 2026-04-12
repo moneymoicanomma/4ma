@@ -1,4 +1,6 @@
 import type { Metadata, Viewport } from "next";
+import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import { rootMetadata, siteStructuredData } from "@/lib/seo";
 
 import "./globals.css";
@@ -31,7 +33,11 @@ export default function RootLayout({
           type="application/ld+json"
         />
       </head>
-      <body>{children}</body>
+      <body>
+        {children}
+        <Analytics />
+        <SpeedInsights />
+      </body>
     </html>
   );
 }
