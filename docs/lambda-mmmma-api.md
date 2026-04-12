@@ -5,6 +5,7 @@
 Arquivos:
 
 - `lambda/mmmma-api/index.mjs`
+- `lambda/mmmma-api/google-sheets-exports.mjs`
 - `lambda/mmmma-api/package.json`
 
 ## Endpoints prontos
@@ -13,6 +14,7 @@ Este starter responde:
 
 - `GET /health`
 - `GET /v1/admin/database-overview`
+- `GET /v1/google-sheets/exports/:tableKey`
 - `POST /v1/newsletter/subscriptions`
 - `POST /v1/contact-messages`
 - `POST /v1/fighter-applications`
@@ -32,13 +34,19 @@ INTERNAL_API_BEARER_TOKEN=gere-um-token-longo-e-aleatorio
 APP_ENCRYPTION_KEY=gere-um-segredo-longo-e-aleatorio
 ```
 
+Opcional para Google Sheets com token dedicado:
+
+```bash
+GOOGLE_SHEETS_EXPORT_BEARER_TOKEN=gere-um-token-so-para-o-apps-script
+```
+
 ## Como publicar
 
 Dentro de `lambda/mmmma-api`:
 
 ```bash
 npm install
-zip -r function.zip index.mjs package.json package-lock.json node_modules
+zip -r function.zip index.mjs google-sheets-exports.mjs package.json package-lock.json node_modules
 ```
 
 Depois, na Lambda:
@@ -68,6 +76,14 @@ Overview do admin:
 ```bash
 curl -i https://rufyyaot4xzcbx4tapzd72hgoa0icnnk.lambda-url.us-east-2.on.aws/v1/admin/database-overview \
   -H 'Authorization: Bearer SEU_TOKEN' \
+  -H 'Accept: application/json'
+```
+
+Export de uma tabela para Google Sheets:
+
+```bash
+curl -i 'https://rufyyaot4xzcbx4tapzd72hgoa0icnnk.lambda-url.us-east-2.on.aws/v1/google-sheets/exports/event_fighter_intakes?limit=1000&offset=0' \
+  -H 'Authorization: Bearer SEU_TOKEN_GOOGLE_SHEETS' \
   -H 'Accept: application/json'
 ```
 

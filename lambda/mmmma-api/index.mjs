@@ -8,6 +8,11 @@ import { promisify } from "node:util";
 
 import pg from "pg";
 
+import {
+  GOOGLE_SHEETS_EXPORT_ROUTE_BASE,
+  GOOGLE_SHEETS_EXPORTS
+} from "./google-sheets-exports.mjs";
+
 const { Pool } = pg;
 const scrypt = promisify(scryptCallback);
 
@@ -188,6 +193,19 @@ function assertInternalBearer(event) {
   return true;
 }
 
+function assertGoogleSheetsExportBearer(event) {
+  const expectedToken =
+    process.env.GOOGLE_SHEETS_EXPORT_BEARER_TOKEN?.trim() || getRequiredEnv("INTERNAL_API_BEARER_TOKEN");
+  const authorization = getHeader(event.headers, "authorization") ?? "";
+  const [scheme, token] = authorization.split(/\s+/, 2);
+
+  if (scheme !== "Bearer" || token !== expectedToken) {
+    return false;
+  }
+
+  return true;
+}
+
 function normalizeEmail(email) {
   return typeof email === "string" ? email.trim().toLowerCase() : "";
 }
@@ -274,6 +292,38 @@ function parseJsonBody(event) {
     : event.body;
 
   return JSON.parse(rawBody);
+}
+
+function parsePositiveInteger(value, fallback, maxValue = Number.MAX_SAFE_INTEGER) {
+  const parsed = Number.parseInt(value ?? "", 10);
+
+  if (!Number.isFinite(parsed) || parsed < 0) {
+    return fallback;
+  }
+
+  return Math.min(parsed, maxValue);
+}
+
+async function loadGoogleSheetsExportPage(exportConfig, options) {
+  const limit = Math.max(1, Math.min(options.limit ?? 1000, 1000));
+  const offset = Math.max(0, options.offset ?? 0);
+  const result = await getDatabasePool().query(
+    `
+      select ${exportConfig.columns.join(", ")}
+      from ${exportConfig.tableName}
+      order by ${exportConfig.orderBy}
+      limit $1
+      offset $2
+    `,
+    [limit, offset]
+  );
+
+  return {
+    key: exportConfig.key,
+    sheetName: exportConfig.sheetName,
+    columns: exportConfig.columns,
+    rows: result.rows
+  };
 }
 
 function sha256Buffer(value) {
@@ -2150,6 +2200,43 @@ async function handleAdminDatabaseRecord(event, tableId, rowId) {
   }
 }
 
+async function handleGoogleSheetsExportTable(event, exportKey) {
+  if (!assertGoogleSheetsExportBearer(event)) {
+    return buildJsonResponse(401, {
+      ok: false,
+      message: "Unauthorized."
+    });
+  }
+
+  const exportConfig = GOOGLE_SHEETS_EXPORTS[exportKey];
+
+  if (!exportConfig) {
+    return buildNotFoundResponse();
+  }
+
+  const limit = parsePositiveInteger(event.queryStringParameters?.limit, 1000, 1000);
+  const offset = parsePositiveInteger(event.queryStringParameters?.offset, 0);
+
+  try {
+    const payload = await loadGoogleSheetsExportPage(exportConfig, {
+      limit,
+      offset
+    });
+
+    return buildJsonResponse(200, {
+      ok: true,
+      export: payload
+    });
+  } catch (error) {
+    console.error("google sheets export failed", { error, exportKey, limit, offset });
+
+    return buildJsonResponse(503, {
+      ok: false,
+      message: "Serviço temporariamente indisponível."
+    });
+  }
+}
+
 async function handleEventFighterAccess(event) {
   if (!assertInternalBearer(event)) {
     return buildJsonResponse(401, {
@@ -3374,6 +3461,14 @@ export const handler = async (event) => {
           decodeURIComponent(pathSegments[0]),
           decodeURIComponent(pathSegments[1])
         );
+      }
+    }
+
+    if (method === "GET" && rawPath.startsWith(`${GOOGLE_SHEETS_EXPORT_ROUTE_BASE}/`)) {
+      const exportKey = rawPath.slice(GOOGLE_SHEETS_EXPORT_ROUTE_BASE.length + 1).trim();
+
+      if (exportKey) {
+        return await handleGoogleSheetsExportTable(event, decodeURIComponent(exportKey));
       }
     }
 
