@@ -2,10 +2,8 @@ import "server-only";
 
 import { NextResponse } from "next/server";
 
-import type { PublicMutationResponse } from "@/lib/contracts/public-mutation";
-
-export function publicApiResponse(
-  payload: PublicMutationResponse,
+export function publicApiResponse<TPayload extends object>(
+  payload: TPayload,
   options?: {
     status?: number;
     headers?: HeadersInit;

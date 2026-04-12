@@ -8,6 +8,7 @@ import {
   PutObjectCommand,
   S3Client
 } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 import {
   getServerEnv,
@@ -21,6 +22,15 @@ export type StoredFighterPhoto = {
   sha256Hex: string;
   byteSize: number;
   contentType: string;
+  storageProvider: string;
+};
+
+export type StagedFighterPhotoUploadTarget = {
+  uploadUrl: string;
+  bucket: string;
+  objectKey: string;
+  contentType: string;
+  byteSize: number;
   storageProvider: string;
 };
 
@@ -67,6 +77,49 @@ function resolveStagedObjectKey(fileName: string, requestId: string, fieldName: 
   const safeRequestId = requestId.replace(/[^a-zA-Z0-9_-]+/g, "-").slice(0, 80) || randomUUID();
 
   return `event-fighter-intakes/staging/${safeRequestId}/${fieldName}-${randomUUID()}${normalizedExtension}`;
+}
+
+export async function createStagedFighterPhotoUploadTarget(options: {
+  byteSize: number;
+  contentType: string;
+  fieldName: string;
+  fileName: string;
+  requestId: string;
+  env?: ServerEnv;
+}): Promise<StagedFighterPhotoUploadTarget> {
+  const env = options.env ?? getServerEnv();
+
+  if (!isFighterPhotoStorageConfigured(env)) {
+    throw new Error("Fighter photo storage is not configured.");
+  }
+
+  const bucket = env.fighterPhotosStorageBucket!;
+  const objectKey = resolveStagedObjectKey(
+    options.fileName,
+    options.requestId,
+    options.fieldName
+  );
+
+  const uploadUrl = await getSignedUrl(
+    getS3Client(env),
+    new PutObjectCommand({
+      Bucket: bucket,
+      Key: objectKey,
+      ContentType: options.contentType
+    }),
+    {
+      expiresIn: 10 * 60
+    }
+  );
+
+  return {
+    uploadUrl,
+    bucket,
+    objectKey,
+    contentType: options.contentType,
+    byteSize: options.byteSize,
+    storageProvider: env.fighterPhotosStorageProvider
+  };
 }
 
 export async function uploadFighterPhoto(options: {

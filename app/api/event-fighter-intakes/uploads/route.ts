@@ -1,31 +1,26 @@
 import { NextRequest } from "next/server";
 
-import {
-  parseEventFighterIntakeJsonSubmission,
-  type EventFighterIntakePublicResponse
-} from "@/lib/contracts/event-fighter-intake";
 import { requireAuthenticatedEventFighterPortalSession } from "@/app/api/event-fighter-intakes/_auth";
+import {
+  parseEventFighterIntakeUploadRequest,
+  type EventFighterIntakeUploadInitResponse
+} from "@/lib/contracts/event-fighter-intake";
 import { publicApiResponse } from "@/lib/server/api-response";
-import { submitEventFighterIntake } from "@/lib/server/event-fighter-intake";
+import { createStagedFighterPhotoUploadTarget } from "@/lib/server/fighter-photo-storage";
+import { getServerEnv, isFighterPhotoStorageConfigured } from "@/lib/server/env";
+import { buildRequestAuditContext } from "@/lib/server/request-context";
 import {
   getClientIdentifier,
   getPublicMutationCorsHeaders,
   isAllowedRequestOrigin,
   readJsonRequestBody
 } from "@/lib/server/request-guards";
-import { buildRequestAuditContext } from "@/lib/server/request-context";
-import { getServerEnv } from "@/lib/server/env";
 import { takeRateLimitToken } from "@/lib/server/rate-limit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const MAX_EVENT_FIGHTER_INTAKE_BODY_BYTES = 256 * 1024;
-
-const successPayload: EventFighterIntakePublicResponse = {
-  ok: true,
-  message: "Ficha recebida. Se precisarmos complementar algo, a equipe entra em contato."
-};
+const MAX_EVENT_FIGHTER_UPLOAD_INIT_BODY_BYTES = 64 * 1024;
 
 export async function POST(request: NextRequest) {
   const env = getServerEnv();
@@ -36,9 +31,22 @@ export async function POST(request: NextRequest) {
       {
         ok: false,
         message: "Origem não permitida."
-      },
+      } satisfies EventFighterIntakeUploadInitResponse,
       {
         status: 403,
+        headers: corsHeaders ?? undefined
+      }
+    );
+  }
+
+  if (!isFighterPhotoStorageConfigured(env)) {
+    return publicApiResponse(
+      {
+        ok: false,
+        message: "As credenciais de upload do R2 ainda não foram configuradas para o portal."
+      } satisfies EventFighterIntakeUploadInitResponse,
+      {
+        status: 503,
         headers: corsHeaders ?? undefined
       }
     );
@@ -55,10 +63,13 @@ export async function POST(request: NextRequest) {
   }
 
   const requester = getClientIdentifier(request);
-  const rateLimit = takeRateLimitToken(`event-fighter-intake:${requester}`, {
-    limit: 2,
-    windowMs: 10 * 60 * 1000
-  });
+  const rateLimit = takeRateLimitToken(
+    `event-fighter-intake-upload:${requester}:${authenticatedSession.authenticatedEmail}`,
+    {
+      limit: 4,
+      windowMs: 10 * 60 * 1000
+    }
+  );
 
   if (!rateLimit.ok) {
     const retryAfterSeconds = Math.max(1, Math.ceil((rateLimit.resetAt - Date.now()) / 1000));
@@ -67,7 +78,7 @@ export async function POST(request: NextRequest) {
       {
         ok: false,
         message: "Muitas tentativas seguidas. Tenta novamente em alguns minutos."
-      },
+      } satisfies EventFighterIntakeUploadInitResponse,
       {
         status: 429,
         headers: {
@@ -79,7 +90,7 @@ export async function POST(request: NextRequest) {
   }
 
   const requestBody = await readJsonRequestBody(request, {
-    maxBytes: MAX_EVENT_FIGHTER_INTAKE_BODY_BYTES
+    maxBytes: MAX_EVENT_FIGHTER_UPLOAD_INIT_BODY_BYTES
   });
 
   if (!requestBody.ok) {
@@ -87,7 +98,7 @@ export async function POST(request: NextRequest) {
       {
         ok: false,
         message: requestBody.message
-      },
+      } satisfies EventFighterIntakeUploadInitResponse,
       {
         status: requestBody.status,
         headers: corsHeaders ?? undefined
@@ -95,17 +106,14 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const parsed = parseEventFighterIntakeJsonSubmission(
-    requestBody.data,
-    authenticatedSession.authenticatedEmail
-  );
+  const parsed = parseEventFighterIntakeUploadRequest(requestBody.data);
 
   if (!parsed.ok) {
     return publicApiResponse(
       {
         ok: false,
         message: parsed.message
-      },
+      } satisfies EventFighterIntakeUploadInitResponse,
       {
         status: 400,
         headers: corsHeaders ?? undefined
@@ -113,40 +121,47 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  if (parsed.honeypotTriggered || !parsed.data) {
-    return publicApiResponse(successPayload, {
-      headers: corsHeaders ?? undefined
-    });
-  }
+  const requestContext = buildRequestAuditContext(request);
 
-  const result = await submitEventFighterIntake(
-    parsed.data,
-    {
-      authenticatedAccountId: authenticatedSession.authenticatedAccountId,
-      requestContext: buildRequestAuditContext(request)
-    },
-    env
-  );
-
-  if (!result.ok) {
-    const status = result.status ?? (result.reason === "not_configured" ? 503 : 502);
+  try {
+    const uploads = await Promise.all(
+      parsed.files.map((file) =>
+        createStagedFighterPhotoUploadTarget({
+          byteSize: file.byteSize,
+          contentType: file.contentType,
+          fieldName: file.fieldName,
+          fileName: file.fileName,
+          requestId: requestContext.requestId,
+          env
+        }).then((target) => ({
+          ...target,
+          fieldName: file.fieldName,
+          fileName: file.fileName
+        }))
+      )
+    );
 
     return publicApiResponse(
       {
-        ok: false,
-        message:
-          result.message ?? "Serviço temporariamente indisponível. Tenta novamente daqui a pouco."
-      },
+        ok: true,
+        uploads
+      } satisfies EventFighterIntakeUploadInitResponse,
       {
-        status,
+        headers: corsHeaders ?? undefined
+      }
+    );
+  } catch {
+    return publicApiResponse(
+      {
+        ok: false,
+        message: "Não foi possível preparar o upload das fotos agora."
+      } satisfies EventFighterIntakeUploadInitResponse,
+      {
+        status: 502,
         headers: corsHeaders ?? undefined
       }
     );
   }
-
-  return publicApiResponse(successPayload, {
-    headers: corsHeaders ?? undefined
-  });
 }
 
 export async function OPTIONS(request: NextRequest) {

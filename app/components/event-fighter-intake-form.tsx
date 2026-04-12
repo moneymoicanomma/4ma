@@ -5,7 +5,10 @@ import { type FormEvent, useState } from "react";
 import {
   EVENT_FIGHTER_PHOTO_FIELDS,
   PIX_KEY_TYPES,
+  parseEventFighterIntakeFormData,
+  type EventFighterIntakeDraftSubmission,
   type EventFighterIntakePublicResponse,
+  type EventFighterIntakeUploadInitResponse,
   type HealthInsuranceOption,
   type PixKeyType
 } from "@/lib/contracts/event-fighter-intake";
@@ -27,6 +30,8 @@ const initialState: FormState = {
   message: ""
 };
 
+const successMessage =
+  "Ficha recebida. Se precisarmos complementar algo, a equipe entra em contato.";
 const initialHealthInsuranceOption: HealthInsuranceOption = "no";
 const initialPixKeyType: PixKeyType = "cpf";
 
@@ -36,6 +41,91 @@ const pixKeyTypeLabels: Record<PixKeyType, string> = {
   phone: "Telefone",
   random: "Aleatória"
 };
+
+function arrayBufferToHex(buffer: ArrayBuffer) {
+  return Array.from(new Uint8Array(buffer), (byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
+async function computeSha256Hex(file: File) {
+  const digest = await crypto.subtle.digest("SHA-256", await file.arrayBuffer());
+
+  return arrayBufferToHex(digest);
+}
+
+async function createUploadTargets(submission: EventFighterIntakeDraftSubmission) {
+  const response = await fetch("/api/event-fighter-intakes/uploads", {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      files: submission.photos.map((photo) => ({
+        fieldName: photo.fieldName,
+        fileName: photo.file.name,
+        contentType: photo.file.type || "application/octet-stream",
+        byteSize: photo.file.size
+      }))
+    }),
+    cache: "no-store"
+  });
+
+  const payload =
+    (await response.json().catch(() => null)) as EventFighterIntakeUploadInitResponse | null;
+
+  if (!response.ok || !payload || payload.ok !== true) {
+    throw new Error(
+      payload && "message" in payload
+        ? payload.message
+        : "Não foi possível preparar o upload das fotos agora."
+    );
+  }
+
+  return payload.uploads;
+}
+
+async function uploadPhotosToR2(submission: EventFighterIntakeDraftSubmission) {
+  const uploadTargets = await createUploadTargets(submission);
+  const uploadTargetByField = new Map(
+    uploadTargets.map((target) => [target.fieldName, target] as const)
+  );
+
+  return Promise.all(
+    submission.photos.map(async (photo) => {
+      const target = uploadTargetByField.get(photo.fieldName);
+
+      if (!target) {
+        throw new Error(`Não foi possível preparar o upload de ${photo.label}.`);
+      }
+
+      const [sha256Hex, uploadResponse] = await Promise.all([
+        computeSha256Hex(photo.file),
+        fetch(target.uploadUrl, {
+          method: "PUT",
+          headers: {
+            "Content-Type": target.contentType
+          },
+          body: photo.file
+        })
+      ]);
+
+      if (!uploadResponse.ok) {
+        throw new Error(`Não foi possível enviar ${photo.label} agora.`);
+      }
+
+      return {
+        fieldName: photo.fieldName,
+        fileName: target.fileName,
+        bucket: target.bucket,
+        objectKey: target.objectKey,
+        contentType: target.contentType,
+        byteSize: target.byteSize,
+        sha256Hex,
+        storageProvider: target.storageProvider
+      };
+    })
+  );
+}
 
 export function EventFighterIntakeForm({
   authenticatedEmail
@@ -56,16 +146,53 @@ export function EventFighterIntakeForm({
 
     setState({
       status: "submitting",
-      message: "Enviando ficha..."
+      message: "Validando ficha..."
     });
 
     try {
+      const parsed = parseEventFighterIntakeFormData(formData, authenticatedEmail);
+
+      if (!parsed.ok) {
+        setState({
+          status: "error",
+          message: parsed.message
+        });
+        return;
+      }
+
+      if (parsed.honeypotTriggered || !parsed.data) {
+        form.reset();
+        setHasHealthInsurance(initialHealthInsuranceOption);
+        setState({
+          status: "success",
+          message: successMessage
+        });
+        setConfirmationMessage(successMessage);
+        return;
+      }
+
+      setState({
+        status: "submitting",
+        message: "Enviando fotos para o portal..."
+      });
+
+      const uploadedPhotos = await uploadPhotosToR2(parsed.data);
+
+      setState({
+        status: "submitting",
+        message: "Gravando ficha..."
+      });
+
       const response = await fetch("/api/event-fighter-intakes", {
         method: "POST",
         headers: {
-          Accept: "application/json"
+          Accept: "application/json",
+          "Content-Type": "application/json"
         },
-        body: formData,
+        body: JSON.stringify({
+          payload: parsed.data.payload,
+          photos: uploadedPhotos
+        }),
         cache: "no-store"
       });
 
@@ -81,17 +208,19 @@ export function EventFighterIntakeForm({
       }
 
       form.reset();
-      formData.set("email", authenticatedEmail);
       setHasHealthInsurance(initialHealthInsuranceOption);
       setState({
         status: "success",
         message: payload.message
       });
       setConfirmationMessage(payload.message);
-    } catch {
+    } catch (error) {
       setState({
         status: "error",
-        message: "Não foi possível enviar agora. Tenta novamente."
+        message:
+          error instanceof Error
+            ? error.message
+            : "Não foi possível enviar agora. Tenta novamente."
       });
     }
   }
