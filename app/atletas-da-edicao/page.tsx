@@ -16,7 +16,7 @@ import {
 } from "@/lib/server/env";
 import {
   EVENT_FIGHTER_SESSION_COOKIE_NAME,
-  createEventFighterCredentialFingerprint,
+  createEventFighterSessionFingerprint,
   getEventFighterAuthConfig,
   verifyEventFighterSessionToken
 } from "@/lib/event-fighter/auth";
@@ -63,12 +63,12 @@ async function resolveAuthenticatedEmail(env: ServerEnv) {
     return null;
   }
 
-  const credentialFingerprint = createEventFighterCredentialFingerprint(
+  const sessionFingerprint = createEventFighterSessionFingerprint(
     session.sub,
-    authConfig.password
+    authConfig.sessionSecret
   );
 
-  if (session.cf !== credentialFingerprint) {
+  if (session.cf !== sessionFingerprint) {
     return null;
   }
 

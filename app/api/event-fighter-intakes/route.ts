@@ -9,7 +9,7 @@ import { getSessionAccountFromToken } from "@/lib/server/auth-store";
 import { submitEventFighterIntake } from "@/lib/server/event-fighter-intake";
 import {
   EVENT_FIGHTER_SESSION_COOKIE_NAME,
-  createEventFighterCredentialFingerprint,
+  createEventFighterSessionFingerprint,
   getEventFighterAuthConfig,
   verifyEventFighterSessionToken
 } from "@/lib/event-fighter/auth";
@@ -105,12 +105,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const credentialFingerprint = createEventFighterCredentialFingerprint(
+    const sessionFingerprint = createEventFighterSessionFingerprint(
       session.sub,
-      authConfig.password
+      authConfig.sessionSecret
     );
 
-    if (session.cf !== credentialFingerprint) {
+    if (session.cf !== sessionFingerprint) {
       return publicApiResponse(
         {
           ok: false,

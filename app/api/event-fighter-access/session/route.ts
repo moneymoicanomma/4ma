@@ -11,14 +11,19 @@ import {
   EVENT_FIGHTER_ACCESS_PATH,
   EVENT_FIGHTER_SESSION_COOKIE_NAME,
   EVENT_FIGHTER_SESSION_MAX_AGE_SECONDS,
-  createEventFighterCredentialFingerprint,
+  createEventFighterSessionFingerprint,
   createEventFighterSessionToken,
   getEventFighterAuthConfig,
   getSafeEventFighterRedirectPath,
   isValidEventFighterEmail,
   normalizeEventFighterEmail
 } from "@/lib/event-fighter/auth";
-import { getServerEnv, isDatabaseConfigured } from "@/lib/server/env";
+import {
+  getServerEnv,
+  isDatabaseConfigured,
+  isUpstreamConfigured
+} from "@/lib/server/env";
+import { UpstreamApiError, postJsonToUpstream } from "@/lib/server/http";
 import { buildRequestAuditContext } from "@/lib/server/request-context";
 import {
   getClientIdentifier,
@@ -66,6 +71,7 @@ function buildJsonResponse(payload: EventFighterSessionResponse, status = 200) {
 
 export async function POST(request: NextRequest) {
   const env = getServerEnv();
+  const databaseConfigured = isDatabaseConfigured(env);
 
   if (!env.eventFighterPortalEnabled) {
     return buildJsonResponse(
@@ -144,20 +150,30 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  if (isDatabaseConfigured(env)) {
-    const authenticatedSession = await authenticateAccountWithPassword({
-      acceptedRoles: ["fighter"],
-      email,
-      password,
-      requestContext: buildRequestAuditContext(request),
-      sessionKind: "fighter_portal",
-      sessionMaxAgeSeconds: EVENT_FIGHTER_SESSION_MAX_AGE_SECONDS,
-      sessionMetadata: {
-        surface: "event-fighter-access"
-      }
-    }).catch(() => null);
+  if (databaseConfigured) {
+    try {
+      const authenticatedSession = await authenticateAccountWithPassword({
+        acceptedRoles: ["fighter"],
+        email,
+        password,
+        requestContext: buildRequestAuditContext(request),
+        sessionKind: "fighter_portal",
+        sessionMaxAgeSeconds: EVENT_FIGHTER_SESSION_MAX_AGE_SECONDS,
+        sessionMetadata: {
+          surface: "event-fighter-access"
+        }
+      });
 
-    if (authenticatedSession) {
+      if (!authenticatedSession) {
+        return buildJsonResponse(
+          {
+            ok: false,
+            message: "Credenciais inválidas."
+          },
+          401
+        );
+      }
+
       const response = buildJsonResponse({
         ok: true,
         message: "Acesso liberado.",
@@ -175,6 +191,90 @@ export async function POST(request: NextRequest) {
       });
 
       return response;
+    } catch (error) {
+      console.error("event fighter login failed", {
+        error,
+        email
+      });
+
+      return buildJsonResponse(
+        {
+          ok: false,
+          message:
+            "O portal privado está indisponível no momento. Tenta novamente em alguns minutos."
+        },
+        503
+      );
+    }
+  }
+
+  if (isUpstreamConfigured(env)) {
+    try {
+      const upstreamResponse = await postJsonToUpstream(
+        `${env.upstreamApiBaseUrl}${env.eventFighterAccessPath}`,
+        {
+          email,
+          password,
+          next: redirectTo
+        },
+        {
+          bearerToken: env.upstreamApiBearerToken!,
+          timeoutMs: env.upstreamRequestTimeoutMs
+        }
+      );
+      const upstreamPayload =
+        (await upstreamResponse.json().catch(() => null)) as EventFighterSessionResponse | null;
+
+      if (!upstreamPayload?.ok) {
+        throw new UpstreamApiError(502, "Invalid upstream payload.");
+      }
+
+      const sessionFingerprint = createEventFighterSessionFingerprint(
+        email,
+        config.sessionSecret
+      );
+      const sessionToken = createEventFighterSessionToken(
+        email,
+        config.sessionSecret,
+        sessionFingerprint
+      );
+
+      const response = buildJsonResponse({
+        ok: true,
+        message: upstreamPayload.message || "Acesso liberado.",
+        redirectTo
+      });
+
+      response.cookies.set({
+        name: EVENT_FIGHTER_SESSION_COOKIE_NAME,
+        value: sessionToken,
+        httpOnly: true,
+        maxAge: EVENT_FIGHTER_SESSION_MAX_AGE_SECONDS,
+        path: "/",
+        sameSite: "lax",
+        secure: process.env.NODE_ENV === "production"
+      });
+
+      return response;
+    } catch (error) {
+      if (error instanceof UpstreamApiError && error.status === 401) {
+        return buildJsonResponse(
+          {
+            ok: false,
+            message: "Credenciais inválidas."
+          },
+          401
+        );
+      }
+
+      return buildJsonResponse(
+        {
+          ok: false,
+          message:
+            "O portal privado está indisponível no momento. Tenta novamente em alguns minutos."
+        },
+        503
+      );
     }
   }
 
@@ -188,14 +288,11 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const credentialFingerprint = createEventFighterCredentialFingerprint(
-    email,
-    config.password
-  );
+  const sessionFingerprint = createEventFighterSessionFingerprint(email, config.sessionSecret);
   const sessionToken = createEventFighterSessionToken(
     email,
     config.sessionSecret,
-    credentialFingerprint
+    sessionFingerprint
   );
 
   const response = buildJsonResponse({

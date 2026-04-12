@@ -17,6 +17,7 @@ export type ServerEnv = {
   fighterPhotosStorageForcePathStyle: boolean;
   upstreamApiBaseUrl: string | null;
   upstreamApiBearerToken: string | null;
+  eventFighterAccessPath: string;
   newsletterSubscribePath: string;
   contactMessageSubmitPath: string;
   fighterApplicationSubmitPath: string;
@@ -63,6 +64,10 @@ function createServerEnv(): ServerEnv {
     fighterPhotosStorageForcePathStyle,
     upstreamApiBaseUrl: process.env.UPSTREAM_API_BASE_URL?.trim().replace(/\/+$/, "") ?? null,
     upstreamApiBearerToken: process.env.UPSTREAM_API_BEARER_TOKEN?.trim() || null,
+    eventFighterAccessPath: normalizePath(
+      process.env.UPSTREAM_EVENT_FIGHTER_ACCESS_PATH ?? "",
+      "/v1/event-fighter-access/session"
+    ),
     newsletterSubscribePath: normalizePath(
       process.env.UPSTREAM_NEWSLETTER_PATH ?? "",
       "/v1/newsletter/subscriptions"

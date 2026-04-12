@@ -1,0 +1,8 @@
+{
+  "name": "mmmma-api-lambda",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "pg": "^8.20.0"
+  }
+}

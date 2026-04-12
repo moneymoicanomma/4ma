@@ -4,6 +4,9 @@ import { Pool, type PoolClient, type QueryResult, type QueryResultRow } from "pg
 
 import { getServerEnv, isDatabaseConfigured } from "@/lib/server/env";
 
+const DATABASE_CONNECTION_TIMEOUT_MS = 5000;
+const DATABASE_QUERY_TIMEOUT_MS = 10000;
+
 export class DatabaseNotConfiguredError extends Error {
   constructor() {
     super("Database is not configured.");
@@ -45,6 +48,9 @@ function createPool() {
   return new Pool({
     connectionString: env.databaseUrl!,
     max: env.databasePoolMaxConnections,
+    connectionTimeoutMillis: DATABASE_CONNECTION_TIMEOUT_MS,
+    query_timeout: DATABASE_QUERY_TIMEOUT_MS,
+    statement_timeout: DATABASE_QUERY_TIMEOUT_MS,
     ssl:
       env.databaseSslMode === "require"
         ? {

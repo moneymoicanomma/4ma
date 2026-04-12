@@ -80,14 +80,14 @@ export function getEventFighterAuthConfig(): EventFighterAuthConfig {
   };
 }
 
-export function createEventFighterCredentialFingerprint(email: string, password: string) {
-  return sha256Base64Url(`${normalizeEventFighterEmail(email)}:${password}`);
+export function createEventFighterSessionFingerprint(email: string, sessionSecret: string) {
+  return sha256Base64Url(`${normalizeEventFighterEmail(email)}:${sessionSecret}`);
 }
 
 export function createEventFighterSessionToken(
   email: string,
   secret: string,
-  credentialFingerprint: string,
+  sessionFingerprint: string,
   issuedAtMs = Date.now()
 ) {
   const issuedAtSeconds = Math.floor(issuedAtMs / 1000);
@@ -96,7 +96,7 @@ export function createEventFighterSessionToken(
     sub: normalizeEventFighterEmail(email),
     iat: issuedAtSeconds,
     exp: issuedAtSeconds + EVENT_FIGHTER_SESSION_MAX_AGE_SECONDS,
-    cf: credentialFingerprint
+    cf: sessionFingerprint
   };
 
   const encodedPayload = bytesToBase64Url(
