@@ -28,7 +28,7 @@ const heroImage = siteAsset("hero-lute.webp");
 
 export const metadata: Metadata = {
   title: "Atletas da Edição | Money Moicano MMA",
-  description: "Ficha privada para atletas confirmados desta edição do Money Moicano MMA.",
+  description: "Ficha privada dos atletas desta edição do Money Moicano MMA.",
   robots: {
     index: false,
     follow: false
@@ -136,7 +136,7 @@ export default async function AtletasDaEdicaoPage() {
             </h1>
             <p className={styles.heroBody}>
               {portalEnabled
-                ? "Esta página é exclusiva para quem já vai lutar nesta edição. A ideia é concentrar dados operacionais, material de apresentação e fotos em um só lugar, sem misturar com o formulário público de interesse."
+                ? "Esta página concentra dados operacionais, material de apresentação e fotos dos atletas desta edição em um só lugar, sem depender de pré-cadastro manual antes do envio."
                 : "Seguramos a ficha privada dos atletas até concluir a infraestrutura com segurança. O restante do site e os formulários públicos seguem funcionando normalmente na Vercel."}
             </p>
 
@@ -145,7 +145,7 @@ export default async function AtletasDaEdicaoPage() {
                 <span className={styles.heroPointNumber}>01</span>
                 <p>
                   {portalEnabled
-                    ? "Entre com o seu próprio email e preencha a ficha com esse mesmo contato."
+                    ? "Entre com o email pessoal do atleta e preencha a ficha com esse mesmo contato."
                     : "Nenhum material privado está sendo coletado por esta rota neste momento."}
                 </p>
               </div>
@@ -213,8 +213,8 @@ export default async function AtletasDaEdicaoPage() {
                   <span className={styles.asideKicker}>Login rápido</span>
                   <h2 className={styles.asideTitle}>Primeiro valida o acesso.</h2>
                   <p className={styles.asideBody}>
-                    Entre com o email do atleta e a senha da conta liberada pela equipe.
-                    Depois do login, a ficha completa abre logo abaixo e o envio fica protegido por sessão.
+                    Entre com o email do atleta e a senha compartilhada enviada pela equipe.
+                    Depois do login, a ficha completa abre logo abaixo e o envio fica protegido por sessão, sem exigir pré-cadastro.
                   </p>
                 </div>
 
@@ -262,8 +262,8 @@ export default async function AtletasDaEdicaoPage() {
             <span className={styles.ctaKicker}>Não sabe como chegou aqui?</span>
             <h2 className={styles.ctaTitle}>Se você ainda quer lutar no MMMMA, use o formulário aberto.</h2>
             <p className={styles.ctaBody}>
-              Esta rota é só para atletas já confirmados nesta edição. Se você está tentando
-              entrar no radar do card, o caminho certo é o formulário público.
+              Esta rota é para a ficha privada dos atletas desta edição. Se você está tentando
+              entrar no radar do card pela primeira vez, o caminho certo continua sendo o formulário público.
             </p>
             <Link className={styles.ctaLink} href="/lute-no-mmmma">
               Lute no MMMMA

@@ -92,8 +92,8 @@ export function EventFighterAccessForm() {
           <span className={styles.kicker}>Acesso restrito</span>
           <h2>Entrar na ficha do atleta</h2>
           <p>
-            Use o seu próprio email e a senha da conta liberada pela equipe
-            para os atletas confirmados.
+            Use o email pessoal do atleta e a senha compartilhada enviada pela equipe.
+            Não precisa de pré-cadastro para liberar a ficha.
           </p>
         </div>
 

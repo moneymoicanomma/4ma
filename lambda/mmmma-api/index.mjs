@@ -1012,73 +1012,22 @@ function scoreEventFighterCandidate(candidate, fullName, nickname) {
   return score;
 }
 
-async function resolveEventFighterTarget(fullName, nickname) {
+async function findExistingUnlinkedEventFighterIntake(email) {
   const result = await getDatabasePool().query(
     `
       select
-        ef.id as "eventFighterId",
-        e.slug as "eventSlug",
-        f.slug as "fighterSlug",
-        i.id as "intakeId",
-        e.status as "eventStatus",
-        f.display_name as "displayName",
-        f.legal_name as "legalName",
-        f.nickname as "fighterNickname",
-        ef.card_name as "cardName"
-      from app.event_fighters ef
-      join app.events e
-        on e.id = ef.event_id
-      join app.fighters f
-        on f.id = ef.fighter_id
-      left join app.event_fighter_intakes i
-        on i.event_fighter_id = ef.id
-      where e.status in ('draft', 'published', 'locked')
-        and f.is_active
-      order by
-        case e.status
-          when 'published' then 0
-          when 'locked' then 1
-          else 2
-        end,
-        e.starts_at asc,
-        ef.created_at desc
-    `
+        id as "intakeId"
+      from app.event_fighter_intakes
+      where event_fighter_id is null
+        and source = $1
+        and email = $2
+      order by submitted_at desc
+      limit 1
+    `,
+    [EVENT_FIGHTER_INTAKE_SOURCE, email]
   );
 
-  const rankedMatches = result.rows
-    .map((candidate) => ({
-      ...candidate,
-      score: scoreEventFighterCandidate(candidate, fullName, nickname)
-    }))
-    .filter((candidate) => candidate.score > 0)
-    .sort((left, right) => right.score - left.score);
-
-  if (!rankedMatches.length) {
-    return {
-      ok: false,
-      status: 404,
-      message:
-        "Nao consegui localizar esse atleta no card atual. Confere o nome completo e o apelido do cadastro."
-    };
-  }
-
-  if (
-    rankedMatches.length > 1 &&
-    rankedMatches[0].score === rankedMatches[1].score &&
-    rankedMatches[0].eventFighterId !== rankedMatches[1].eventFighterId
-  ) {
-    return {
-      ok: false,
-      status: 409,
-      message:
-        "Encontrei mais de um atleta compativel com esse nome. Ajusta o nome completo ou o apelido e tenta novamente."
-    };
-  }
-
-  return {
-    ok: true,
-    value: rankedMatches[0]
-  };
+  return result.rows[0]?.intakeId ?? null;
 }
 
 async function handleEventFighterIntake(event) {
@@ -1139,30 +1088,7 @@ async function handleEventFighterIntake(event) {
     });
   }
 
-  const target = await resolveEventFighterTarget(fullName, nickname);
-
-  if (!target.ok) {
-    return buildJsonResponse(target.status, {
-      ok: false,
-      message: target.message
-    });
-  }
-
-  const previousPhotosResult =
-    target.value.intakeId === null
-      ? { rows: [] }
-      : await getDatabasePool().query(
-          `
-            select
-              storage_bucket as bucket,
-              object_key as "objectKey"
-            from app.event_fighter_intake_photos
-            where intake_id = $1
-          `,
-          [target.value.intakeId]
-        );
-
-  void previousPhotosResult;
+  const existingIntakeId = await findExistingUnlinkedEventFighterIntake(email);
 
   try {
     await withDatabaseTransaction(
@@ -1176,158 +1102,203 @@ async function handleEventFighterIntake(event) {
         userAgent: normalizeText(requestContext?.userAgent) || null
       },
       async (client) => {
-        const intakeId = target.value.intakeId ?? randomUUID();
+        const intakeId = existingIntakeId ?? randomUUID();
+        const requestId = normalizeText(requestContext?.requestId) || randomUUID();
+        const requestOrigin = normalizeText(requestContext?.requestOrigin) || null;
+        const requestIpHash = normalizeText(requestContext?.requestIpHash) || null;
+        const userAgent = normalizeText(requestContext?.userAgent) || null;
+        const metadata = JSON.stringify({
+          surface: "event-fighter-intake-lambda",
+          accessEmail,
+          submissionMode: "shared-password"
+        });
 
-        await client.query(
-          `
-            insert into app.event_fighter_intakes (
-              id,
-              event_fighter_id,
-              submitted_by_account_id,
-              full_name,
-              nickname,
+        if (existingIntakeId) {
+          await client.query(
+            `
+              update app.event_fighter_intakes
+              set
+                submitted_by_account_id = null,
+                full_name = $2,
+                nickname = $3,
+                email = $4,
+                phone_whatsapp = $5,
+                birth_date = $6::date,
+                cpf_ciphertext = app.encrypt_secret($7),
+                cpf_digest = app.secret_digest($8),
+                cpf_last4 = app.last_four_digits($9),
+                pix_key_type = $10::app.pix_key_type_enum,
+                pix_key_ciphertext = app.encrypt_secret($11),
+                pix_key_digest = app.secret_digest($12),
+                pix_key_last4 = app.last_four_digits($13),
+                has_health_insurance = $14,
+                health_insurance_provider = $15,
+                record_summary = $16,
+                primary_specialty = $17,
+                additional_specialties = $18,
+                competition_history = $19,
+                titles_won = $20,
+                life_story = $21,
+                funny_story = $22,
+                curiosities = $23,
+                hobbies = $24,
+                source = $25,
+                intake_status = 'submitted',
+                reviewed_by_account_id = null,
+                reviewed_at = null,
+                staff_notes = null,
+                request_id = $26,
+                request_origin = $27,
+                request_ip_hash = $28,
+                user_agent = $29,
+                metadata = app.event_fighter_intakes.metadata || $30::jsonb,
+                submitted_at = now(),
+                updated_at = now()
+              where id = $1::uuid
+            `,
+            [
+              existingIntakeId,
+              payload.fullName,
+              payload.nickname,
               email,
-              phone_whatsapp,
-              birth_date,
-              cpf_ciphertext,
-              cpf_digest,
-              cpf_last4,
-              pix_key_type,
-              pix_key_ciphertext,
-              pix_key_digest,
-              pix_key_last4,
-              has_health_insurance,
-              health_insurance_provider,
-              record_summary,
-              primary_specialty,
-              additional_specialties,
-              competition_history,
-              titles_won,
-              life_story,
-              funny_story,
-              curiosities,
-              hobbies,
-              source,
-              intake_status,
-              request_id,
-              request_origin,
-              request_ip_hash,
-              user_agent,
-              metadata,
-              submitted_at
-            )
-            values (
-              $1::uuid,
-              $2::uuid,
-              null,
-              $3,
-              $4,
-              $5,
-              $6,
-              $7::date,
-              app.encrypt_secret($8),
-              app.secret_digest($9),
-              app.last_four_digits($10),
-              $11::app.pix_key_type_enum,
-              app.encrypt_secret($12),
-              app.secret_digest($13),
-              app.last_four_digits($14),
-              $15,
-              $16,
-              $17,
-              $18,
-              $19,
-              $20,
-              $21,
-              $22,
-              $23,
-              $24,
-              $25,
-              $26,
-              'submitted',
-              $27,
-              $28,
-              $29,
-              $30,
-              $31::jsonb,
-              now()
-            )
-            on conflict (event_fighter_id) do update
-            set
-              submitted_by_account_id = excluded.submitted_by_account_id,
-              full_name = excluded.full_name,
-              nickname = excluded.nickname,
-              email = excluded.email,
-              phone_whatsapp = excluded.phone_whatsapp,
-              birth_date = excluded.birth_date,
-              cpf_ciphertext = excluded.cpf_ciphertext,
-              cpf_digest = excluded.cpf_digest,
-              cpf_last4 = excluded.cpf_last4,
-              pix_key_type = excluded.pix_key_type,
-              pix_key_ciphertext = excluded.pix_key_ciphertext,
-              pix_key_digest = excluded.pix_key_digest,
-              pix_key_last4 = excluded.pix_key_last4,
-              has_health_insurance = excluded.has_health_insurance,
-              health_insurance_provider = excluded.health_insurance_provider,
-              record_summary = excluded.record_summary,
-              primary_specialty = excluded.primary_specialty,
-              additional_specialties = excluded.additional_specialties,
-              competition_history = excluded.competition_history,
-              titles_won = excluded.titles_won,
-              life_story = excluded.life_story,
-              funny_story = excluded.funny_story,
-              curiosities = excluded.curiosities,
-              hobbies = excluded.hobbies,
-              source = excluded.source,
-              intake_status = 'submitted',
-              reviewed_by_account_id = null,
-              reviewed_at = null,
-              staff_notes = null,
-              request_id = excluded.request_id,
-              request_origin = excluded.request_origin,
-              request_ip_hash = excluded.request_ip_hash,
-              user_agent = excluded.user_agent,
-              metadata = app.event_fighter_intakes.metadata || excluded.metadata,
-              submitted_at = excluded.submitted_at,
-              updated_at = now()
-          `,
-          [
-            intakeId,
-            target.value.eventFighterId,
-            payload.fullName,
-            payload.nickname,
-            email,
-            payload.phoneWhatsapp,
-            payload.birthDate,
-            payload.cpf,
-            String(payload.cpf ?? "").replace(/\D+/g, ""),
-            payload.cpf,
-            payload.pixKeyType,
-            payload.pixKey,
-            payload.pixKey,
-            payload.pixKey,
-            Boolean(payload.hasHealthInsurance),
-            payload.hasHealthInsurance ? payload.healthInsuranceProvider : null,
-            payload.record,
-            payload.primarySpecialty,
-            payload.additionalSpecialties,
-            payload.competitionHistory,
-            payload.titlesWon,
-            payload.lifeStory,
-            payload.funnyStory,
-            payload.curiosities,
-            payload.hobbies,
-            payload.source,
-            normalizeText(requestContext?.requestId) || randomUUID(),
-            normalizeText(requestContext?.requestOrigin) || null,
-            normalizeText(requestContext?.requestIpHash) || null,
-            normalizeText(requestContext?.userAgent) || null,
-            JSON.stringify({
-              surface: "event-fighter-intake-lambda",
-              accessEmail
-            })
-          ]
-        );
+              payload.phoneWhatsapp,
+              payload.birthDate,
+              payload.cpf,
+              String(payload.cpf ?? "").replace(/\D+/g, ""),
+              payload.cpf,
+              payload.pixKeyType,
+              payload.pixKey,
+              payload.pixKey,
+              payload.pixKey,
+              Boolean(payload.hasHealthInsurance),
+              payload.hasHealthInsurance ? payload.healthInsuranceProvider : null,
+              payload.record,
+              payload.primarySpecialty,
+              payload.additionalSpecialties,
+              payload.competitionHistory,
+              payload.titlesWon,
+              payload.lifeStory,
+              payload.funnyStory,
+              payload.curiosities,
+              payload.hobbies,
+              payload.source,
+              requestId,
+              requestOrigin,
+              requestIpHash,
+              userAgent,
+              metadata
+            ]
+          );
+        } else {
+          await client.query(
+            `
+              insert into app.event_fighter_intakes (
+                id,
+                event_fighter_id,
+                submitted_by_account_id,
+                full_name,
+                nickname,
+                email,
+                phone_whatsapp,
+                birth_date,
+                cpf_ciphertext,
+                cpf_digest,
+                cpf_last4,
+                pix_key_type,
+                pix_key_ciphertext,
+                pix_key_digest,
+                pix_key_last4,
+                has_health_insurance,
+                health_insurance_provider,
+                record_summary,
+                primary_specialty,
+                additional_specialties,
+                competition_history,
+                titles_won,
+                life_story,
+                funny_story,
+                curiosities,
+                hobbies,
+                source,
+                intake_status,
+                request_id,
+                request_origin,
+                request_ip_hash,
+                user_agent,
+                metadata,
+                submitted_at
+              )
+              values (
+                $1::uuid,
+                null,
+                null,
+                $2,
+                $3,
+                $4,
+                $5,
+                $6::date,
+                app.encrypt_secret($7),
+                app.secret_digest($8),
+                app.last_four_digits($9),
+                $10::app.pix_key_type_enum,
+                app.encrypt_secret($11),
+                app.secret_digest($12),
+                app.last_four_digits($13),
+                $14,
+                $15,
+                $16,
+                $17,
+                $18,
+                $19,
+                $20,
+                $21,
+                $22,
+                $23,
+                $24,
+                $25,
+                'submitted',
+                $26,
+                $27,
+                $28,
+                $29,
+                $30::jsonb,
+                now()
+              )
+            `,
+            [
+              intakeId,
+              payload.fullName,
+              payload.nickname,
+              email,
+              payload.phoneWhatsapp,
+              payload.birthDate,
+              payload.cpf,
+              String(payload.cpf ?? "").replace(/\D+/g, ""),
+              payload.cpf,
+              payload.pixKeyType,
+              payload.pixKey,
+              payload.pixKey,
+              payload.pixKey,
+              Boolean(payload.hasHealthInsurance),
+              payload.hasHealthInsurance ? payload.healthInsuranceProvider : null,
+              payload.record,
+              payload.primarySpecialty,
+              payload.additionalSpecialties,
+              payload.competitionHistory,
+              payload.titlesWon,
+              payload.lifeStory,
+              payload.funnyStory,
+              payload.curiosities,
+              payload.hobbies,
+              payload.source,
+              requestId,
+              requestOrigin,
+              requestIpHash,
+              userAgent,
+              metadata
+            ]
+          );
+        }
 
         for (const photo of photos) {
           await client.query(

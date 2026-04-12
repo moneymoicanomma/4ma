@@ -49,6 +49,7 @@ function syncRailActiveState(rail: HTMLElement) {
 export function LandingMotionController() {
   useEffect(() => {
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const mobileViewport = window.matchMedia("(max-width: 780px)");
     const revealNodes = Array.from(document.querySelectorAll<HTMLElement>("[data-reveal]"));
     const railNodes = Array.from(document.querySelectorAll<HTMLElement>("[data-rail]"));
     const cleanups: Array<() => void> = [];
@@ -82,7 +83,7 @@ export function LandingMotionController() {
       });
     }
 
-    if (reduceMotion.matches) {
+    if (reduceMotion.matches || mobileViewport.matches) {
       for (const node of revealNodes) {
         node.classList.add("is-visible");
       }
