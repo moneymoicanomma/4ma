@@ -25,6 +25,9 @@ Somente quando o portal privado dos atletas for religado:
 
 ```bash
 EVENT_FIGHTER_PORTAL_ENABLED=true
+EVENT_FIGHTER_ACCESS_AUTH_MODE=shared_password
+ATHLETE_FORM_PASSWORD=<senha-compartilhada-com-os-atletas>
+ATHLETE_FORM_SESSION_SECRET=<segredo-do-cookie-do-portal>
 APP_ENCRYPTION_KEY=<segredo-longo>
 FIGHTER_PHOTOS_STORAGE_PROVIDER=r2
 FIGHTER_PHOTOS_S3_BUCKET=mmmma-fighter-photos
@@ -38,10 +41,11 @@ FIGHTER_PHOTOS_S3_FORCE_PATH_STYLE=false
 ## Notas práticas
 
 - `NEXT_PUBLIC_SITE_ASSET_BASE_URL` pode usar o `r2.dev` agora para destravar o deploy. Quando o domínio customizado do bucket estiver livre, basta trocar a env.
+- Com `EVENT_FIGHTER_ACCESS_AUTH_MODE=shared_password`, o login do portal aceita qualquer email válido junto da senha compartilhada enviada pela equipe. Não exige pré-cadastro do atleta.
 - `FIGHTER_PHOTOS_S3_ENDPOINT` usa o endpoint S3 compatível do R2.
 - `DATABASE_POOL_MAX_CONNECTIONS=5` é um ponto de partida mais seguro para ambiente serverless do que deixar o pool alto por instância.
 - O app continua salvando no banco só os metadados das fotos. Os binários seguem no bucket S3 compatível.
-- `UPSTREAM_*`, `ADMIN_*` e `ATHLETE_FORM_*` ficaram fora do exemplo de propósito. Nesta arquitetura, os formulários gravam direto na RDS e a autenticação administrativa deve vir de `app.accounts` + `app.auth_sessions`.
+- `UPSTREAM_*` continua sendo usado para enviar as fichas para a Lambda/RDS privada. O modo de autenticação do portal pode ser separado disso.
 
 ## Checklist
 

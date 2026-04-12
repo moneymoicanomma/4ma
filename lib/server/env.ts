@@ -6,6 +6,7 @@ export type ServerEnv = {
   databaseSslMode: "disable" | "require";
   appEncryptionKey: string | null;
   eventFighterPortalEnabled: boolean;
+  eventFighterAccessAuthMode: "account" | "shared_password";
   turnstileSecretKey: string | null;
   turnstileSiteKey: string | null;
   fighterPhotosStorageProvider: string;
@@ -41,6 +42,10 @@ function createServerEnv(): ServerEnv {
   const databaseSslMode = process.env.DATABASE_SSL_MODE?.trim().toLowerCase();
   const eventFighterPortalEnabled =
     process.env.EVENT_FIGHTER_PORTAL_ENABLED?.trim().toLowerCase() === "true";
+  const eventFighterAccessAuthMode =
+    process.env.EVENT_FIGHTER_ACCESS_AUTH_MODE?.trim().toLowerCase() === "shared_password"
+      ? "shared_password"
+      : "account";
   const fighterPhotosStorageForcePathStyle =
     process.env.FIGHTER_PHOTOS_S3_FORCE_PATH_STYLE?.trim().toLowerCase() === "true";
 
@@ -51,6 +56,7 @@ function createServerEnv(): ServerEnv {
     databaseSslMode: databaseSslMode === "disable" ? "disable" : "require",
     appEncryptionKey: process.env.APP_ENCRYPTION_KEY?.trim() || null,
     eventFighterPortalEnabled,
+    eventFighterAccessAuthMode,
     turnstileSecretKey: process.env.TURNSTILE_SECRET_KEY?.trim() || null,
     turnstileSiteKey: process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY?.trim() || null,
     fighterPhotosStorageProvider: process.env.FIGHTER_PHOTOS_STORAGE_PROVIDER?.trim() || "s3",

@@ -150,6 +150,43 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  if (env.eventFighterAccessAuthMode === "shared_password") {
+    if (!safeCompare(password, config.password)) {
+      return buildJsonResponse(
+        {
+          ok: false,
+          message: "Credenciais inválidas."
+        },
+        401
+      );
+    }
+
+    const sessionFingerprint = createEventFighterSessionFingerprint(email, config.sessionSecret);
+    const sessionToken = createEventFighterSessionToken(
+      email,
+      config.sessionSecret,
+      sessionFingerprint
+    );
+
+    const response = buildJsonResponse({
+      ok: true,
+      message: "Acesso liberado.",
+      redirectTo
+    });
+
+    response.cookies.set({
+      name: EVENT_FIGHTER_SESSION_COOKIE_NAME,
+      value: sessionToken,
+      httpOnly: true,
+      maxAge: EVENT_FIGHTER_SESSION_MAX_AGE_SECONDS,
+      path: "/",
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production"
+    });
+
+    return response;
+  }
+
   if (databaseConfigured) {
     try {
       const authenticatedSession = await authenticateAccountWithPassword({
@@ -278,40 +315,14 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  if (!safeCompare(password, config.password)) {
-    return buildJsonResponse(
-      {
-        ok: false,
-        message: "Credenciais inválidas."
-      },
-      401
-    );
-  }
-
-  const sessionFingerprint = createEventFighterSessionFingerprint(email, config.sessionSecret);
-  const sessionToken = createEventFighterSessionToken(
-    email,
-    config.sessionSecret,
-    sessionFingerprint
+  return buildJsonResponse(
+    {
+      ok: false,
+      message:
+        "O portal privado está indisponível no momento. Tenta novamente em alguns minutos."
+    },
+    503
   );
-
-  const response = buildJsonResponse({
-    ok: true,
-    message: "Acesso liberado.",
-    redirectTo
-  });
-
-  response.cookies.set({
-    name: EVENT_FIGHTER_SESSION_COOKIE_NAME,
-    value: sessionToken,
-    httpOnly: true,
-    maxAge: EVENT_FIGHTER_SESSION_MAX_AGE_SECONDS,
-    path: "/",
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production"
-  });
-
-  return response;
 }
 
 export async function DELETE(request: NextRequest) {
