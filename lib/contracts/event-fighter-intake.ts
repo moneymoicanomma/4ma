@@ -1,4 +1,6 @@
 import type { PublicMutationResponse } from "@/lib/contracts/public-mutation";
+import { normalizeBrazilianState, type BrazilianStateName } from "@/lib/contracts/brazilian-states";
+import { FIGHTER_WEIGHT_CLASSES, type FighterWeightClass } from "@/lib/contracts/fighter-application";
 import {
   isValidEventFighterEmail,
   normalizeEventFighterEmail
@@ -57,16 +59,19 @@ export type EventFighterIntakePayload = {
   email: string;
   phoneWhatsapp: string;
   record: string;
-  category: string;
+  category: FighterWeightClass;
   height: string;
   reach: string;
   tapologyLink: string;
   instagramLink: string;
   city: string;
+  state: BrazilianStateName;
   education: string;
   team: string;
+  coachName: string;
   fightGraduations: string;
   coachContact: string;
+  managerName: string;
   managerContact: string;
   cornerOne: string;
   cornerTwo: string;
@@ -172,10 +177,13 @@ type NormalizedEventFighterIntakeFields = {
   tapologyLink: string;
   instagramLink: string;
   city: string;
+  state: string;
   education: string;
   team: string;
+  coachName: string;
   fightGraduations: string;
   coachContact: string;
+  managerName: string;
   managerContact: string;
   cornerOne: string;
   cornerTwo: string;
@@ -197,6 +205,7 @@ const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
 const MAX_OBJECT_KEY_LENGTH = 1024;
 const pixKeyTypesSet = new Set<string>(PIX_KEY_TYPES);
 const healthInsuranceOptionsSet = new Set<string>(HEALTH_INSURANCE_OPTIONS);
+const weightClassSet = new Set<string>(FIGHTER_WEIGHT_CLASSES);
 const photoFieldNameSet = new Set<string>(
   EVENT_FIGHTER_PHOTO_FIELDS.map((photoField) => photoField.fieldName)
 );
@@ -444,6 +453,11 @@ function getValidatedPayload(
       minLength: 2,
       maxLength: MAX_SHORT_TEXT_LENGTH
     }) ??
+    validateRequiredText(fields.state, {
+      label: "Estado",
+      minLength: 2,
+      maxLength: 40
+    }) ??
     validateRequiredText(fields.education, {
       label: "Escolaridade",
       minLength: 2,
@@ -451,6 +465,11 @@ function getValidatedPayload(
     }) ??
     validateRequiredText(fields.team, {
       label: "Equipe",
+      minLength: 2,
+      maxLength: MAX_SHORT_TEXT_LENGTH
+    }) ??
+    validateRequiredText(fields.coachName, {
+      label: "Nome do treinador",
       minLength: 2,
       maxLength: MAX_SHORT_TEXT_LENGTH
     }) ??
@@ -501,6 +520,13 @@ function getValidatedPayload(
     return {
       ok: false,
       message: "Informe se você possui plano de saúde."
+    };
+  }
+
+  if (!weightClassSet.has(fields.category)) {
+    return {
+      ok: false,
+      message: "Selecione uma categoria válida."
     };
   }
 
@@ -589,6 +615,11 @@ function getValidatedPayload(
   }
 
   const optionalFieldError =
+    validateOptionalText(fields.managerName, {
+      label: "Nome do empresário",
+      minLength: 2,
+      maxLength: MAX_SHORT_TEXT_LENGTH
+    }) ??
     validateOptionalText(fields.managerContact, {
       label: "Contato do empresário",
       minLength: 8,
@@ -607,6 +638,20 @@ function getValidatedPayload(
     };
   }
 
+  if (fields.managerName && !fields.managerContact) {
+    return {
+      ok: false,
+      message: "Informe o contato do empresário."
+    };
+  }
+
+  if (fields.managerContact && !fields.managerName) {
+    return {
+      ok: false,
+      message: "Informe o nome do empresário."
+    };
+  }
+
   return {
     ok: true,
     payload: {
@@ -622,16 +667,19 @@ function getValidatedPayload(
       email: fields.email,
       phoneWhatsapp: fields.phoneWhatsapp,
       record: fields.record,
-      category: fields.category,
+      category: fields.category as FighterWeightClass,
       height: fields.height,
       reach: fields.reach,
       tapologyLink: fields.tapologyLink,
       instagramLink: fields.instagramLink,
       city: fields.city,
+      state: fields.state as BrazilianStateName,
       education: fields.education,
       team: fields.team,
+      coachName: fields.coachName,
       fightGraduations: fields.fightGraduations,
       coachContact: fields.coachContact,
+      managerName: fields.managerName,
       managerContact: fields.managerContact,
       cornerOne: fields.cornerOne,
       cornerTwo: fields.cornerTwo,
@@ -821,10 +869,13 @@ export function parseEventFighterIntakeFormData(
     tapologyLink: normalizeShortText(formData.get("tapologyLink")),
     instagramLink: normalizeShortText(formData.get("instagramLink")),
     city: normalizeShortText(formData.get("city")),
+    state: normalizeBrazilianState(formData.get("state")),
     education: normalizeShortText(formData.get("education")),
     team: normalizeShortText(formData.get("team")),
+    coachName: normalizeShortText(formData.get("coachName")),
     fightGraduations: normalizeLongText(formData.get("fightGraduations")),
     coachContact: normalizeShortText(formData.get("coachContact")),
+    managerName: normalizeShortText(formData.get("managerName")),
     managerContact: normalizeShortText(formData.get("managerContact")),
     cornerOne: normalizeShortText(formData.get("cornerOne")),
     cornerTwo: normalizeShortText(formData.get("cornerTwo")),
@@ -1033,10 +1084,13 @@ export function parseEventFighterIntakeJsonSubmission(
     tapologyLink: normalizeShortText(input.payload.tapologyLink),
     instagramLink: normalizeShortText(input.payload.instagramLink),
     city: normalizeShortText(input.payload.city),
+    state: normalizeBrazilianState(input.payload.state),
     education: normalizeShortText(input.payload.education),
     team: normalizeShortText(input.payload.team),
+    coachName: normalizeShortText(input.payload.coachName),
     fightGraduations: normalizeLongText(input.payload.fightGraduations),
     coachContact: normalizeShortText(input.payload.coachContact),
+    managerName: normalizeShortText(input.payload.managerName),
     managerContact: normalizeShortText(input.payload.managerContact),
     cornerOne: normalizeShortText(input.payload.cornerOne),
     cornerTwo: normalizeShortText(input.payload.cornerTwo),

@@ -100,12 +100,15 @@ insert into app.event_fighter_intakes (
   height,
   reach,
   city,
+  state_code,
   education_level,
   team,
+  coach_name,
   fight_graduations,
   tapology_profile,
   instagram_profile,
   coach_contact,
+  manager_name,
   manager_contact,
   corner_one_name,
   corner_two_name,
@@ -156,7 +159,10 @@ insert into app.event_fighter_intakes (
   $31,
   $32,
   $33,
-  $34
+  $34,
+  $35,
+  $36,
+  $37
 );
 ```
 

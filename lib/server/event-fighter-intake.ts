@@ -2,6 +2,7 @@ import "server-only";
 
 import { randomUUID } from "node:crypto";
 
+import { getBrazilianStateCode } from "@/lib/contracts/brazilian-states";
 import { type EventFighterIntakeSubmission } from "@/lib/contracts/event-fighter-intake";
 import { queryDatabase, withDatabaseTransaction } from "@/lib/server/database";
 import { deleteFighterPhotos } from "@/lib/server/fighter-photo-storage";
@@ -211,6 +212,11 @@ async function persistLinkedEventFighterIntakeInDatabase(
   const intakeId = portalTarget.intakeId ?? randomUUID();
   const previousPhotos = await getPreviousPhotosForIntake(portalTarget.intakeId);
   const intakeMetadata = buildEventFighterIntakeMetadata(submission);
+  const stateCode = getBrazilianStateCode(submission.payload.state);
+
+  if (!stateCode) {
+    throw new Error("Unsupported state for event fighter intake.");
+  }
 
   await withDatabaseTransaction(
     {
@@ -248,12 +254,15 @@ async function persistLinkedEventFighterIntakeInDatabase(
             height,
             reach,
             city,
+            state_code,
             education_level,
             team,
+            coach_name,
             fight_graduations,
             tapology_profile,
             instagram_profile,
             coach_contact,
+            manager_name,
             manager_contact,
             corner_one_name,
             corner_two_name,
@@ -315,12 +324,15 @@ async function persistLinkedEventFighterIntakeInDatabase(
             $38,
             $39,
             $40,
-            'submitted',
             $41,
             $42,
             $43,
+            'submitted',
             $44,
-            $45::jsonb,
+            $45,
+            $46,
+            $47,
+            $48::jsonb,
             now()
           )
           on conflict (event_fighter_id) do update
@@ -345,12 +357,15 @@ async function persistLinkedEventFighterIntakeInDatabase(
             height = excluded.height,
             reach = excluded.reach,
             city = excluded.city,
+            state_code = excluded.state_code,
             education_level = excluded.education_level,
             team = excluded.team,
+            coach_name = excluded.coach_name,
             fight_graduations = excluded.fight_graduations,
             tapology_profile = excluded.tapology_profile,
             instagram_profile = excluded.instagram_profile,
             coach_contact = excluded.coach_contact,
+            manager_name = excluded.manager_name,
             manager_contact = excluded.manager_contact,
             corner_one_name = excluded.corner_one_name,
             corner_two_name = excluded.corner_two_name,
@@ -400,12 +415,15 @@ async function persistLinkedEventFighterIntakeInDatabase(
           submission.payload.height,
           submission.payload.reach,
           submission.payload.city,
+          stateCode,
           submission.payload.education,
           submission.payload.team,
+          submission.payload.coachName,
           submission.payload.fightGraduations,
           submission.payload.tapologyLink,
           submission.payload.instagramLink,
           submission.payload.coachContact,
+          submission.payload.managerName || null,
           submission.payload.managerContact || null,
           submission.payload.cornerOne,
           submission.payload.cornerTwo || null,
@@ -463,6 +481,11 @@ async function persistUnlinkedEventFighterIntakeInDatabase(
   const intakeMetadata = buildEventFighterIntakeMetadata(submission, {
     submissionMode: "shared-password"
   });
+  const stateCode = getBrazilianStateCode(submission.payload.state);
+
+  if (!stateCode) {
+    throw new Error("Unsupported state for event fighter intake.");
+  }
 
   await withDatabaseTransaction(
     {
@@ -500,33 +523,36 @@ async function persistUnlinkedEventFighterIntakeInDatabase(
               height = $18,
               reach = $19,
               city = $20,
-              education_level = $21,
-              team = $22,
-              fight_graduations = $23,
-              tapology_profile = $24,
-              instagram_profile = $25,
-              coach_contact = $26,
-              manager_contact = $27,
-              corner_one_name = $28,
-              corner_two_name = $29,
-              primary_specialty = $30,
-              additional_specialties = $31,
-              competition_history = $32,
-              titles_won = $33,
-              life_story = $34,
-              funny_story = $35,
-              curiosities = $36,
-              hobbies = $37,
-              source = $38,
+              state_code = $21,
+              education_level = $22,
+              team = $23,
+              coach_name = $24,
+              fight_graduations = $25,
+              tapology_profile = $26,
+              instagram_profile = $27,
+              coach_contact = $28,
+              manager_name = $29,
+              manager_contact = $30,
+              corner_one_name = $31,
+              corner_two_name = $32,
+              primary_specialty = $33,
+              additional_specialties = $34,
+              competition_history = $35,
+              titles_won = $36,
+              life_story = $37,
+              funny_story = $38,
+              curiosities = $39,
+              hobbies = $40,
+              source = $41,
               intake_status = 'submitted',
               reviewed_by_account_id = null,
               reviewed_at = null,
               staff_notes = null,
-              request_id = $39,
-              request_origin = $40,
-              request_ip_hash = $41,
-              user_agent = $42,
-              metadata = app.event_fighter_intakes.metadata || $43::jsonb,
+              request_id = $42,
+              request_origin = $43,
+              request_ip_hash = $44,
+              user_agent = $45,
+              metadata = app.event_fighter_intakes.metadata || $46::jsonb,
               submitted_at = now(),
               updated_at = now()
             where id = $1::uuid
@@ -554,12 +580,15 @@ async function persistUnlinkedEventFighterIntakeInDatabase(
             submission.payload.height,
             submission.payload.reach,
             submission.payload.city,
+            stateCode,
             submission.payload.education,
             submission.payload.team,
+            submission.payload.coachName,
             submission.payload.fightGraduations,
             submission.payload.tapologyLink,
             submission.payload.instagramLink,
             submission.payload.coachContact,
+            submission.payload.managerName || null,
             submission.payload.managerContact || null,
             submission.payload.cornerOne,
             submission.payload.cornerTwo || null,
@@ -605,12 +634,15 @@ async function persistUnlinkedEventFighterIntakeInDatabase(
               height,
               reach,
               city,
+              state_code,
               education_level,
               team,
+              coach_name,
               fight_graduations,
               tapology_profile,
               instagram_profile,
               coach_contact,
+              manager_name,
               manager_contact,
               corner_one_name,
               corner_two_name,
@@ -672,12 +704,15 @@ async function persistUnlinkedEventFighterIntakeInDatabase(
               $36,
               $37,
               $38,
-              'submitted',
               $39,
               $40,
               $41,
+              'submitted',
               $42,
-              $43::jsonb,
+              $43,
+              $44,
+              $45,
+              $46::jsonb,
               now()
             )
           `,
@@ -704,12 +739,15 @@ async function persistUnlinkedEventFighterIntakeInDatabase(
             submission.payload.height,
             submission.payload.reach,
             submission.payload.city,
+            stateCode,
             submission.payload.education,
             submission.payload.team,
+            submission.payload.coachName,
             submission.payload.fightGraduations,
             submission.payload.tapologyLink,
             submission.payload.instagramLink,
             submission.payload.coachContact,
+            submission.payload.managerName || null,
             submission.payload.managerContact || null,
             submission.payload.cornerOne,
             submission.payload.cornerTwo || null,

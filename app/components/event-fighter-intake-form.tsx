@@ -2,6 +2,8 @@
 
 import { type FormEvent, useState } from "react";
 
+import { BRAZILIAN_STATES } from "@/lib/contracts/brazilian-states";
+import { FIGHTER_WEIGHT_CLASSES, type FighterWeightClass } from "@/lib/contracts/fighter-application";
 import {
   EVENT_FIGHTER_PHOTO_FIELDS,
   PIX_KEY_TYPES,
@@ -41,6 +43,22 @@ const pixKeyTypeLabels: Record<PixKeyType, string> = {
   email: "Email",
   phone: "Telefone",
   random: "Aleatória"
+};
+
+const weightClassLabels: Record<FighterWeightClass, string> = {
+  "atomo-feminino": "Peso átomo feminino (até 47,6 kg)",
+  "palha-feminino": "Peso palha feminino (até 52,2 kg)",
+  "mosca-feminino": "Peso mosca feminino (até 56,7 kg)",
+  "galo-feminino": "Peso galo feminino (até 61,2 kg)",
+  "pena-feminino": "Peso pena feminino (até 65,8 kg)",
+  mosca: "Peso mosca (até 56,7 kg)",
+  galo: "Peso galo (até 61,2 kg)",
+  pena: "Peso pena (até 65,8 kg)",
+  leve: "Peso leve (até 70,3 kg)",
+  "meio-medio": "Peso meio-médio (até 77,1 kg)",
+  medio: "Peso médio (até 83,9 kg)",
+  "meio-pesado": "Peso meio-pesado (até 93,0 kg)",
+  pesado: "Peso pesado (até 120,2 kg)"
 };
 
 function MinimumCharactersHint({ count }: Readonly<{ count: number }>) {
@@ -359,6 +377,20 @@ export function EventFighterIntakeForm({
             </label>
 
             <label className={styles.field}>
+              <span className={styles.label}>Estado</span>
+              <select className={styles.select} defaultValue="" name="state" required>
+                <option disabled value="">
+                  Selecione o estado
+                </option>
+                {BRAZILIAN_STATES.map((state) => (
+                  <option key={state.code} value={state.name}>
+                    {state.name} ({state.code})
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className={styles.field}>
               <span className={styles.label}>Escolaridade</span>
               <input
                 className={styles.input}
@@ -398,14 +430,16 @@ export function EventFighterIntakeForm({
 
             <label className={styles.field}>
               <span className={styles.label}>Categoria</span>
-              <input
-                className={styles.input}
-                minLength={2}
-                name="category"
-                placeholder="Ex.: peso galo"
-                required
-                type="text"
-              />
+              <select className={styles.select} defaultValue="" name="category" required>
+                <option disabled value="">
+                  Selecione a categoria
+                </option>
+                {FIGHTER_WEIGHT_CLASSES.map((weightClass) => (
+                  <option key={weightClass} value={weightClass}>
+                    {weightClassLabels[weightClass]}
+                  </option>
+                ))}
+              </select>
             </label>
 
             <label className={styles.field}>
@@ -507,6 +541,18 @@ export function EventFighterIntakeForm({
 
           <div className={styles.grid}>
             <label className={styles.field}>
+              <span className={styles.label}>Nome do treinador</span>
+              <input
+                className={styles.input}
+                minLength={2}
+                name="coachName"
+                placeholder="Nome completo do treinador"
+                required
+                type="text"
+              />
+            </label>
+
+            <label className={styles.field}>
               <span className={styles.label}>Contato do treinador</span>
               <input
                 className={styles.input}
@@ -517,6 +563,18 @@ export function EventFighterIntakeForm({
                 required
                 type="text"
               />
+            </label>
+
+            <label className={styles.field}>
+              <span className={styles.label}>Nome do empresário</span>
+              <input
+                className={styles.input}
+                minLength={2}
+                name="managerName"
+                placeholder="Se for diferente do treinador"
+                type="text"
+              />
+              <p className={styles.helper}>Opcional se o treinador já centraliza esse contato.</p>
             </label>
 
             <label className={styles.field}>
