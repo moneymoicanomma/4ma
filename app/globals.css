@@ -2023,6 +2023,12 @@ section[id] {
     backdrop-filter: blur(24px);
   }
 
+  .topbar.is-menu-open {
+    background: linear-gradient(180deg, #080808 0%, #000000 100%);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+
   .topbar::after {
     bottom: -22px;
     height: 22px;
@@ -2129,10 +2135,9 @@ section[id] {
     position: absolute;
     inset: 0;
     border: 0;
-    background:
-      radial-gradient(circle at top right, rgba(232, 24, 26, 0.1), transparent 34%),
-      rgba(0, 0, 0, 0.76);
-    backdrop-filter: blur(10px);
+    background: rgba(0, 0, 0, 0.88);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
     opacity: 0;
     transition: opacity 180ms ease;
   }
@@ -2148,10 +2153,14 @@ section[id] {
     gap: 22px;
     padding: 20px 16px calc(24px + env(safe-area-inset-bottom));
     border-left: 1px solid rgba(255, 255, 255, 0.16);
+    background-color: #050505;
     background:
-      radial-gradient(circle at top right, rgba(232, 24, 26, 0.22), transparent 34%),
-      linear-gradient(180deg, rgba(14, 14, 14, 0.995) 0%, rgba(4, 4, 4, 0.99) 100%);
-    box-shadow: -24px 0 48px rgba(0, 0, 0, 0.44);
+      radial-gradient(circle at top right, rgba(232, 24, 26, 0.16), transparent 34%),
+      linear-gradient(180deg, #111111 0%, #040404 100%);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    box-shadow: -24px 0 48px rgba(0, 0, 0, 0.66);
+    isolation: isolate;
     transform: translateX(100%);
     transition:
       transform 220ms ease,
