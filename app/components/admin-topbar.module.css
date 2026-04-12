@@ -1,0 +1,145 @@
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 14px 32px;
+  background: rgba(3, 3, 3, 0.82);
+  backdrop-filter: blur(18px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.leftCluster {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  width: min(100%, 212px);
+  flex-shrink: 0;
+}
+
+.brand img {
+  width: 100%;
+  height: auto;
+}
+
+.nav,
+.actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.navLink,
+.secondaryLink,
+.primaryLink,
+.logoutAction {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 46px;
+  padding: 0 18px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  transition:
+    transform 160ms ease,
+    border-color 160ms ease,
+    background-color 160ms ease,
+    color 160ms ease;
+}
+
+.navLink::after,
+.secondaryLink::after,
+.primaryLink::after,
+.logoutAction::after {
+  content: "";
+  position: absolute;
+  right: -1px;
+  bottom: -1px;
+  width: 18px;
+  height: 18px;
+  border-right: 1px solid rgba(232, 24, 26, 0.72);
+  border-bottom: 1px solid rgba(232, 24, 26, 0.72);
+  pointer-events: none;
+}
+
+.navLink,
+.secondaryLink,
+.logoutAction {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.76);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.navLinkActive {
+  border-color: rgba(232, 24, 26, 0.46);
+  background:
+    radial-gradient(circle at top left, rgba(232, 24, 26, 0.18), transparent 55%),
+    rgba(255, 255, 255, 0.04);
+  color: #ffffff;
+}
+
+.primaryLink {
+  background: linear-gradient(135deg, #ff2c30 0%, #b01013 100%);
+  color: #ffffff;
+}
+
+.navLink:hover,
+.navLink:focus-visible,
+.secondaryLink:hover,
+.secondaryLink:focus-visible,
+.primaryLink:hover,
+.primaryLink:focus-visible,
+.logoutAction:hover,
+.logoutAction:focus-visible {
+  transform: translateY(-2px);
+}
+
+@media (max-width: 1120px) {
+  .topbar {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 12px 20px;
+  }
+
+  .leftCluster {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .actions {
+    justify-content: stretch;
+  }
+}
+
+@media (max-width: 720px) {
+  .brand {
+    width: min(100%, 220px);
+  }
+
+  .nav,
+  .actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .navLink,
+  .secondaryLink,
+  .primaryLink,
+  .logoutAction {
+    width: 100%;
+  }
+}

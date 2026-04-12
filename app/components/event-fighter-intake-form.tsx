@@ -281,13 +281,13 @@ export function EventFighterIntakeForm({
             </label>
 
             <label className={styles.field}>
-              <span className={styles.label}>Apelido</span>
+              <span className={styles.label}>Nome de luta</span>
               <input
                 autoComplete="nickname"
                 className={styles.input}
                 minLength={2}
                 name="nickname"
-                placeholder='Ex.: "The Problem"'
+                placeholder="Nome como você quer ser apresentado"
                 required
                 type="text"
               />
@@ -333,7 +333,7 @@ export function EventFighterIntakeForm({
             </label>
 
             <label className={styles.field}>
-              <span className={styles.label}>Telefone / Whatsapp</span>
+              <span className={styles.label}>Contato do atleta</span>
               <input
                 autoComplete="tel"
                 className={styles.input}
@@ -344,6 +344,219 @@ export function EventFighterIntakeForm({
                 required
                 type="tel"
               />
+            </label>
+
+            <label className={styles.field}>
+              <span className={styles.label}>Cidade</span>
+              <input
+                className={styles.input}
+                minLength={2}
+                name="city"
+                placeholder="Cidade onde você mora"
+                required
+                type="text"
+              />
+            </label>
+
+            <label className={styles.field}>
+              <span className={styles.label}>Escolaridade</span>
+              <input
+                className={styles.input}
+                minLength={2}
+                name="education"
+                placeholder="Ex.: ensino médio completo"
+                required
+                type="text"
+              />
+            </label>
+          </div>
+        </section>
+
+        <section className={styles.section}>
+          <div className={styles.sectionHeader}>
+            <span className={styles.sectionKicker}>Perfil oficial</span>
+            <h2 className={styles.sectionTitle}>Como você entra no card</h2>
+            <p className={styles.sectionCopy}>
+              Esses dados ajudam apresentação, produção, redes e alinhamento de equipe.
+              Preenche do jeito que a organização precisa enxergar você nesta edição.
+            </p>
+          </div>
+
+          <div className={styles.grid}>
+            <label className={styles.field}>
+              <span className={styles.label}>Cartel</span>
+              <input
+                className={styles.input}
+                minLength={3}
+                name="record"
+                placeholder="Ex.: 5-1 profissional, 8-2 amador"
+                required
+                type="text"
+              />
+              <MinimumCharactersHint count={3} />
+            </label>
+
+            <label className={styles.field}>
+              <span className={styles.label}>Categoria</span>
+              <input
+                className={styles.input}
+                minLength={2}
+                name="category"
+                placeholder="Ex.: peso galo"
+                required
+                type="text"
+              />
+            </label>
+
+            <label className={styles.field}>
+              <span className={styles.label}>Altura</span>
+              <input
+                className={styles.input}
+                minLength={2}
+                name="height"
+                placeholder="Ex.: 1,78 m"
+                required
+                type="text"
+              />
+            </label>
+
+            <label className={styles.field}>
+              <span className={styles.label}>Envergadura</span>
+              <input
+                className={styles.input}
+                minLength={2}
+                name="reach"
+                placeholder="Ex.: 1,84 m"
+                required
+                type="text"
+              />
+            </label>
+
+            <label className={styles.field}>
+              <span className={styles.label}>Equipe</span>
+              <input
+                className={styles.input}
+                minLength={2}
+                name="team"
+                placeholder="Nome da equipe"
+                required
+                type="text"
+              />
+            </label>
+
+            <label className={styles.field}>
+              <span className={styles.label}>Especialidade principal</span>
+              <input
+                className={styles.input}
+                minLength={2}
+                name="primarySpecialty"
+                placeholder="Ex.: Wrestling, Muay Thai, Jiu-jitsu"
+                required
+                type="text"
+              />
+              <MinimumCharactersHint count={2} />
+            </label>
+
+            <label className={`${styles.field} ${styles.fullWidth}`}>
+              <span className={styles.label}>Graduações na luta</span>
+              <textarea
+                className={styles.textarea}
+                minLength={2}
+                name="fightGraduations"
+                placeholder="Ex.: faixa preta de jiu-jitsu, luva preta de muay thai, graduação de judô."
+                required
+              />
+              <MinimumCharactersHint count={2} />
+            </label>
+
+            <label className={styles.field}>
+              <span className={styles.label}>Link Tapology</span>
+              <input
+                className={styles.input}
+                minLength={6}
+                name="tapologyLink"
+                placeholder="Cole o link do perfil"
+                required
+                type="text"
+              />
+            </label>
+
+            <label className={styles.field}>
+              <span className={styles.label}>Link Instagram</span>
+              <input
+                className={styles.input}
+                minLength={6}
+                name="instagramLink"
+                placeholder="Cole o link do perfil"
+                required
+                type="text"
+              />
+            </label>
+          </div>
+        </section>
+
+        <section className={styles.section}>
+          <div className={styles.sectionHeader}>
+            <span className={styles.sectionKicker}>Operação do evento</span>
+            <h2 className={styles.sectionTitle}>Corners e contatos da equipe</h2>
+            <p className={styles.sectionCopy}>
+              Esse bloco ajuda logística, credenciamento e contato rápido com quem cuida da
+              sua operação fora da luta.
+            </p>
+          </div>
+
+          <div className={styles.grid}>
+            <label className={styles.field}>
+              <span className={styles.label}>Contato do treinador</span>
+              <input
+                className={styles.input}
+                inputMode="tel"
+                minLength={8}
+                name="coachContact"
+                placeholder="Telefone ou Whatsapp"
+                required
+                type="text"
+              />
+            </label>
+
+            <label className={styles.field}>
+              <span className={styles.label}>Contato do empresário</span>
+              <input
+                className={styles.input}
+                inputMode="tel"
+                minLength={8}
+                name="managerContact"
+                placeholder="Se for diferente do treinador"
+                type="text"
+              />
+              <p className={styles.helper}>Opcional se o contato do treinador já resolver.</p>
+            </label>
+
+            <label className={styles.field}>
+              <span className={styles.label}>Corner 1</span>
+              <input
+                className={styles.input}
+                minLength={2}
+                name="cornerOne"
+                placeholder="Nome do primeiro corner"
+                required
+                type="text"
+              />
+            </label>
+
+            <label className={styles.field}>
+              <span className={styles.label}>Corner 2</span>
+              <input
+                className={styles.input}
+                minLength={2}
+                name="cornerTwo"
+                placeholder="Nome do segundo corner"
+                type="text"
+              />
+              <p className={styles.helper}>
+                Para atletas fora de São Paulo, o evento arcará com viagem e hospedagem
+                somente para um corner.
+              </p>
             </label>
           </div>
         </section>
@@ -433,32 +646,6 @@ export function EventFighterIntakeForm({
           </div>
 
           <div className={styles.grid}>
-            <label className={styles.field}>
-              <span className={styles.label}>Cartel</span>
-              <input
-                className={styles.input}
-                minLength={3}
-                name="record"
-                placeholder="Ex.: 5-1 profissional, 8-2 amador"
-                required
-                type="text"
-              />
-              <MinimumCharactersHint count={3} />
-            </label>
-
-            <label className={styles.field}>
-              <span className={styles.label}>Especialidade principal</span>
-              <input
-                className={styles.input}
-                minLength={2}
-                name="primarySpecialty"
-                placeholder="Ex.: Wrestling, Muay Thai, Jiu-jitsu"
-                required
-                type="text"
-              />
-              <MinimumCharactersHint count={2} />
-            </label>
-
             <label className={`${styles.field} ${styles.fullWidth}`}>
               <span className={styles.label}>Outras especialidades</span>
               <textarea

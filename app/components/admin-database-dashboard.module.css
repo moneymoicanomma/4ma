@@ -1,0 +1,251 @@
+.dashboard {
+  display: grid;
+  gap: 22px;
+}
+
+.warningBanner,
+.emptyState,
+.errorState,
+.emptyTableState {
+  display: grid;
+  gap: 10px;
+  padding: 22px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background:
+    radial-gradient(circle at top left, rgba(232, 24, 26, 0.14), transparent 38%),
+    rgba(8, 8, 8, 0.92);
+}
+
+.warningBanner {
+  color: rgba(255, 240, 214, 0.92);
+  border-color: rgba(255, 176, 74, 0.28);
+  background:
+    radial-gradient(circle at top left, rgba(255, 176, 74, 0.14), transparent 38%),
+    rgba(14, 11, 8, 0.94);
+}
+
+.emptyEyebrow,
+.tableName,
+.previewLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: rgba(255, 255, 255, 0.56);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1.6px;
+  text-transform: uppercase;
+}
+
+.emptyEyebrow::before,
+.previewLabel::before {
+  content: "";
+  width: 28px;
+  height: 1px;
+  background: rgba(232, 24, 26, 0.82);
+}
+
+.emptyState h2,
+.tableCopy h2 {
+  margin: 0;
+  color: #ffffff;
+  font-family: var(--font-title);
+  font-size: clamp(28px, 4vw, 42px);
+  line-height: 0.96;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+}
+
+.emptyState p,
+.tableCopy p,
+.errorState p,
+.emptyTableState p {
+  margin: 0;
+  color: rgba(227, 226, 225, 0.74);
+  font-size: 15px;
+  line-height: 1.7;
+}
+
+.anchorMenu {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.anchorLink,
+.anchorLinkMuted {
+  display: grid;
+  gap: 6px;
+  padding: 16px 18px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background:
+    radial-gradient(circle at top left, rgba(232, 24, 26, 0.14), transparent 42%),
+    rgba(7, 7, 7, 0.9);
+  color: #ffffff;
+  text-decoration: none;
+  transition:
+    transform 160ms ease,
+    border-color 160ms ease,
+    background-color 160ms ease;
+}
+
+.anchorLink strong,
+.anchorLinkMuted strong {
+  font-size: 15px;
+}
+
+.anchorLink span,
+.anchorLinkMuted span {
+  color: rgba(227, 226, 225, 0.62);
+  font-size: 13px;
+}
+
+.anchorLink:hover,
+.anchorLink:focus-visible,
+.anchorLinkMuted:hover,
+.anchorLinkMuted:focus-visible {
+  transform: translateY(-2px);
+  border-color: rgba(232, 24, 26, 0.32);
+}
+
+.anchorLinkMuted {
+  opacity: 0.64;
+}
+
+.tableList {
+  display: grid;
+  gap: 18px;
+}
+
+.tableCard {
+  display: grid;
+  gap: 18px;
+  padding: 22px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background:
+    radial-gradient(circle at top left, rgba(232, 24, 26, 0.14), transparent 42%),
+    rgba(8, 8, 8, 0.92);
+  scroll-margin-top: 108px;
+}
+
+.tableHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.tableCopy {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
+.tableMetrics {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(160px, 1fr));
+  gap: 12px;
+  min-width: min(100%, 360px);
+}
+
+.metricCard {
+  display: grid;
+  gap: 6px;
+  padding: 14px 16px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.metricCard span {
+  color: rgba(255, 255, 255, 0.52);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+}
+
+.metricCard strong {
+  color: #ffffff;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.statusRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.statusChip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  padding: 0 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+  color: rgba(255, 255, 255, 0.86);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.tableScroller {
+  overflow-x: auto;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(3, 3, 3, 0.72);
+}
+
+.table {
+  width: 100%;
+  min-width: 760px;
+  border-collapse: collapse;
+}
+
+.table th,
+.table td {
+  padding: 14px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  text-align: left;
+}
+
+.table th {
+  color: rgba(255, 255, 255, 0.52);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+}
+
+.table td {
+  color: rgba(242, 241, 240, 0.9);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.025);
+}
+
+@media (max-width: 920px) {
+  .tableHeader {
+    flex-direction: column;
+  }
+
+  .tableMetrics {
+    grid-template-columns: 1fr;
+    min-width: 0;
+    width: 100%;
+  }
+}
+
+@media (max-width: 720px) {
+  .tableCard,
+  .emptyState,
+  .errorState,
+  .emptyTableState {
+    padding: 18px;
+  }
+
+  .table {
+    min-width: 640px;
+  }
+}

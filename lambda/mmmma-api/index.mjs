@@ -1042,6 +1042,34 @@ async function findExistingUnlinkedEventFighterIntake(email) {
   return result.rows[0]?.intakeId ?? null;
 }
 
+function buildEventFighterIntakeMetadata(payload, accessEmail, extras = {}) {
+  return JSON.stringify({
+    surface: "event-fighter-intake-lambda",
+    accessEmail,
+    schemaVersion: "v2",
+    athleteProfile: {
+      fightName: normalizeText(payload?.nickname) || "",
+      athleteContact: normalizeText(payload?.phoneWhatsapp) || "",
+      category: normalizeText(payload?.category) || "",
+      height: normalizeText(payload?.height) || "",
+      reach: normalizeText(payload?.reach) || "",
+      tapologyLink: normalizeText(payload?.tapologyLink) || "",
+      instagramLink: normalizeText(payload?.instagramLink) || "",
+      city: normalizeText(payload?.city) || "",
+      education: normalizeText(payload?.education) || "",
+      team: normalizeText(payload?.team) || "",
+      fightGraduations: normalizeText(payload?.fightGraduations) || "",
+      coachContact: normalizeText(payload?.coachContact) || "",
+      managerContact: normalizeText(payload?.managerContact) || "",
+      corners: [
+        normalizeText(payload?.cornerOne) || "",
+        normalizeText(payload?.cornerTwo) || ""
+      ]
+    },
+    ...extras
+  });
+}
+
 async function handleEventFighterIntake(event) {
   if (!assertInternalBearer(event)) {
     return buildJsonResponse(401, {
@@ -1119,9 +1147,7 @@ async function handleEventFighterIntake(event) {
         const requestOrigin = normalizeText(requestContext?.requestOrigin) || null;
         const requestIpHash = normalizeText(requestContext?.requestIpHash) || null;
         const userAgent = normalizeText(requestContext?.userAgent) || null;
-        const metadata = JSON.stringify({
-          surface: "event-fighter-intake-lambda",
-          accessEmail,
+        const metadata = buildEventFighterIntakeMetadata(payload, accessEmail, {
           submissionMode: "shared-password"
         });
 

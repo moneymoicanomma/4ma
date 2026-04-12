@@ -35,6 +35,34 @@ type ExistingIntakePhotoRow = {
   objectKey: string;
 };
 
+function buildEventFighterIntakeMetadata(
+  submission: EventFighterIntakeSubmission,
+  extras?: Record<string, string>
+) {
+  return JSON.stringify({
+    surface: "event-fighter-intake",
+    accessEmail: submission.payload.accessEmail,
+    schemaVersion: "v2",
+    athleteProfile: {
+      fightName: submission.payload.nickname,
+      athleteContact: submission.payload.phoneWhatsapp,
+      category: submission.payload.category,
+      height: submission.payload.height,
+      reach: submission.payload.reach,
+      tapologyLink: submission.payload.tapologyLink,
+      instagramLink: submission.payload.instagramLink,
+      city: submission.payload.city,
+      education: submission.payload.education,
+      team: submission.payload.team,
+      fightGraduations: submission.payload.fightGraduations,
+      coachContact: submission.payload.coachContact,
+      managerContact: submission.payload.managerContact,
+      corners: [submission.payload.cornerOne, submission.payload.cornerTwo]
+    },
+    ...(extras ?? {})
+  });
+}
+
 const eventPhotoFieldNameToDatabaseValue: Record<string, string> = {
   fullBodyPhoto: "full_body_photo",
   facePhoto: "face_photo",
@@ -199,6 +227,7 @@ async function persistLinkedEventFighterIntakeInDatabase(
 
   const intakeId = portalTarget.intakeId ?? randomUUID();
   const previousPhotos = await getPreviousPhotosForIntake(portalTarget.intakeId);
+  const intakeMetadata = buildEventFighterIntakeMetadata(submission);
 
   await withDatabaseTransaction(
     {
@@ -358,10 +387,7 @@ async function persistLinkedEventFighterIntakeInDatabase(
           options.requestContext.requestOrigin,
           options.requestContext.requestIpHash,
           options.requestContext.userAgent,
-          JSON.stringify({
-            surface: "event-fighter-intake",
-            accessEmail: submission.payload.accessEmail
-          })
+          intakeMetadata
         ]
       );
 
@@ -399,6 +425,9 @@ async function persistUnlinkedEventFighterIntakeInDatabase(
   const existingIntakeId = existingIntakeResult.rows[0]?.intakeId ?? null;
   const intakeId = existingIntakeId ?? randomUUID();
   const previousPhotos = await getPreviousPhotosForIntake(existingIntakeId);
+  const intakeMetadata = buildEventFighterIntakeMetadata(submission, {
+    submissionMode: "shared-password"
+  });
 
   await withDatabaseTransaction(
     {
@@ -486,11 +515,7 @@ async function persistUnlinkedEventFighterIntakeInDatabase(
             options.requestContext.requestOrigin,
             options.requestContext.requestIpHash,
             options.requestContext.userAgent,
-            JSON.stringify({
-              surface: "event-fighter-intake",
-              accessEmail: submission.payload.accessEmail,
-              submissionMode: "shared-password"
-            })
+            intakeMetadata
           ]
         );
       } else {
@@ -601,11 +626,7 @@ async function persistUnlinkedEventFighterIntakeInDatabase(
             options.requestContext.requestOrigin,
             options.requestContext.requestIpHash,
             options.requestContext.userAgent,
-            JSON.stringify({
-              surface: "event-fighter-intake",
-              accessEmail: submission.payload.accessEmail,
-              submissionMode: "shared-password"
-            })
+            intakeMetadata
           ]
         );
       }

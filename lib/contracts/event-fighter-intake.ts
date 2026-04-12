@@ -57,6 +57,19 @@ export type EventFighterIntakePayload = {
   email: string;
   phoneWhatsapp: string;
   record: string;
+  category: string;
+  height: string;
+  reach: string;
+  tapologyLink: string;
+  instagramLink: string;
+  city: string;
+  education: string;
+  team: string;
+  fightGraduations: string;
+  coachContact: string;
+  managerContact: string;
+  cornerOne: string;
+  cornerTwo: string;
   primarySpecialty: string;
   additionalSpecialties: string;
   competitionHistory: string;
@@ -153,6 +166,19 @@ type NormalizedEventFighterIntakeFields = {
   email: string;
   phoneWhatsapp: string;
   record: string;
+  category: string;
+  height: string;
+  reach: string;
+  tapologyLink: string;
+  instagramLink: string;
+  city: string;
+  education: string;
+  team: string;
+  fightGraduations: string;
+  coachContact: string;
+  managerContact: string;
+  cornerOne: string;
+  cornerTwo: string;
   primarySpecialty: string;
   additionalSpecialties: string;
   competitionHistory: string;
@@ -228,6 +254,21 @@ function validateRequiredText(
   }
 
   return null;
+}
+
+function validateOptionalText(
+  value: string,
+  options: {
+    label: string;
+    minLength?: number;
+    maxLength?: number;
+  }
+) {
+  if (!value) {
+    return null;
+  }
+
+  return validateRequiredText(value, options);
 }
 
 function isValidBirthDate(value: string) {
@@ -343,7 +384,7 @@ function getValidatedPayload(
       maxLength: MAX_SHORT_TEXT_LENGTH
     }) ??
     validateRequiredText(fields.nickname, {
-      label: "Apelido",
+      label: "Nome de luta",
       minLength: 2,
       maxLength: MAX_SHORT_TEXT_LENGTH
     }) ??
@@ -365,13 +406,63 @@ function getValidatedPayload(
       maxLength: 160
     }) ??
     validateRequiredText(fields.phoneWhatsapp, {
-      label: "Telefone / Whatsapp",
+      label: "Contato do atleta",
       minLength: 8,
       maxLength: 40
     }) ??
     validateRequiredText(fields.record, {
       label: "Cartel",
       minLength: 3
+    }) ??
+    validateRequiredText(fields.category, {
+      label: "Categoria",
+      minLength: 2,
+      maxLength: MAX_SHORT_TEXT_LENGTH
+    }) ??
+    validateRequiredText(fields.height, {
+      label: "Altura",
+      minLength: 2,
+      maxLength: MAX_SHORT_TEXT_LENGTH
+    }) ??
+    validateRequiredText(fields.reach, {
+      label: "Envergadura",
+      minLength: 2,
+      maxLength: MAX_SHORT_TEXT_LENGTH
+    }) ??
+    validateRequiredText(fields.tapologyLink, {
+      label: "Link Tapology",
+      minLength: 6,
+      maxLength: MAX_MEDIUM_TEXT_LENGTH
+    }) ??
+    validateRequiredText(fields.instagramLink, {
+      label: "Link Instagram",
+      minLength: 6,
+      maxLength: MAX_MEDIUM_TEXT_LENGTH
+    }) ??
+    validateRequiredText(fields.city, {
+      label: "Cidade",
+      minLength: 2,
+      maxLength: MAX_SHORT_TEXT_LENGTH
+    }) ??
+    validateRequiredText(fields.education, {
+      label: "Escolaridade",
+      minLength: 2,
+      maxLength: MAX_SHORT_TEXT_LENGTH
+    }) ??
+    validateRequiredText(fields.team, {
+      label: "Equipe",
+      minLength: 2,
+      maxLength: MAX_SHORT_TEXT_LENGTH
+    }) ??
+    validateRequiredText(fields.coachContact, {
+      label: "Contato do treinador",
+      minLength: 8,
+      maxLength: MAX_SHORT_TEXT_LENGTH
+    }) ??
+    validateRequiredText(fields.cornerOne, {
+      label: "Corner 1",
+      minLength: 2,
+      maxLength: MAX_SHORT_TEXT_LENGTH
     }) ??
     validateRequiredText(fields.primarySpecialty, {
       label: "Especialidade principal",
@@ -444,7 +535,7 @@ function getValidatedPayload(
   if (digitsOnly(fields.phoneWhatsapp).length < 10) {
     return {
       ok: false,
-      message: "Informe um telefone / Whatsapp válido."
+      message: "Informe um contato do atleta válido."
     };
   }
 
@@ -456,6 +547,11 @@ function getValidatedPayload(
   }
 
   const longFieldError =
+    validateRequiredText(fields.fightGraduations, {
+      label: "Graduações na luta",
+      minLength: 2,
+      maxLength: MAX_MEDIUM_TEXT_LENGTH
+    }) ??
     validateRequiredText(fields.additionalSpecialties, {
       label: "Outras especialidades",
       minLength: 2
@@ -492,6 +588,25 @@ function getValidatedPayload(
     };
   }
 
+  const optionalFieldError =
+    validateOptionalText(fields.managerContact, {
+      label: "Contato do empresário",
+      minLength: 8,
+      maxLength: MAX_SHORT_TEXT_LENGTH
+    }) ??
+    validateOptionalText(fields.cornerTwo, {
+      label: "Corner 2",
+      minLength: 2,
+      maxLength: MAX_SHORT_TEXT_LENGTH
+    });
+
+  if (optionalFieldError) {
+    return {
+      ok: false,
+      message: optionalFieldError
+    };
+  }
+
   return {
     ok: true,
     payload: {
@@ -507,6 +622,19 @@ function getValidatedPayload(
       email: fields.email,
       phoneWhatsapp: fields.phoneWhatsapp,
       record: fields.record,
+      category: fields.category,
+      height: fields.height,
+      reach: fields.reach,
+      tapologyLink: fields.tapologyLink,
+      instagramLink: fields.instagramLink,
+      city: fields.city,
+      education: fields.education,
+      team: fields.team,
+      fightGraduations: fields.fightGraduations,
+      coachContact: fields.coachContact,
+      managerContact: fields.managerContact,
+      cornerOne: fields.cornerOne,
+      cornerTwo: fields.cornerTwo,
       primarySpecialty: fields.primarySpecialty,
       additionalSpecialties: fields.additionalSpecialties,
       competitionHistory: fields.competitionHistory,
@@ -687,6 +815,19 @@ export function parseEventFighterIntakeFormData(
     email: normalizeEventFighterEmail(normalizeShortText(formData.get("email"))),
     phoneWhatsapp: normalizeShortText(formData.get("phoneWhatsapp")),
     record: normalizeShortText(formData.get("record")),
+    category: normalizeShortText(formData.get("category")),
+    height: normalizeShortText(formData.get("height")),
+    reach: normalizeShortText(formData.get("reach")),
+    tapologyLink: normalizeShortText(formData.get("tapologyLink")),
+    instagramLink: normalizeShortText(formData.get("instagramLink")),
+    city: normalizeShortText(formData.get("city")),
+    education: normalizeShortText(formData.get("education")),
+    team: normalizeShortText(formData.get("team")),
+    fightGraduations: normalizeLongText(formData.get("fightGraduations")),
+    coachContact: normalizeShortText(formData.get("coachContact")),
+    managerContact: normalizeShortText(formData.get("managerContact")),
+    cornerOne: normalizeShortText(formData.get("cornerOne")),
+    cornerTwo: normalizeShortText(formData.get("cornerTwo")),
     primarySpecialty: normalizeShortText(formData.get("primarySpecialty")),
     additionalSpecialties: normalizeLongText(formData.get("additionalSpecialties")),
     competitionHistory: normalizeLongText(formData.get("competitionHistory")),
@@ -886,6 +1027,19 @@ export function parseEventFighterIntakeJsonSubmission(
     email: normalizeEventFighterEmail(normalizeShortText(input.payload.email)),
     phoneWhatsapp: normalizeShortText(input.payload.phoneWhatsapp),
     record: normalizeShortText(input.payload.record),
+    category: normalizeShortText(input.payload.category),
+    height: normalizeShortText(input.payload.height),
+    reach: normalizeShortText(input.payload.reach),
+    tapologyLink: normalizeShortText(input.payload.tapologyLink),
+    instagramLink: normalizeShortText(input.payload.instagramLink),
+    city: normalizeShortText(input.payload.city),
+    education: normalizeShortText(input.payload.education),
+    team: normalizeShortText(input.payload.team),
+    fightGraduations: normalizeLongText(input.payload.fightGraduations),
+    coachContact: normalizeShortText(input.payload.coachContact),
+    managerContact: normalizeShortText(input.payload.managerContact),
+    cornerOne: normalizeShortText(input.payload.cornerOne),
+    cornerTwo: normalizeShortText(input.payload.cornerTwo),
     primarySpecialty: normalizeShortText(input.payload.primarySpecialty),
     additionalSpecialties: normalizeLongText(input.payload.additionalSpecialties),
     competitionHistory: normalizeLongText(input.payload.competitionHistory),
