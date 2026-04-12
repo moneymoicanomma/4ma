@@ -135,12 +135,13 @@ export async function POST(request: NextRequest) {
   const result = await submitFighterApplication(parsed.data, requestContext, env);
 
   if (!result.ok) {
-    const status = result.reason === "not_configured" ? 503 : 502;
+    const status = result.status ?? (result.reason === "not_configured" ? 503 : 502);
 
     return publicApiResponse(
       {
         ok: false,
-        message: "Serviço temporariamente indisponível. Tenta novamente daqui a pouco."
+        message:
+          result.message ?? "Serviço temporariamente indisponível. Tenta novamente daqui a pouco."
       },
       {
         status,

@@ -70,6 +70,7 @@ export function FighterApplicationForm() {
   const [selectedSpecialty, setSelectedSpecialty] = useState<FighterSpecialty>(defaultSpecialty);
   const [confirmationMessage, setConfirmationMessage] = useState("");
   const [turnstileToken, setTurnstileToken] = useState("");
+  const [turnstileClientError, setTurnstileClientError] = useState("");
   const [turnstileResetSignal, setTurnstileResetSignal] = useState(0);
   const turnstileEnabled = Boolean(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY?.trim());
 
@@ -79,6 +80,7 @@ export function FighterApplicationForm() {
     }
 
     setTurnstileToken("");
+    setTurnstileClientError("");
     setTurnstileResetSignal((current) => current + 1);
   }
 
@@ -92,7 +94,7 @@ export function FighterApplicationForm() {
     if (turnstileEnabled && !turnstileToken) {
       setState({
         status: "error",
-        message: humanConfirmationMessage
+        message: turnstileClientError || humanConfirmationMessage
       });
       return;
     }
@@ -478,11 +480,24 @@ export function FighterApplicationForm() {
 
             <TurnstileWidget
               errorMessage={
-                state.status === "error" && state.message === humanConfirmationMessage
+                state.status === "error" &&
+                (state.message === humanConfirmationMessage ||
+                  state.message === turnstileClientError)
                   ? state.message
                   : undefined
               }
-              onTokenChange={setTurnstileToken}
+              onWidgetError={() => {
+                setTurnstileClientError(
+                  "O desafio anti-bot não carregou direito. Atualize a página e tente novamente."
+                );
+              }}
+              onTokenChange={(token) => {
+                setTurnstileToken(token);
+
+                if (token) {
+                  setTurnstileClientError("");
+                }
+              }}
               resetSignal={turnstileResetSignal}
             />
 

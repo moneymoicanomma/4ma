@@ -13,7 +13,7 @@ declare global {
         container: HTMLElement,
         options: {
           callback?: (token: string) => void;
-          "error-callback"?: () => void;
+          "error-callback"?: (errorCode?: string) => void;
           "expired-callback"?: () => void;
           sitekey: string;
           theme?: "light" | "dark" | "auto";
@@ -26,6 +26,7 @@ declare global {
 
 type TurnstileWidgetProps = {
   errorMessage?: string;
+  onWidgetError?: (errorCode?: string) => void;
   onTokenChange: (token: string) => void;
   resetSignal?: number;
 };
@@ -34,6 +35,7 @@ const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY?.trim() ?? "";
 
 export function TurnstileWidget({
   errorMessage,
+  onWidgetError,
   onTokenChange,
   resetSignal = 0
 }: Readonly<TurnstileWidgetProps>) {
@@ -56,8 +58,9 @@ export function TurnstileWidget({
       "expired-callback"() {
         onTokenChange("");
       },
-      "error-callback"() {
+      "error-callback"(errorCode) {
         onTokenChange("");
+        onWidgetError?.(errorCode);
       }
     });
 
@@ -67,7 +70,7 @@ export function TurnstileWidget({
         widgetIdRef.current = null;
       }
     };
-  }, [onTokenChange, scriptLoaded]);
+  }, [onTokenChange, onWidgetError, scriptLoaded]);
 
   useEffect(() => {
     if (!widgetIdRef.current || !window.turnstile) {

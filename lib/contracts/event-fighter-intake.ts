@@ -10,27 +10,33 @@ export const HEALTH_INSURANCE_OPTIONS = ["yes", "no"] as const;
 export const EVENT_FIGHTER_PHOTO_FIELDS = [
   {
     fieldName: "fullBodyPhoto",
-    label: "Foto de corpo inteiro"
+    label: "Corpo inteiro",
+    note: "De frente, da cabeça aos pés, com braços e pernas visíveis e sem corte."
   },
   {
     fieldName: "facePhoto",
-    label: "Foto de rosto"
+    label: "Perfil direto",
+    note: "Rosto centralizado, olhando para a câmera, do peito para cima e sem acessórios."
   },
   {
     fieldName: "frontPhoto",
-    label: "Foto de frente"
+    label: "Cintura para cima",
+    note: "De frente, da cintura para cima, com ombros e tronco inteiros no enquadramento."
   },
   {
     fieldName: "profilePhoto",
-    label: "Foto de perfil"
+    label: "Perfil esquerdo",
+    note: "Virado para a esquerda, pegando rosto e tronco sem corte."
   },
   {
     fieldName: "diagonalLeftPhoto",
-    label: "Diagonal para a esquerda"
+    label: "Quadril para cima",
+    note: "Do quadril para cima, com boa luz e espaço para usar em arte e transmissão."
   },
   {
     fieldName: "diagonalRightPhoto",
-    label: "Diagonal para a direita"
+    label: "Perfil direito",
+    note: "Virado para a direita, pegando rosto e tronco sem corte."
   }
 ] as const;
 
@@ -161,8 +167,6 @@ type NormalizedEventFighterIntakeFields = {
 
 const MAX_SHORT_TEXT_LENGTH = 180;
 const MAX_MEDIUM_TEXT_LENGTH = 320;
-const MAX_LONG_TEXT_LENGTH = 5000;
-const MAX_HOBBY_TEXT_LENGTH = 1200;
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
 const MAX_OBJECT_KEY_LENGTH = 1024;
 const pixKeyTypesSet = new Set<string>(PIX_KEY_TYPES);
@@ -204,7 +208,7 @@ function validateRequiredText(
   options: {
     label: string;
     minLength?: number;
-    maxLength: number;
+    maxLength?: number;
   }
 ) {
   if (!value) {
@@ -215,7 +219,7 @@ function validateRequiredText(
     return `${options.label} precisa de mais detalhes.`;
   }
 
-  if (value.length > options.maxLength) {
+  if (options.maxLength && value.length > options.maxLength) {
     return `${options.label} está grande demais.`;
   }
 
@@ -349,28 +353,25 @@ function getValidatedPayload(
     }) ??
     validateRequiredText(fields.pixKey, {
       label: "Chave Pix",
-      minLength: 3,
-      maxLength: MAX_MEDIUM_TEXT_LENGTH
+      minLength: 3
     }) ??
     validateRequiredText(fields.email, {
       label: "Email",
       minLength: 6,
-      maxLength: MAX_SHORT_TEXT_LENGTH
+      maxLength: 160
     }) ??
     validateRequiredText(fields.phoneWhatsapp, {
       label: "Telefone / Whatsapp",
       minLength: 8,
-      maxLength: MAX_SHORT_TEXT_LENGTH
+      maxLength: 40
     }) ??
     validateRequiredText(fields.record, {
       label: "Cartel",
-      minLength: 3,
-      maxLength: MAX_MEDIUM_TEXT_LENGTH
+      minLength: 3
     }) ??
     validateRequiredText(fields.primarySpecialty, {
       label: "Especialidade principal",
-      minLength: 2,
-      maxLength: MAX_SHORT_TEXT_LENGTH
+      minLength: 2
     });
 
   if (shortFieldError) {
@@ -411,8 +412,7 @@ function getValidatedPayload(
   if (fields.hasHealthInsurance === "yes") {
     const healthInsuranceError = validateRequiredText(fields.healthInsuranceProvider, {
       label: "Plano de saúde",
-      minLength: 2,
-      maxLength: MAX_SHORT_TEXT_LENGTH
+      minLength: 2
     });
 
     if (healthInsuranceError) {
@@ -454,38 +454,31 @@ function getValidatedPayload(
   const longFieldError =
     validateRequiredText(fields.additionalSpecialties, {
       label: "Outras especialidades",
-      minLength: 2,
-      maxLength: MAX_LONG_TEXT_LENGTH
+      minLength: 2
     }) ??
     validateRequiredText(fields.competitionHistory, {
       label: "Histórico de competição",
-      minLength: 40,
-      maxLength: MAX_LONG_TEXT_LENGTH
+      minLength: 40
     }) ??
     validateRequiredText(fields.titlesWon, {
       label: "Títulos conquistados",
-      minLength: 20,
-      maxLength: MAX_LONG_TEXT_LENGTH
+      minLength: 20
     }) ??
     validateRequiredText(fields.lifeStory, {
       label: "História de vida",
-      minLength: 60,
-      maxLength: MAX_LONG_TEXT_LENGTH
+      minLength: 60
     }) ??
     validateRequiredText(fields.funnyStory, {
       label: "História engraçada",
-      minLength: 20,
-      maxLength: MAX_LONG_TEXT_LENGTH
+      minLength: 20
     }) ??
     validateRequiredText(fields.curiosities, {
       label: "Curiosidades",
-      minLength: 20,
-      maxLength: MAX_LONG_TEXT_LENGTH
+      minLength: 20
     }) ??
     validateRequiredText(fields.hobbies, {
       label: "Hobbies",
-      minLength: 2,
-      maxLength: MAX_HOBBY_TEXT_LENGTH
+      minLength: 2
     });
 
   if (longFieldError) {

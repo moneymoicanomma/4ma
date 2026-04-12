@@ -255,7 +255,6 @@ export function EventFighterIntakeForm({
               <input
                 autoComplete="name"
                 className={styles.input}
-                maxLength={180}
                 minLength={5}
                 name="fullName"
                 placeholder="Nome e sobrenome"
@@ -269,7 +268,6 @@ export function EventFighterIntakeForm({
               <input
                 autoComplete="nickname"
                 className={styles.input}
-                maxLength={180}
                 minLength={2}
                 name="nickname"
                 placeholder='Ex.: "The Problem"'
@@ -284,7 +282,6 @@ export function EventFighterIntakeForm({
                 autoComplete="off"
                 className={styles.input}
                 inputMode="numeric"
-                maxLength={18}
                 name="cpf"
                 placeholder="000.000.000-00"
                 required
@@ -324,7 +321,6 @@ export function EventFighterIntakeForm({
                 autoComplete="tel"
                 className={styles.input}
                 inputMode="tel"
-                maxLength={180}
                 minLength={8}
                 name="phoneWhatsapp"
                 placeholder="DDD + número"
@@ -367,7 +363,6 @@ export function EventFighterIntakeForm({
               <input
                 autoComplete="off"
                 className={styles.input}
-                maxLength={320}
                 minLength={3}
                 name="pixKey"
                 placeholder="Digite exatamente como recebe"
@@ -398,7 +393,6 @@ export function EventFighterIntakeForm({
               <input
                 className={styles.input}
                 disabled={hasHealthInsurance !== "yes"}
-                maxLength={180}
                 minLength={2}
                 name="healthInsuranceProvider"
                 placeholder={hasHealthInsurance === "yes" ? "Nome do plano" : "Preencha apenas se tiver plano"}
@@ -424,7 +418,6 @@ export function EventFighterIntakeForm({
               <span className={styles.label}>Cartel</span>
               <input
                 className={styles.input}
-                maxLength={320}
                 minLength={3}
                 name="record"
                 placeholder="Ex.: 5-1 profissional, 8-2 amador"
@@ -437,7 +430,6 @@ export function EventFighterIntakeForm({
               <span className={styles.label}>Especialidade principal</span>
               <input
                 className={styles.input}
-                maxLength={180}
                 minLength={2}
                 name="primarySpecialty"
                 placeholder="Ex.: Wrestling, Muay Thai, Jiu-jitsu"
@@ -450,7 +442,6 @@ export function EventFighterIntakeForm({
               <span className={styles.label}>Outras especialidades</span>
               <textarea
                 className={styles.textarea}
-                maxLength={5000}
                 minLength={2}
                 name="additionalSpecialties"
                 placeholder="Conte o que também entra no seu jogo e como isso aparece na luta."
@@ -462,7 +453,6 @@ export function EventFighterIntakeForm({
               <span className={styles.label}>Histórico de competição</span>
               <textarea
                 className={styles.textarea}
-                maxLength={5000}
                 minLength={40}
                 name="competitionHistory"
                 placeholder="Detalhe eventos, adversários, datas, resultados, experiências no amador/profissional e qualquer contexto importante."
@@ -474,7 +464,6 @@ export function EventFighterIntakeForm({
               <span className={styles.label}>Títulos conquistados</span>
               <textarea
                 className={styles.textarea}
-                maxLength={5000}
                 minLength={20}
                 name="titlesWon"
                 placeholder="Liste cinturões, torneios, medalhas e onde foram conquistados."
@@ -499,7 +488,6 @@ export function EventFighterIntakeForm({
               <span className={styles.label}>História de vida</span>
               <textarea
                 className={styles.textarea}
-                maxLength={5000}
                 minLength={60}
                 name="lifeStory"
                 placeholder="Conte de onde você veio, o que te trouxe para a luta, desafios vencidos e o que move sua carreira."
@@ -511,7 +499,6 @@ export function EventFighterIntakeForm({
               <span className={styles.label}>Alguma história engraçada</span>
               <textarea
                 className={styles.textarea}
-                maxLength={5000}
                 minLength={20}
                 name="funnyStory"
                 placeholder="Bastidor, treino, viagem, corte de peso, algo inusitado que ajude a contar quem você é."
@@ -523,7 +510,6 @@ export function EventFighterIntakeForm({
               <span className={styles.label}>Curiosidades e etc.</span>
               <textarea
                 className={styles.textarea}
-                maxLength={5000}
                 minLength={20}
                 name="curiosities"
                 placeholder="Manias, rotina, detalhes fora do comum, qualquer ponto que renda boa apresentação."
@@ -535,7 +521,6 @@ export function EventFighterIntakeForm({
               <span className={styles.label}>Hobbies</span>
               <textarea
                 className={styles.textarea}
-                maxLength={1200}
                 minLength={2}
                 name="hobbies"
                 placeholder="O que você curte fazer fora da luta?"
@@ -559,6 +544,7 @@ export function EventFighterIntakeForm({
             {EVENT_FIGHTER_PHOTO_FIELDS.map((photoField) => (
               <label className={styles.photoCard} key={photoField.fieldName}>
                 <span className={styles.photoTitle}>{photoField.label}</span>
+                <span className={styles.photoNote}>{photoField.note}</span>
                 <span className={styles.photoNote}>JPEG, PNG, WEBP ou HEIC, até 10 MB.</span>
                 <input
                   accept="image/*,.heic,.heif"

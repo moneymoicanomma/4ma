@@ -9,7 +9,7 @@ import {
   isUpstreamConfigured,
   type ServerEnv
 } from "@/lib/server/env";
-import { postJsonToUpstream } from "@/lib/server/http";
+import { UpstreamApiError, postJsonToUpstream } from "@/lib/server/http";
 import type { RequestAuditContext } from "@/lib/server/request-context";
 
 type FighterApplicationSubmitResult =
@@ -17,6 +17,8 @@ type FighterApplicationSubmitResult =
   | {
       ok: false;
       reason: "not_configured" | "upstream_error";
+      status?: number;
+      message?: string;
     };
 
 export async function submitFighterApplication(
@@ -193,7 +195,7 @@ export async function submitFighterApplication(
   }
 
   try {
-    await postJsonToUpstream(
+    const response = await postJsonToUpstream(
       `${env.upstreamApiBaseUrl}${env.fighterApplicationSubmitPath}`,
       {
         payload,
@@ -205,11 +207,32 @@ export async function submitFighterApplication(
       }
     );
 
+    const responsePayload =
+      (await response.json().catch(() => null)) as { ok?: boolean; message?: string } | null;
+
+    if (!responsePayload?.ok) {
+      return {
+        ok: false,
+        reason: "upstream_error",
+        status: 502,
+        message:
+          responsePayload?.message ??
+          "Serviço temporariamente indisponível. Tenta novamente daqui a pouco."
+      };
+    }
+
     return { ok: true };
-  } catch {
+  } catch (error) {
+    const status = error instanceof UpstreamApiError ? error.status : 502;
+
     return {
       ok: false,
-      reason: "upstream_error"
+      reason: "upstream_error",
+      status,
+      message:
+        status === 404
+          ? "A API da AWS ainda não está com a rota /v1/fighter-applications publicada."
+          : "Serviço temporariamente indisponível. Tenta novamente daqui a pouco."
     };
   }
 }
