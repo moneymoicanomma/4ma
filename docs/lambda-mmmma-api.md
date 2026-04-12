@@ -12,6 +12,7 @@ Arquivos:
 Este starter responde:
 
 - `GET /health`
+- `GET /v1/admin/database-overview`
 - `POST /v1/newsletter/subscriptions`
 - `POST /v1/contact-messages`
 - `POST /v1/fighter-applications`
@@ -62,6 +63,14 @@ Healthcheck:
 curl https://rufyyaot4xzcbx4tapzd72hgoa0icnnk.lambda-url.us-east-2.on.aws/health
 ```
 
+Overview do admin:
+
+```bash
+curl -i https://rufyyaot4xzcbx4tapzd72hgoa0icnnk.lambda-url.us-east-2.on.aws/v1/admin/database-overview \
+  -H 'Authorization: Bearer SEU_TOKEN' \
+  -H 'Accept: application/json'
+```
+
 Login:
 
 ```bash
@@ -87,6 +96,7 @@ Configurar:
 ```bash
 UPSTREAM_API_BASE_URL=https://rufyyaot4xzcbx4tapzd72hgoa0icnnk.lambda-url.us-east-2.on.aws
 UPSTREAM_API_BEARER_TOKEN=mesmo-token-da-lambda
+UPSTREAM_ADMIN_DATABASE_OVERVIEW_PATH=/v1/admin/database-overview
 EVENT_FIGHTER_PORTAL_ENABLED=true
 EVENT_FIGHTER_ACCESS_AUTH_MODE=shared_password
 ATHLETE_FORM_PASSWORD=<senha-compartilhada>

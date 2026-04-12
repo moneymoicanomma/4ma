@@ -12,6 +12,7 @@ const { Pool } = pg;
 const scrypt = promisify(scryptCallback);
 
 const EVENT_FIGHTER_ACCESS_PATH = "/v1/event-fighter-access/session";
+const ADMIN_DATABASE_OVERVIEW_PATH = "/v1/admin/database-overview";
 const EVENT_FIGHTER_INTAKE_PATH = "/v1/event-fighter-intakes";
 const NEWSLETTER_SUBSCRIBE_PATH = "/v1/newsletter/subscriptions";
 const CONTACT_MESSAGES_PATH = "/v1/contact-messages";
@@ -19,6 +20,7 @@ const FIGHTER_APPLICATIONS_PATH = "/v1/fighter-applications";
 const PARTNER_INQUIRIES_PATH = "/v1/partner-inquiries";
 const FANTASY_ENTRIES_PATH = "/v1/fantasy/entries";
 const HEALTHCHECK_PATH = "/health";
+const ADMIN_TABLE_PREVIEW_LIMIT = 6;
 const PASSWORD_HASH_PREFIX = "scrypt";
 const DATABASE_CONNECTION_TIMEOUT_MS = 5000;
 const DATABASE_QUERY_TIMEOUT_MS = 10000;
@@ -69,6 +71,46 @@ const BRAZILIAN_STATES = [
   { code: "SE", name: "Sergipe" },
   { code: "TO", name: "Tocantins" }
 ];
+const ADMIN_NUMBER_FORMATTER = new Intl.NumberFormat("pt-BR");
+const ADMIN_DATE_TIME_FORMATTER = new Intl.DateTimeFormat("pt-BR", {
+  dateStyle: "medium",
+  timeStyle: "short"
+});
+const ADMIN_STATUS_LABELS = {
+  active: "Ativo",
+  approved: "Aprovado",
+  archived: "Arquivado",
+  bounced: "Bounce",
+  changes_requested: "Ajustes solicitados",
+  contacted: "Contatado",
+  converted: "Convertido",
+  disqualified: "Desclassificado",
+  disabled: "Desativado",
+  draft: "Rascunho",
+  finished: "Encerrado",
+  invited: "Convidado",
+  locked: "Travado",
+  new: "Novo",
+  pending: "Pendente",
+  published: "Publicado",
+  qualified: "Qualificado",
+  rejected: "Rejeitado",
+  responded: "Respondido",
+  reviewing: "Em revisão",
+  shortlisted: "Selecionado",
+  submitted: "Enviado",
+  subscribed: "Inscrito",
+  under_review: "Em revisão",
+  unsubscribed: "Descadastrado",
+  voided: "Invalidado"
+};
+const ADMIN_SOURCE_LABELS = {
+  contact_page: "Contato",
+  fighter_application: "Cadastro de lutador",
+  newsletter_signup: "Newsletter",
+  partner_inquiry: "Parceria",
+  press_newsletter: "Newsletter imprensa"
+};
 
 let pool;
 
@@ -315,6 +357,603 @@ async function withDatabaseTransaction(context, execute, options = {}) {
     throw error;
   } finally {
     client.release();
+  }
+}
+
+function adminHumanizeToken(value) {
+  const normalized = normalizeText(value);
+
+  if (!normalized) {
+    return "—";
+  }
+
+  return normalized
+    .split(/[_-]+/)
+    .filter(Boolean)
+    .map((part) => {
+      const lowerPart = part.toLowerCase();
+
+      if (["mma", "ufc", "cpf", "pix", "uf"].includes(lowerPart)) {
+        return lowerPart.toUpperCase();
+      }
+
+      return lowerPart.charAt(0).toUpperCase() + lowerPart.slice(1);
+    })
+    .join(" ");
+}
+
+function adminFormatText(value) {
+  return normalizeText(value) || "—";
+}
+
+function adminParseCount(value) {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return value;
+  }
+
+  if (typeof value === "string") {
+    const parsed = Number.parseInt(value, 10);
+
+    if (Number.isFinite(parsed)) {
+      return parsed;
+    }
+  }
+
+  return 0;
+}
+
+function adminFormatDateTime(value) {
+  if (!value) {
+    return "—";
+  }
+
+  const date = value instanceof Date ? value : new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return "—";
+  }
+
+  return ADMIN_DATE_TIME_FORMATTER.format(date);
+}
+
+function adminFormatStatus(value) {
+  const normalized = normalizeText(value);
+
+  if (!normalized) {
+    return "—";
+  }
+
+  return ADMIN_STATUS_LABELS[normalized] ?? adminHumanizeToken(normalized);
+}
+
+function adminFormatSource(value) {
+  const normalized = normalizeText(value);
+
+  if (!normalized) {
+    return "—";
+  }
+
+  return ADMIN_SOURCE_LABELS[normalized.replace(/-/g, "_")] ?? adminHumanizeToken(normalized);
+}
+
+function adminFormatWeightClass(value) {
+  return adminHumanizeToken(value);
+}
+
+function adminFormatScore(value) {
+  return `${ADMIN_NUMBER_FORMATTER.format(adminParseCount(value))} pts`;
+}
+
+function adminFormatPhotoCount(value) {
+  const count = adminParseCount(value);
+
+  return `${ADMIN_NUMBER_FORMATTER.format(count)} ${count === 1 ? "foto" : "fotos"}`;
+}
+
+function adminBuildLocation(city, stateCode) {
+  const normalizedCity = normalizeText(city);
+  const normalizedStateCode = normalizeText(stateCode);
+
+  if (normalizedCity && normalizedStateCode) {
+    return `${normalizedCity}, ${normalizedStateCode}`;
+  }
+
+  return normalizedCity || normalizedStateCode || "—";
+}
+
+function adminCreateRow(id, cells) {
+  return {
+    id,
+    cells
+  };
+}
+
+async function loadAdminTableSummary(text, values = []) {
+  const result = await getDatabasePool().query(text, values);
+  const row = result.rows[0] ?? {};
+
+  return {
+    totalRows: adminParseCount(row.totalRows),
+    lastActivityAt: row.lastActivityAt ? adminFormatDateTime(row.lastActivityAt) : null
+  };
+}
+
+async function loadAdminStatusCounts(text, values = []) {
+  const result = await getDatabasePool().query(text, values);
+
+  return result.rows.map((row) => ({
+    label: adminFormatStatus(row.status),
+    value: adminParseCount(row.total)
+  }));
+}
+
+async function withAdminTableFallback(config, load) {
+  try {
+    return await load();
+  } catch (error) {
+    console.error(`[admin-database] failed to load ${config.tableName}`, error);
+
+    return {
+      ...config,
+      rows: [],
+      statusCounts: [],
+      totalRows: null,
+      lastActivityAt: null,
+      errorMessage: "Não foi possível ler esta tabela no ambiente atual."
+    };
+  }
+}
+
+async function loadAdminContactMessagesTable() {
+  const config = {
+    id: "contact-messages",
+    label: "Mensagens de Contato",
+    tableName: "app.contact_messages",
+    description: "Leads enviados pelo formulário público de contato.",
+    previewLabel: "Últimas mensagens",
+    columns: [
+      { key: "createdAt", label: "Data" },
+      { key: "fullName", label: "Nome" },
+      { key: "email", label: "Email" },
+      { key: "subject", label: "Assunto" },
+      { key: "status", label: "Status" }
+    ]
+  };
+
+  return withAdminTableFallback(config, async () => {
+    const [summary, statusCounts, result] = await Promise.all([
+      loadAdminTableSummary(`
+        select
+          count(*)::int as "totalRows",
+          max(updated_at) as "lastActivityAt"
+        from app.contact_messages
+      `),
+      loadAdminStatusCounts(`
+        select
+          status,
+          count(*)::int as total
+        from app.contact_messages
+        group by status
+        order by count(*) desc, status asc
+      `),
+      getDatabasePool().query(`
+        select
+          id,
+          created_at as "createdAt",
+          full_name as "fullName",
+          email,
+          subject,
+          status
+        from app.contact_messages
+        order by created_at desc
+        limit ${ADMIN_TABLE_PREVIEW_LIMIT}
+      `)
+    ]);
+
+    return {
+      ...config,
+      ...summary,
+      statusCounts,
+      rows: result.rows.map((row) =>
+        adminCreateRow(row.id, {
+          createdAt: adminFormatDateTime(row.createdAt),
+          fullName: adminFormatText(row.fullName),
+          email: adminFormatText(row.email),
+          subject: adminFormatText(row.subject),
+          status: adminFormatStatus(row.status)
+        })
+      )
+    };
+  });
+}
+
+async function loadAdminNewsletterSubscriptionsTable() {
+  const config = {
+    id: "newsletter-subscriptions",
+    label: "Newsletter",
+    tableName: "app.newsletter_subscriptions",
+    description: "Inscrições captadas pelas áreas públicas e pela imprensa.",
+    previewLabel: "Últimas inscrições",
+    columns: [
+      { key: "subscribedAt", label: "Data" },
+      { key: "email", label: "Email" },
+      { key: "fullName", label: "Nome" },
+      { key: "source", label: "Origem" },
+      { key: "status", label: "Status" }
+    ]
+  };
+
+  return withAdminTableFallback(config, async () => {
+    const [summary, statusCounts, result] = await Promise.all([
+      loadAdminTableSummary(`
+        select
+          count(*)::int as "totalRows",
+          max(updated_at) as "lastActivityAt"
+        from app.newsletter_subscriptions
+      `),
+      loadAdminStatusCounts(`
+        select
+          status,
+          count(*)::int as total
+        from app.newsletter_subscriptions
+        group by status
+        order by count(*) desc, status asc
+      `),
+      getDatabasePool().query(`
+        select
+          id,
+          subscribed_at as "subscribedAt",
+          email,
+          metadata ->> 'fullName' as "fullName",
+          source,
+          status
+        from app.newsletter_subscriptions
+        order by subscribed_at desc
+        limit ${ADMIN_TABLE_PREVIEW_LIMIT}
+      `)
+    ]);
+
+    return {
+      ...config,
+      ...summary,
+      statusCounts,
+      rows: result.rows.map((row) =>
+        adminCreateRow(row.id, {
+          subscribedAt: adminFormatDateTime(row.subscribedAt),
+          email: adminFormatText(row.email),
+          fullName: adminFormatText(row.fullName),
+          source: adminFormatSource(row.source),
+          status: adminFormatStatus(row.status)
+        })
+      )
+    };
+  });
+}
+
+async function loadAdminPartnerInquiriesTable() {
+  const config = {
+    id: "partner-inquiries",
+    label: "Parceiros",
+    tableName: "app.partner_inquiries",
+    description: "Empresas e marcas que entraram pelo fluxo comercial.",
+    previewLabel: "Últimas oportunidades",
+    columns: [
+      { key: "createdAt", label: "Data" },
+      { key: "companyName", label: "Empresa" },
+      { key: "fullName", label: "Contato" },
+      { key: "email", label: "Email" },
+      { key: "status", label: "Status" }
+    ]
+  };
+
+  return withAdminTableFallback(config, async () => {
+    const [summary, statusCounts, result] = await Promise.all([
+      loadAdminTableSummary(`
+        select
+          count(*)::int as "totalRows",
+          max(updated_at) as "lastActivityAt"
+        from app.partner_inquiries
+      `),
+      loadAdminStatusCounts(`
+        select
+          status,
+          count(*)::int as total
+        from app.partner_inquiries
+        group by status
+        order by count(*) desc, status asc
+      `),
+      getDatabasePool().query(`
+        select
+          id,
+          created_at as "createdAt",
+          company_name as "companyName",
+          full_name as "fullName",
+          email,
+          status
+        from app.partner_inquiries
+        order by created_at desc
+        limit ${ADMIN_TABLE_PREVIEW_LIMIT}
+      `)
+    ]);
+
+    return {
+      ...config,
+      ...summary,
+      statusCounts,
+      rows: result.rows.map((row) =>
+        adminCreateRow(row.id, {
+          createdAt: adminFormatDateTime(row.createdAt),
+          companyName: adminFormatText(row.companyName),
+          fullName: adminFormatText(row.fullName),
+          email: adminFormatText(row.email),
+          status: adminFormatStatus(row.status)
+        })
+      )
+    };
+  });
+}
+
+async function loadAdminFighterApplicationsTable() {
+  const config = {
+    id: "fighter-applications",
+    label: "Cadastro de Lutadores",
+    tableName: "app.fighter_applications",
+    description: "Aplicações enviadas por atletas interessados em participar do projeto.",
+    previewLabel: "Últimos cadastros",
+    columns: [
+      { key: "createdAt", label: "Data" },
+      { key: "fighter", label: "Lutador" },
+      { key: "weightClass", label: "Categoria" },
+      { key: "location", label: "Cidade" },
+      { key: "athleteWhatsapp", label: "WhatsApp" },
+      { key: "status", label: "Status" }
+    ]
+  };
+
+  return withAdminTableFallback(config, async () => {
+    const [summary, statusCounts, result] = await Promise.all([
+      loadAdminTableSummary(`
+        select
+          count(*)::int as "totalRows",
+          max(updated_at) as "lastActivityAt"
+        from app.fighter_applications
+      `),
+      loadAdminStatusCounts(`
+        select
+          status,
+          count(*)::int as total
+        from app.fighter_applications
+        group by status
+        order by count(*) desc, status asc
+      `),
+      getDatabasePool().query(`
+        select
+          fa.id,
+          fa.created_at as "createdAt",
+          fa.full_name as "fullName",
+          fa.nickname,
+          fa.weight_class as "weightClass",
+          fa.city,
+          fa.state_code as "stateCode",
+          contact.phone_whatsapp as "athleteWhatsapp",
+          fa.status
+        from app.fighter_applications fa
+        left join app.fighter_application_contacts contact
+          on contact.fighter_application_id = fa.id
+         and contact.contact_role = 'athlete'
+        order by fa.created_at desc
+        limit ${ADMIN_TABLE_PREVIEW_LIMIT}
+      `)
+    ]);
+
+    return {
+      ...config,
+      ...summary,
+      statusCounts,
+      rows: result.rows.map((row) =>
+        adminCreateRow(row.id, {
+          createdAt: adminFormatDateTime(row.createdAt),
+          fighter:
+            [normalizeText(row.fullName), normalizeText(row.nickname)]
+              .filter(Boolean)
+              .join(" / ") || "—",
+          weightClass: adminFormatWeightClass(row.weightClass),
+          location: adminBuildLocation(row.city, row.stateCode),
+          athleteWhatsapp: adminFormatText(row.athleteWhatsapp),
+          status: adminFormatStatus(row.status)
+        })
+      )
+    };
+  });
+}
+
+async function loadAdminEventFighterIntakesTable() {
+  const config = {
+    id: "event-fighter-intakes",
+    label: "Intake de Evento",
+    tableName: "app.event_fighter_intakes",
+    description: "Fichas operacionais enviadas pelos lutadores para cada edição.",
+    previewLabel: "Últimos intakes",
+    columns: [
+      { key: "submittedAt", label: "Enviado em" },
+      { key: "fighter", label: "Atleta" },
+      { key: "email", label: "Email" },
+      { key: "phoneWhatsapp", label: "WhatsApp" },
+      { key: "photoCount", label: "Fotos" },
+      { key: "intakeStatus", label: "Status" }
+    ]
+  };
+
+  return withAdminTableFallback(config, async () => {
+    const [summary, statusCounts, result] = await Promise.all([
+      loadAdminTableSummary(`
+        select
+          count(*)::int as "totalRows",
+          max(updated_at) as "lastActivityAt"
+        from app.event_fighter_intakes
+      `),
+      loadAdminStatusCounts(`
+        select
+          intake_status as status,
+          count(*)::int as total
+        from app.event_fighter_intakes
+        group by intake_status
+        order by count(*) desc, intake_status asc
+      `),
+      getDatabasePool().query(`
+        select
+          intake.id,
+          intake.submitted_at as "submittedAt",
+          intake.full_name as "fullName",
+          intake.nickname,
+          intake.email,
+          intake.phone_whatsapp as "phoneWhatsapp",
+          intake.intake_status as "intakeStatus",
+          coalesce(photo_counts.total, 0)::int as "photoCount"
+        from app.event_fighter_intakes intake
+        left join lateral (
+          select count(*)::int as total
+          from app.event_fighter_intake_photos photo
+          where photo.intake_id = intake.id
+        ) photo_counts on true
+        order by intake.submitted_at desc
+        limit ${ADMIN_TABLE_PREVIEW_LIMIT}
+      `)
+    ]);
+
+    return {
+      ...config,
+      ...summary,
+      statusCounts,
+      rows: result.rows.map((row) =>
+        adminCreateRow(row.id, {
+          submittedAt: adminFormatDateTime(row.submittedAt),
+          fighter:
+            [normalizeText(row.fullName), normalizeText(row.nickname)]
+              .filter(Boolean)
+              .join(" / ") || "—",
+          email: adminFormatText(row.email),
+          phoneWhatsapp: adminFormatText(row.phoneWhatsapp),
+          photoCount: adminFormatPhotoCount(row.photoCount),
+          intakeStatus: adminFormatStatus(row.intakeStatus)
+        })
+      )
+    };
+  });
+}
+
+async function loadAdminFantasyEntriesTable() {
+  const config = {
+    id: "fantasy-entries",
+    label: "Entradas do Fantasy",
+    tableName: "app.fantasy_entries",
+    description: "Participações submetidas pelos usuários no fantasy oficial.",
+    previewLabel: "Últimas entradas",
+    columns: [
+      { key: "submittedAt", label: "Enviado em" },
+      { key: "eventName", label: "Evento" },
+      { key: "displayName", label: "Jogador" },
+      { key: "location", label: "Cidade" },
+      { key: "scoreCached", label: "Pontuação" },
+      { key: "entryStatus", label: "Status" }
+    ]
+  };
+
+  return withAdminTableFallback(config, async () => {
+    const [summary, statusCounts, result] = await Promise.all([
+      loadAdminTableSummary(`
+        select
+          count(*)::int as "totalRows",
+          max(updated_at) as "lastActivityAt"
+        from app.fantasy_entries
+      `),
+      loadAdminStatusCounts(`
+        select
+          entry_status as status,
+          count(*)::int as total
+        from app.fantasy_entries
+        group by entry_status
+        order by count(*) desc, entry_status asc
+      `),
+      getDatabasePool().query(`
+        select
+          entry.id,
+          entry.submitted_at as "submittedAt",
+          event.name as "eventName",
+          entry.display_name as "displayName",
+          entry.city,
+          entry.state_code as "stateCode",
+          entry.score_cached as "scoreCached",
+          entry.entry_status as "entryStatus"
+        from app.fantasy_entries entry
+        join app.events event
+          on event.id = entry.event_id
+        order by entry.submitted_at desc
+        limit ${ADMIN_TABLE_PREVIEW_LIMIT}
+      `)
+    ]);
+
+    return {
+      ...config,
+      ...summary,
+      statusCounts,
+      rows: result.rows.map((row) =>
+        adminCreateRow(row.id, {
+          submittedAt: adminFormatDateTime(row.submittedAt),
+          eventName: adminFormatText(row.eventName),
+          displayName: adminFormatText(row.displayName),
+          location: adminBuildLocation(row.city, row.stateCode),
+          scoreCached: adminFormatScore(row.scoreCached),
+          entryStatus: adminFormatStatus(row.entryStatus)
+        })
+      )
+    };
+  });
+}
+
+async function loadAdminDatabaseOverviewFromDatabase() {
+  const tables = await Promise.all([
+    loadAdminContactMessagesTable(),
+    loadAdminNewsletterSubscriptionsTable(),
+    loadAdminPartnerInquiriesTable(),
+    loadAdminFighterApplicationsTable(),
+    loadAdminEventFighterIntakesTable(),
+    loadAdminFantasyEntriesTable()
+  ]);
+
+  const availableTables = tables.filter((table) => !table.errorMessage).length;
+  const unavailableTables = tables.length - availableTables;
+  const totalRows = tables.reduce(
+    (sum, table) => sum + (table.totalRows ?? 0),
+    0
+  );
+
+  return {
+    databaseConfigured: true,
+    totalRows,
+    tables,
+    availableTables,
+    unavailableTables
+  };
+}
+
+async function handleAdminDatabaseOverview(event) {
+  if (!assertInternalBearer(event)) {
+    return buildJsonResponse(401, {
+      ok: false,
+      message: "Unauthorized."
+    });
+  }
+
+  try {
+    return buildJsonResponse(200, await loadAdminDatabaseOverviewFromDatabase());
+  } catch (error) {
+    console.error("admin database overview failed", { error });
+
+    return buildJsonResponse(503, {
+      ok: false,
+      message: "Serviço temporariamente indisponível."
+    });
   }
 }
 
@@ -1493,6 +2132,10 @@ export const handler = async (event) => {
   try {
     if (method === "GET" && rawPath === HEALTHCHECK_PATH) {
       return buildHealthResponse();
+    }
+
+    if (method === "GET" && rawPath === ADMIN_DATABASE_OVERVIEW_PATH) {
+      return await handleAdminDatabaseOverview(event);
     }
 
     if (method === "POST" && rawPath === EVENT_FIGHTER_ACCESS_PATH) {

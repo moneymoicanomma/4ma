@@ -1,9 +1,11 @@
 import "server-only";
 
 import { queryDatabase } from "@/lib/server/database";
+import { getJsonFromUpstream } from "@/lib/server/http";
 import {
   getServerEnv,
   isDatabaseConfigured,
+  isUpstreamConfigured,
   type ServerEnv,
 } from "@/lib/server/env";
 
@@ -792,14 +794,22 @@ async function loadFantasyEntriesTable() {
 export async function loadAdminDatabaseOverview(
   env: ServerEnv = getServerEnv(),
 ): Promise<AdminDatabaseOverview> {
-  console.log(
-    "[admin/database] process.env.DATABASE_URL:",
-    process.env.DATABASE_URL ? "OK" : "MISSING",
-  );
-  console.log(
-    "[admin/database] env.databaseUrl:",
-    env.databaseUrl ? "OK" : "MISSING",
-  );
+  if (!isDatabaseConfigured(env) && isUpstreamConfigured(env)) {
+    try {
+      return await getJsonFromUpstream<AdminDatabaseOverview>(
+        `${env.upstreamApiBaseUrl}${env.adminDatabaseOverviewPath}`,
+        {
+          bearerToken: env.upstreamApiBearerToken!,
+          timeoutMs: env.upstreamRequestTimeoutMs,
+        },
+      );
+    } catch (error) {
+      console.error(
+        "[admin/database] failed to load overview from upstream",
+        error,
+      );
+    }
+  }
 
   if (!isDatabaseConfigured(env)) {
     return {

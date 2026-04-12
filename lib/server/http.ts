@@ -10,6 +10,51 @@ export class UpstreamApiError extends Error {
   }
 }
 
+export async function getJsonFromUpstream<TResponse>(
+  url: string,
+  options: {
+    bearerToken: string;
+    timeoutMs: number;
+  }
+) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), options.timeoutMs);
+
+  try {
+    const response = await fetch(url, {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+        Authorization: `Bearer ${options.bearerToken}`
+      },
+      cache: "no-store",
+      signal: controller.signal
+    });
+
+    if (!response.ok) {
+      throw new UpstreamApiError(response.status);
+    }
+
+    try {
+      return (await response.json()) as TResponse;
+    } catch {
+      throw new UpstreamApiError(502, "Upstream returned invalid JSON");
+    }
+  } catch (error) {
+    if (error instanceof Error && error.name === "AbortError") {
+      throw new UpstreamApiError(504, "Upstream request timed out");
+    }
+
+    if (error instanceof UpstreamApiError) {
+      throw error;
+    }
+
+    throw new UpstreamApiError(502, "Could not reach upstream API");
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
 export async function postJsonToUpstream<TPayload>(
   url: string,
   payload: TPayload,
