@@ -9,18 +9,12 @@ import {
   restrictedAreaNotes,
   siteUrl
 } from "@/lib/site";
+import { siteAsset } from "@/lib/site-assets";
 
 import styles from "./page.module.css";
 
-const r2PublicBase = "https://pub-ecc1c3f0770f4d4ebd9b8cc27c8d8bcf.r2.dev";
-const r2Asset = (fileName: string) =>
-  `${r2PublicBase}/${fileName
-    .split("/")
-    .map((segment) => encodeURIComponent(segment))
-    .join("/")}`;
-
-const brandLogoWide = r2Asset("logo money moicano mma extenso.svg");
-const heroImage = r2Asset("hero-main-v3.webp");
+const brandLogoWide = siteAsset("logo money moicano mma extenso.svg");
+const heroImage = siteAsset("hero-main-v3.webp");
 const publicEntryPoints = publicSiteRoutes.filter((route) => route.href !== "/mapa-do-site");
 
 export const metadata: Metadata = {

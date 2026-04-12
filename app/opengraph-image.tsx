@@ -1,5 +1,7 @@
 import { ImageResponse } from "next/og";
 
+import { siteAsset } from "@/lib/site-assets";
+
 export const alt = "Money Moicano MMA";
 export const size = {
   width: 1200,
@@ -8,8 +10,7 @@ export const size = {
 export const contentType = "image/png";
 
 export default async function OpenGraphImage() {
-  const imageUrl =
-    "https://pub-ecc1c3f0770f4d4ebd9b8cc27c8d8bcf.r2.dev/open-graph-v2.jpg";
+  const imageUrl = siteAsset("open-graph-v2.jpg");
 
   const res = await fetch(imageUrl);
   const arrayBuffer = await res.arrayBuffer();

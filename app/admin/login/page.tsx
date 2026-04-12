@@ -9,19 +9,13 @@ import {
   isAdminAuthConfigured,
   resolveAdminSessionIdentity
 } from "@/lib/admin/auth";
+import { siteAsset } from "@/lib/site-assets";
 import { getSessionAccountFromToken } from "@/lib/server/auth-store";
 import { getServerEnv, isDatabaseConfigured } from "@/lib/server/env";
 
 import styles from "./page.module.css";
 
-const r2PublicBase = "https://pub-ecc1c3f0770f4d4ebd9b8cc27c8d8bcf.r2.dev";
-const r2Asset = (fileName: string) =>
-  `${r2PublicBase}/${fileName
-    .split("/")
-    .map((segment) => encodeURIComponent(segment))
-    .join("/")}`;
-
-const brandLogoWide = r2Asset("logo money moicano mma extenso.svg");
+const brandLogoWide = siteAsset("logo money moicano mma extenso.svg");
 
 export const metadata: Metadata = {
   title: "Login Admin | Money Moicano MMA",

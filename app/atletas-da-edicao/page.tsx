@@ -7,6 +7,7 @@ import { EventFighterAccessForm } from "@/app/components/event-fighter-access-fo
 import { EventFighterIntakeForm } from "@/app/components/event-fighter-intake-form";
 import { EventFighterLogoutButton } from "@/app/components/event-fighter-logout-button";
 import { LandingMotionController } from "@/app/components/landing-motion-controller";
+import { siteAsset } from "@/lib/site-assets";
 import { getSessionAccountFromToken } from "@/lib/server/auth-store";
 import {
   getServerEnv,
@@ -22,15 +23,8 @@ import {
 
 import styles from "./page.module.css";
 
-const r2PublicBase = "https://pub-ecc1c3f0770f4d4ebd9b8cc27c8d8bcf.r2.dev";
-const r2Asset = (fileName: string) =>
-  `${r2PublicBase}/${fileName
-    .split("/")
-    .map((segment) => encodeURIComponent(segment))
-    .join("/")}`;
-
-const brandLogoWide = r2Asset("logo money moicano mma extenso.svg");
-const heroImage = r2Asset("hero-lute.webp");
+const brandLogoWide = siteAsset("logo money moicano mma extenso.svg");
+const heroImage = siteAsset("hero-lute.webp");
 
 export const metadata: Metadata = {
   title: "Atletas da Edição | Money Moicano MMA",

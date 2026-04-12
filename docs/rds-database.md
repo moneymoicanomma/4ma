@@ -232,12 +232,14 @@ Para o intake privado com fotos, alem do banco tambem existe dependencia de buck
 - `FIGHTER_PHOTOS_S3_ACCESS_KEY_ID`
 - `FIGHTER_PHOTOS_S3_SECRET_ACCESS_KEY`
 - `FIGHTER_PHOTOS_S3_FORCE_PATH_STYLE`
+- `NEXT_PUBLIC_SITE_ASSET_BASE_URL` (dominio publico dos assets no R2/CDN)
 
 Observacoes praticas:
 
 - sem `DATABASE_URL`, os formularios publicos ainda podem cair no upstream legado se ele estiver configurado
 - sem bucket configurado, o intake de atleta nao consegue persistir as fotos no fluxo direto
 - sem `APP_ENCRYPTION_KEY`, CPF e Pix do intake nao podem ser gravados pelo schema atual
+- em deploy serverless, vale reduzir `DATABASE_POOL_MAX_CONNECTIONS` para evitar excesso de conexoes na RDS
 
 ## Seed de senha
 

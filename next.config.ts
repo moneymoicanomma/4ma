@@ -1,6 +1,9 @@
 import type { NextConfig } from "next";
 
+import { getSiteAssetRemotePatterns } from "./lib/site-assets";
+
 const repoRoot = process.cwd();
+const siteAssetRemotePatterns = getSiteAssetRemotePatterns();
 
 const securityHeaders = [
   {
@@ -37,10 +40,7 @@ const nextConfig: NextConfig = {
   images: {
     unoptimized: true,
     remotePatterns: [
-      {
-        protocol: "https",
-        hostname: "pub-ecc1c3f0770f4d4ebd9b8cc27c8d8bcf.r2.dev"
-      },
+      ...siteAssetRemotePatterns,
       {
         protocol: "https",
         hostname: "moneymoicanomma.com.br"

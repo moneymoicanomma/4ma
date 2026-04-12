@@ -1,31 +1,26 @@
 import Image from "next/image";
 
+import { siteAsset } from "@/lib/site-assets";
+
 import { LandingMotionController } from "./components/landing-motion-controller";
 import { LandingTopbar } from "./components/landing-topbar";
 import { NewsletterSignupForm } from "./components/newsletter-signup-form";
 
-const r2PublicBase = "https://pub-ecc1c3f0770f4d4ebd9b8cc27c8d8bcf.r2.dev";
-const r2Asset = (fileName: string) =>
-  `${r2PublicBase}/${fileName
-    .split("/")
-    .map((segment) => encodeURIComponent(segment))
-    .join("/")}`;
-
-const heroImage = r2Asset("hero-main-v4.webp");
-const brandLogo = r2Asset("logo money moicano mma.svg");
-const brandLogoWide = r2Asset("logo money moicano mma extenso.svg");
-const streamIcon = r2Asset("Video-Game-Logo-Streamplay--Streamline-Ultimate.svg");
-const fightsIcon = r2Asset("Fists-Crashing-Conflict--Streamline-Ultimate.svg");
-const stadiumIcon = r2Asset("Stadium-Classic-2--Streamline-Ultimate.svg");
-const microphoneIcon = r2Asset("Microphone-Podcast-2--Streamline-Ultimate.svg");
-const cornermanIcon = r2Asset("cornerman.svg");
-const cornermanSloganLogo = r2Asset("cornerman - slogan.svg");
-const cabmmaLogo = r2Asset("cabmma.svg");
-const joyaGearLogo = r2Asset("joyagear.svg");
-const instagramIcon = r2Asset("instagram_logo.svg");
-const youtubeIcon = r2Asset("youtube_logo.svg");
-const xIcon = r2Asset("x_logo.svg.svg");
-const ticketBackgroundImage = r2Asset("ingressos-bg.webp");
+const heroImage = siteAsset("hero-main-v4.webp");
+const brandLogo = siteAsset("logo money moicano mma.svg");
+const brandLogoWide = siteAsset("logo money moicano mma extenso.svg");
+const streamIcon = siteAsset("Video-Game-Logo-Streamplay--Streamline-Ultimate.svg");
+const fightsIcon = siteAsset("Fists-Crashing-Conflict--Streamline-Ultimate.svg");
+const stadiumIcon = siteAsset("Stadium-Classic-2--Streamline-Ultimate.svg");
+const microphoneIcon = siteAsset("Microphone-Podcast-2--Streamline-Ultimate.svg");
+const cornermanIcon = siteAsset("cornerman.svg");
+const cornermanSloganLogo = siteAsset("cornerman - slogan.svg");
+const cabmmaLogo = siteAsset("cabmma.svg");
+const joyaGearLogo = siteAsset("joyagear.svg");
+const instagramIcon = siteAsset("instagram_logo.svg");
+const youtubeIcon = siteAsset("youtube_logo.svg");
+const xIcon = siteAsset("x_logo.svg.svg");
+const ticketBackgroundImage = siteAsset("ingressos-bg.webp");
 const transmissionOverlayImage = "https://moneymoicanomma.com.br/transmissao-overlay.webp";
 const cornermanUrl = "https://cornerman.com.br/";
 const cabmmaUrl = "https://www.instagram.com/cab_mma/";
@@ -92,14 +87,14 @@ const transmissionTiles = [
   },
   {
     title: "Torcida maluca",
-    image: r2Asset("torcida-maluca.webp"),
+    image: siteAsset("torcida-maluca.webp"),
     className: "transmission-tile transmission-tile--crowd",
     sizes: "(max-width: 780px) 72vw, (min-width: 1600px) 18vw, 319px"
   },
   {
     title: "Certeza de luta boa",
     titleSecondary: "(Isso realmente aconteceu)",
-    image: r2Asset("luta-boa.webp"),
+    image: siteAsset("luta-boa.webp"),
     className: "transmission-tile transmission-tile--fight",
     sizes: "(max-width: 780px) 74vw, (min-width: 1600px) 24vw, 299px"
   }
@@ -109,13 +104,13 @@ const casterCards = [
   {
     name: "Renato Money Moicano",
     copy: "Dono dessa parada, lutador do UFC, cansado e calvo.",
-    image: r2Asset("caster-renato-moicano.webp"),
+    image: siteAsset("caster-renato-moicano.webp"),
     imagePosition: "center 24%"
   },
   {
     name: "Tiago Pamplona",
     copy: "Amigo do Moicano, comentarista do UFC e tem um podcast fracassado.",
-    image: r2Asset("caster-tiago-pamplona.webp"),
+    image: siteAsset("caster-tiago-pamplona.webp"),
     imagePosition: "center 18%"
   }
 ];
@@ -547,7 +542,7 @@ export default function Home() {
             className="audience-media__image"
             fill
             sizes="(max-width: 980px) 100vw, (min-width: 1600px) 42vw, 535px"
-            src={r2Asset("audiencia-internacional.webp")}
+            src={siteAsset("audiencia-internacional.webp")}
           />
         </div>
 
