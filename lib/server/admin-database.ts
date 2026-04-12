@@ -1,14 +1,18 @@
 import "server-only";
 
 import { queryDatabase } from "@/lib/server/database";
-import { getServerEnv, isDatabaseConfigured, type ServerEnv } from "@/lib/server/env";
+import {
+  getServerEnv,
+  isDatabaseConfigured,
+  type ServerEnv,
+} from "@/lib/server/env";
 
 const TABLE_PREVIEW_LIMIT = 6;
 
 const numberFormatter = new Intl.NumberFormat("pt-BR");
 const dateTimeFormatter = new Intl.DateTimeFormat("pt-BR", {
   dateStyle: "medium",
-  timeStyle: "short"
+  timeStyle: "short",
 });
 
 const statusLabels: Record<string, string> = {
@@ -37,7 +41,7 @@ const statusLabels: Record<string, string> = {
   subscribed: "Inscrito",
   under_review: "Em revisão",
   unsubscribed: "Descadastrado",
-  voided: "Invalidado"
+  voided: "Invalidado",
 };
 
 const sourceLabels: Record<string, string> = {
@@ -45,7 +49,7 @@ const sourceLabels: Record<string, string> = {
   fighter_application: "Cadastro de lutador",
   newsletter_signup: "Newsletter",
   partner_inquiry: "Parceria",
-  press_newsletter: "Newsletter imprensa"
+  press_newsletter: "Newsletter imprensa",
 };
 
 export type AdminDatabaseColumn = {
@@ -253,7 +257,9 @@ function formatSource(value: string | null | undefined) {
     return "—";
   }
 
-  return sourceLabels[normalized.replace(/-/g, "_")] ?? humanizeToken(normalized);
+  return (
+    sourceLabels[normalized.replace(/-/g, "_")] ?? humanizeToken(normalized)
+  );
 }
 
 function formatWeightClass(value: string | null | undefined) {
@@ -270,7 +276,10 @@ function formatPhotoCount(value: number | string | null | undefined) {
   return `${numberFormatter.format(count)} ${count === 1 ? "foto" : "fotos"}`;
 }
 
-function buildLocation(city: string | null | undefined, stateCode: string | null | undefined) {
+function buildLocation(
+  city: string | null | undefined,
+  stateCode: string | null | undefined,
+) {
   const normalizedCity = normalizeText(city);
   const normalizedStateCode = normalizeText(stateCode);
 
@@ -281,10 +290,13 @@ function buildLocation(city: string | null | undefined, stateCode: string | null
   return normalizedCity ?? normalizedStateCode ?? "—";
 }
 
-function createRow(id: string, cells: Record<string, string>): AdminDatabaseRow {
+function createRow(
+  id: string,
+  cells: Record<string, string>,
+): AdminDatabaseRow {
   return {
     id,
-    cells
+    cells,
   };
 }
 
@@ -294,7 +306,9 @@ async function loadTableSummary(text: string, values?: readonly unknown[]) {
 
   return {
     totalRows: parseCount(row?.totalRows),
-    lastActivityAt: row?.lastActivityAt ? formatDateTime(row.lastActivityAt) : null
+    lastActivityAt: row?.lastActivityAt
+      ? formatDateTime(row.lastActivityAt)
+      : null,
   };
 }
 
@@ -303,13 +317,13 @@ async function loadStatusCounts(text: string, values?: readonly unknown[]) {
 
   return result.rows.map((row) => ({
     label: formatStatus(row.status),
-    value: parseCount(row.total)
+    value: parseCount(row.total),
   }));
 }
 
 async function withTableFallback(
   config: TableFallbackConfig,
-  load: () => Promise<AdminDatabaseTablePreview>
+  load: () => Promise<AdminDatabaseTablePreview>,
 ) {
   try {
     return await load();
@@ -322,11 +336,13 @@ async function withTableFallback(
       statusCounts: [],
       totalRows: null,
       lastActivityAt: null,
-      errorMessage: "Não foi possível ler esta tabela no ambiente atual."
+      errorMessage:
+        error instanceof Error
+          ? error.message
+          : "Não foi possível ler esta tabela no ambiente atual.",
     };
   }
 }
-
 async function loadContactMessagesTable() {
   const config: TableFallbackConfig = {
     id: "contact-messages",
@@ -339,8 +355,8 @@ async function loadContactMessagesTable() {
       { key: "fullName", label: "Nome" },
       { key: "email", label: "Email" },
       { key: "subject", label: "Assunto" },
-      { key: "status", label: "Status" }
-    ]
+      { key: "status", label: "Status" },
+    ],
   };
 
   return withTableFallback(config, async () => {
@@ -351,7 +367,7 @@ async function loadContactMessagesTable() {
             count(*)::int as "totalRows",
             max(updated_at) as "lastActivityAt"
           from app.contact_messages
-        `
+        `,
       ),
       loadStatusCounts(
         `
@@ -361,7 +377,7 @@ async function loadContactMessagesTable() {
           from app.contact_messages
           group by status
           order by count(*) desc, status asc
-        `
+        `,
       ),
       queryDatabase<ContactMessagePreviewRow>(
         `
@@ -375,8 +391,8 @@ async function loadContactMessagesTable() {
           from app.contact_messages
           order by created_at desc
           limit ${TABLE_PREVIEW_LIMIT}
-        `
-      )
+        `,
+      ),
     ]);
 
     return {
@@ -389,9 +405,9 @@ async function loadContactMessagesTable() {
           fullName: formatText(row.fullName),
           email: formatText(row.email),
           subject: formatText(row.subject),
-          status: formatStatus(row.status)
-        })
-      )
+          status: formatStatus(row.status),
+        }),
+      ),
     };
   });
 }
@@ -408,8 +424,8 @@ async function loadNewsletterSubscriptionsTable() {
       { key: "email", label: "Email" },
       { key: "fullName", label: "Nome" },
       { key: "source", label: "Origem" },
-      { key: "status", label: "Status" }
-    ]
+      { key: "status", label: "Status" },
+    ],
   };
 
   return withTableFallback(config, async () => {
@@ -420,7 +436,7 @@ async function loadNewsletterSubscriptionsTable() {
             count(*)::int as "totalRows",
             max(updated_at) as "lastActivityAt"
           from app.newsletter_subscriptions
-        `
+        `,
       ),
       loadStatusCounts(
         `
@@ -430,7 +446,7 @@ async function loadNewsletterSubscriptionsTable() {
           from app.newsletter_subscriptions
           group by status
           order by count(*) desc, status asc
-        `
+        `,
       ),
       queryDatabase<NewsletterPreviewRow>(
         `
@@ -444,8 +460,8 @@ async function loadNewsletterSubscriptionsTable() {
           from app.newsletter_subscriptions
           order by subscribed_at desc
           limit ${TABLE_PREVIEW_LIMIT}
-        `
-      )
+        `,
+      ),
     ]);
 
     return {
@@ -458,9 +474,9 @@ async function loadNewsletterSubscriptionsTable() {
           email: formatText(row.email),
           fullName: formatText(row.fullName),
           source: formatSource(row.source),
-          status: formatStatus(row.status)
-        })
-      )
+          status: formatStatus(row.status),
+        }),
+      ),
     };
   });
 }
@@ -477,8 +493,8 @@ async function loadPartnerInquiriesTable() {
       { key: "companyName", label: "Empresa" },
       { key: "fullName", label: "Contato" },
       { key: "email", label: "Email" },
-      { key: "status", label: "Status" }
-    ]
+      { key: "status", label: "Status" },
+    ],
   };
 
   return withTableFallback(config, async () => {
@@ -489,7 +505,7 @@ async function loadPartnerInquiriesTable() {
             count(*)::int as "totalRows",
             max(updated_at) as "lastActivityAt"
           from app.partner_inquiries
-        `
+        `,
       ),
       loadStatusCounts(
         `
@@ -499,7 +515,7 @@ async function loadPartnerInquiriesTable() {
           from app.partner_inquiries
           group by status
           order by count(*) desc, status asc
-        `
+        `,
       ),
       queryDatabase<PartnerInquiryPreviewRow>(
         `
@@ -513,8 +529,8 @@ async function loadPartnerInquiriesTable() {
           from app.partner_inquiries
           order by created_at desc
           limit ${TABLE_PREVIEW_LIMIT}
-        `
-      )
+        `,
+      ),
     ]);
 
     return {
@@ -527,9 +543,9 @@ async function loadPartnerInquiriesTable() {
           companyName: formatText(row.companyName),
           fullName: formatText(row.fullName),
           email: formatText(row.email),
-          status: formatStatus(row.status)
-        })
-      )
+          status: formatStatus(row.status),
+        }),
+      ),
     };
   });
 }
@@ -539,7 +555,8 @@ async function loadFighterApplicationsTable() {
     id: "fighter-applications",
     label: "Cadastro de Lutadores",
     tableName: "app.fighter_applications",
-    description: "Aplicações enviadas por atletas interessados em participar do projeto.",
+    description:
+      "Aplicações enviadas por atletas interessados em participar do projeto.",
     previewLabel: "Últimos cadastros",
     columns: [
       { key: "createdAt", label: "Data" },
@@ -547,8 +564,8 @@ async function loadFighterApplicationsTable() {
       { key: "weightClass", label: "Categoria" },
       { key: "location", label: "Cidade" },
       { key: "athleteWhatsapp", label: "WhatsApp" },
-      { key: "status", label: "Status" }
-    ]
+      { key: "status", label: "Status" },
+    ],
   };
 
   return withTableFallback(config, async () => {
@@ -559,7 +576,7 @@ async function loadFighterApplicationsTable() {
             count(*)::int as "totalRows",
             max(updated_at) as "lastActivityAt"
           from app.fighter_applications
-        `
+        `,
       ),
       loadStatusCounts(
         `
@@ -569,7 +586,7 @@ async function loadFighterApplicationsTable() {
           from app.fighter_applications
           group by status
           order by count(*) desc, status asc
-        `
+        `,
       ),
       queryDatabase<FighterApplicationPreviewRow>(
         `
@@ -589,8 +606,8 @@ async function loadFighterApplicationsTable() {
            and contact.contact_role = 'athlete'
           order by fa.created_at desc
           limit ${TABLE_PREVIEW_LIMIT}
-        `
-      )
+        `,
+      ),
     ]);
 
     return {
@@ -600,15 +617,16 @@ async function loadFighterApplicationsTable() {
       rows: result.rows.map((row) =>
         createRow(row.id, {
           createdAt: formatDateTime(row.createdAt),
-          fighter: [normalizeText(row.fullName), normalizeText(row.nickname)]
-            .filter(Boolean)
-            .join(" / ") || "—",
+          fighter:
+            [normalizeText(row.fullName), normalizeText(row.nickname)]
+              .filter(Boolean)
+              .join(" / ") || "—",
           weightClass: formatWeightClass(row.weightClass),
           location: buildLocation(row.city, row.stateCode),
           athleteWhatsapp: formatText(row.athleteWhatsapp),
-          status: formatStatus(row.status)
-        })
-      )
+          status: formatStatus(row.status),
+        }),
+      ),
     };
   });
 }
@@ -618,7 +636,8 @@ async function loadEventFighterIntakesTable() {
     id: "event-fighter-intakes",
     label: "Intake de Evento",
     tableName: "app.event_fighter_intakes",
-    description: "Fichas operacionais enviadas pelos lutadores para cada edição.",
+    description:
+      "Fichas operacionais enviadas pelos lutadores para cada edição.",
     previewLabel: "Últimos intakes",
     columns: [
       { key: "submittedAt", label: "Enviado em" },
@@ -626,8 +645,8 @@ async function loadEventFighterIntakesTable() {
       { key: "email", label: "Email" },
       { key: "phoneWhatsapp", label: "WhatsApp" },
       { key: "photoCount", label: "Fotos" },
-      { key: "intakeStatus", label: "Status" }
-    ]
+      { key: "intakeStatus", label: "Status" },
+    ],
   };
 
   return withTableFallback(config, async () => {
@@ -638,7 +657,7 @@ async function loadEventFighterIntakesTable() {
             count(*)::int as "totalRows",
             max(updated_at) as "lastActivityAt"
           from app.event_fighter_intakes
-        `
+        `,
       ),
       loadStatusCounts(
         `
@@ -648,7 +667,7 @@ async function loadEventFighterIntakesTable() {
           from app.event_fighter_intakes
           group by intake_status
           order by count(*) desc, intake_status asc
-        `
+        `,
       ),
       queryDatabase<EventFighterIntakePreviewRow>(
         `
@@ -669,8 +688,8 @@ async function loadEventFighterIntakesTable() {
           ) photo_counts on true
           order by intake.submitted_at desc
           limit ${TABLE_PREVIEW_LIMIT}
-        `
-      )
+        `,
+      ),
     ]);
 
     return {
@@ -680,15 +699,16 @@ async function loadEventFighterIntakesTable() {
       rows: result.rows.map((row) =>
         createRow(row.id, {
           submittedAt: formatDateTime(row.submittedAt),
-          fighter: [normalizeText(row.fullName), normalizeText(row.nickname)]
-            .filter(Boolean)
-            .join(" / ") || "—",
+          fighter:
+            [normalizeText(row.fullName), normalizeText(row.nickname)]
+              .filter(Boolean)
+              .join(" / ") || "—",
           email: formatText(row.email),
           phoneWhatsapp: formatText(row.phoneWhatsapp),
           photoCount: formatPhotoCount(row.photoCount),
-          intakeStatus: formatStatus(row.intakeStatus)
-        })
-      )
+          intakeStatus: formatStatus(row.intakeStatus),
+        }),
+      ),
     };
   });
 }
@@ -706,8 +726,8 @@ async function loadFantasyEntriesTable() {
       { key: "displayName", label: "Jogador" },
       { key: "location", label: "Cidade" },
       { key: "scoreCached", label: "Pontuação" },
-      { key: "entryStatus", label: "Status" }
-    ]
+      { key: "entryStatus", label: "Status" },
+    ],
   };
 
   return withTableFallback(config, async () => {
@@ -718,7 +738,7 @@ async function loadFantasyEntriesTable() {
             count(*)::int as "totalRows",
             max(updated_at) as "lastActivityAt"
           from app.fantasy_entries
-        `
+        `,
       ),
       loadStatusCounts(
         `
@@ -728,7 +748,7 @@ async function loadFantasyEntriesTable() {
           from app.fantasy_entries
           group by entry_status
           order by count(*) desc, entry_status asc
-        `
+        `,
       ),
       queryDatabase<FantasyEntryPreviewRow>(
         `
@@ -747,8 +767,8 @@ async function loadFantasyEntriesTable() {
             on event.id = entry.event_id
           order by entry.submitted_at desc
           limit ${TABLE_PREVIEW_LIMIT}
-        `
-      )
+        `,
+      ),
     ]);
 
     return {
@@ -762,15 +782,15 @@ async function loadFantasyEntriesTable() {
           displayName: formatText(row.displayName),
           location: buildLocation(row.city, row.stateCode),
           scoreCached: formatScore(row.scoreCached),
-          entryStatus: formatStatus(row.entryStatus)
-        })
-      )
+          entryStatus: formatStatus(row.entryStatus),
+        }),
+      ),
     };
   });
 }
 
 export async function loadAdminDatabaseOverview(
-  env: ServerEnv = getServerEnv()
+  env: ServerEnv = getServerEnv(),
 ): Promise<AdminDatabaseOverview> {
   if (!isDatabaseConfigured(env)) {
     return {
@@ -778,7 +798,7 @@ export async function loadAdminDatabaseOverview(
       totalRows: 0,
       tables: [],
       availableTables: 0,
-      unavailableTables: 0
+      unavailableTables: 0,
     };
   }
 
@@ -788,18 +808,21 @@ export async function loadAdminDatabaseOverview(
     loadPartnerInquiriesTable(),
     loadFighterApplicationsTable(),
     loadEventFighterIntakesTable(),
-    loadFantasyEntriesTable()
+    loadFantasyEntriesTable(),
   ]);
 
   const availableTables = tables.filter((table) => !table.errorMessage).length;
   const unavailableTables = tables.length - availableTables;
-  const totalRows = tables.reduce((sum, table) => sum + (table.totalRows ?? 0), 0);
+  const totalRows = tables.reduce(
+    (sum, table) => sum + (table.totalRows ?? 0),
+    0,
+  );
 
   return {
     databaseConfigured: true,
     totalRows,
     tables,
     availableTables,
-    unavailableTables
+    unavailableTables,
   };
 }
