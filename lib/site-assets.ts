@@ -1,5 +1,13 @@
 const defaultSiteAssetBaseUrl = "https://pub-ecc1c3f0770f4d4ebd9b8cc27c8d8bcf.r2.dev";
 
+function resolveBaseUrl(value: string) {
+  try {
+    return new URL(value);
+  } catch {
+    return new URL(`https://${value}`);
+  }
+}
+
 function normalizeBaseUrl(value: string | null | undefined) {
   const trimmed = value?.trim();
 
@@ -7,7 +15,11 @@ function normalizeBaseUrl(value: string | null | undefined) {
     return defaultSiteAssetBaseUrl;
   }
 
-  return trimmed.replace(/\/+$/, "");
+  try {
+    return resolveBaseUrl(trimmed).toString().replace(/\/+$/, "");
+  } catch {
+    return defaultSiteAssetBaseUrl;
+  }
 }
 
 function encodeAssetPath(fileName: string) {
@@ -18,9 +30,14 @@ function encodeAssetPath(fileName: string) {
 }
 
 export const siteAssetBaseUrl = normalizeBaseUrl(process.env.NEXT_PUBLIC_SITE_ASSET_BASE_URL);
+export const fallbackSiteAssetBaseUrl = defaultSiteAssetBaseUrl;
 
 export function siteAsset(fileName: string) {
   return `${siteAssetBaseUrl}/${encodeAssetPath(fileName)}`;
+}
+
+export function fallbackSiteAsset(fileName: string) {
+  return `${fallbackSiteAssetBaseUrl}/${encodeAssetPath(fileName)}`;
 }
 
 export function getSiteAssetRemotePatterns() {
@@ -28,7 +45,7 @@ export function getSiteAssetRemotePatterns() {
 
   return [defaultSiteAssetBaseUrl, siteAssetBaseUrl]
     .map((baseUrl) => {
-      const url = new URL(baseUrl);
+      const url = resolveBaseUrl(baseUrl);
       const pathname = url.pathname.replace(/\/+$/, "");
       const protocol = url.protocol.replace(":", "");
       const key = `${protocol}//${url.hostname}:${url.port}${pathname}`;

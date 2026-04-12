@@ -1,6 +1,6 @@
 import { ImageResponse } from "next/og";
 
-import { siteAsset } from "@/lib/site-assets";
+import { fallbackSiteAsset, siteAsset } from "@/lib/site-assets";
 
 export const alt = "Money Moicano MMA";
 export const size = {
@@ -11,9 +11,19 @@ export const contentType = "image/png";
 
 export default async function OpenGraphImage() {
   const imageUrl = siteAsset("open-graph-v2.jpg");
+  let response: Response;
 
-  const res = await fetch(imageUrl);
-  const arrayBuffer = await res.arrayBuffer();
+  try {
+    response = await fetch(imageUrl);
+
+    if (!response.ok) {
+      throw new Error(`Could not load Open Graph image from ${imageUrl}.`);
+    }
+  } catch {
+    response = await fetch(fallbackSiteAsset("open-graph-v2.jpg"));
+  }
+
+  const arrayBuffer = await response.arrayBuffer();
 
   return new ImageResponse(
     <img
