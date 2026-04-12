@@ -793,12 +793,12 @@ export async function loadAdminDatabaseOverview(
   env: ServerEnv = getServerEnv(),
 ): Promise<AdminDatabaseOverview> {
   console.log(
-    "[admin/database] DATABASE_URL exists?",
-    Boolean(process.env.DATABASE_URL),
+    "[admin/database] process.env.DATABASE_URL:",
+    process.env.DATABASE_URL ? "OK" : "MISSING",
   );
   console.log(
-    "[admin/database] env.databaseUrl exists?",
-    Boolean(env.databaseUrl),
+    "[admin/database] env.databaseUrl:",
+    env.databaseUrl ? "OK" : "MISSING",
   );
 
   if (!isDatabaseConfigured(env)) {
