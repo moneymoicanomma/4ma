@@ -44,30 +44,6 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const requester = getClientIdentifier(request);
-  const rateLimit = takeRateLimitToken(`fighter-application:${requester}`, {
-    limit: 3,
-    windowMs: 10 * 60 * 1000
-  });
-
-  if (!rateLimit.ok) {
-    const retryAfterSeconds = Math.max(1, Math.ceil((rateLimit.resetAt - Date.now()) / 1000));
-
-    return publicApiResponse(
-      {
-        ok: false,
-        message: "Muitas tentativas seguidas. Tenta novamente em alguns minutos."
-      },
-      {
-        status: 429,
-        headers: {
-          ...corsHeaders,
-          "Retry-After": String(retryAfterSeconds)
-        }
-      }
-    );
-  }
-
   const requestBody = await readJsonRequestBody(request, {
     maxBytes: MAX_PUBLIC_MUTATION_BODY_BYTES
   });
@@ -83,6 +59,27 @@ export async function POST(request: NextRequest) {
         headers: corsHeaders ?? undefined
       }
     );
+  }
+
+  const parsed = parseFighterApplication(requestBody.data);
+
+  if (!parsed.ok) {
+    return publicApiResponse(
+      {
+        ok: false,
+        message: parsed.message
+      },
+      {
+        status: 400,
+        headers: corsHeaders ?? undefined
+      }
+    );
+  }
+
+  if (parsed.honeypotTriggered) {
+    return publicApiResponse(successPayload, {
+      headers: corsHeaders ?? undefined
+    });
   }
 
   const requestContext = buildRequestAuditContext(request);
@@ -111,25 +108,28 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const parsed = parseFighterApplication(requestBody.data);
+  const requester = getClientIdentifier(request);
+  const rateLimit = takeRateLimitToken(`fighter-application:${requester}`, {
+    limit: 3,
+    windowMs: 10 * 60 * 1000
+  });
 
-  if (!parsed.ok) {
+  if (!rateLimit.ok) {
+    const retryAfterSeconds = Math.max(1, Math.ceil((rateLimit.resetAt - Date.now()) / 1000));
+
     return publicApiResponse(
       {
         ok: false,
-        message: parsed.message
+        message: "Muitas tentativas seguidas. Tenta novamente em alguns minutos."
       },
       {
-        status: 400,
-        headers: corsHeaders ?? undefined
+        status: 429,
+        headers: {
+          ...corsHeaders,
+          "Retry-After": String(retryAfterSeconds)
+        }
       }
     );
-  }
-
-  if (parsed.honeypotTriggered) {
-    return publicApiResponse(successPayload, {
-      headers: corsHeaders ?? undefined
-    });
   }
 
   const result = await submitFighterApplication(parsed.data, requestContext, env);

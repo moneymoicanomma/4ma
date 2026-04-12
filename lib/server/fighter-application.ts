@@ -24,7 +24,7 @@ export async function submitFighterApplication(
   requestContext: RequestAuditContext,
   env: ServerEnv = getServerEnv()
 ): Promise<FighterApplicationSubmitResult> {
-  const stateCode = getBrazilianStateCode(payload.state);
+  const stateCode = payload.state ? getBrazilianStateCode(payload.state) : null;
 
   if (isDatabaseConfigured(env)) {
     try {
@@ -88,20 +88,20 @@ export async function submitFighterApplication(
               returning id
             `,
             [
-              payload.fullName,
-              payload.nickname,
-              payload.birthDate,
-              payload.city,
+              payload.fullName || null,
+              payload.nickname || null,
+              payload.birthDate || null,
+              payload.city || null,
               stateCode,
-              payload.team,
+              payload.team || null,
               payload.weightClass,
-              payload.tapology,
-              payload.instagram,
+              payload.tapology || null,
+              payload.instagram || null,
               payload.specialty,
               payload.specialtyOther || null,
-              payload.competitionHistory,
-              payload.martialArtsTitles,
-              payload.curiosities,
+              payload.competitionHistory || null,
+              payload.martialArtsTitles || null,
+              payload.curiosities || null,
               payload.roastConsent,
               payload.source,
               requestContext.requestId,
@@ -115,38 +115,62 @@ export async function submitFighterApplication(
           );
 
           const fighterApplicationId = fighterApplicationResult.rows[0]!.id;
+          const contacts: Array<{
+            role: "athlete" | "booking_contact";
+            name: string | null;
+            phone: string | null;
+            metadata: string;
+          }> = [];
 
-          await transaction.query(
-            `
-              insert into app.fighter_application_contacts (
-                fighter_application_id,
-                contact_role,
-                contact_name,
-                phone_whatsapp,
-                metadata
-              )
-              values
-                ($1, $2::app.fighter_application_contact_role_enum, $3, $4, $5::jsonb),
-                ($1, $6::app.fighter_application_contact_role_enum, $7, $8, $9::jsonb)
-            `,
-            [
-              fighterApplicationId,
-              "athlete",
-              null,
-              payload.phoneWhatsapp,
-              JSON.stringify({
+          if (payload.phoneWhatsapp) {
+            contacts.push({
+              role: "athlete",
+              name: null,
+              phone: payload.phoneWhatsapp,
+              metadata: JSON.stringify({
                 surface: "fighter-application",
                 sourceField: "phoneWhatsapp"
-              }),
-              "booking_contact",
-              payload.bookingContactName,
-              payload.bookingContactPhoneWhatsapp,
-              JSON.stringify({
+              })
+            });
+          }
+
+          if (payload.bookingContactName || payload.bookingContactPhoneWhatsapp) {
+            contacts.push({
+              role: "booking_contact",
+              name: payload.bookingContactName || null,
+              phone: payload.bookingContactPhoneWhatsapp || null,
+              metadata: JSON.stringify({
                 surface: "fighter-application",
                 sourceField: "bookingContact"
               })
-            ]
-          );
+            });
+          }
+
+          if (contacts.length > 0) {
+            const values: Array<string | null> = [fighterApplicationId];
+            const rows = contacts.map((contact, index) => {
+              const offset = 2 + index * 4;
+
+              values.push(contact.role, contact.name, contact.phone, contact.metadata);
+
+              return `($1, $${offset}::app.fighter_application_contact_role_enum, $${offset + 1}, $${offset + 2}, $${offset + 3}::jsonb)`;
+            });
+
+            await transaction.query(
+              `
+                insert into app.fighter_application_contacts (
+                  fighter_application_id,
+                  contact_role,
+                  contact_name,
+                  phone_whatsapp,
+                  metadata
+                )
+                values
+                  ${rows.join(",\n                  ")}
+              `,
+              values
+            );
+          }
         }
       );
 

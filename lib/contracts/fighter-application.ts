@@ -39,9 +39,9 @@ export type FighterApplicationPayload = {
   nickname: string;
   birthDate: string;
   city: string;
-  state: BrazilianStateName;
+  state: BrazilianStateName | null;
   team: string;
-  weightClass: FighterWeightClass;
+  weightClass: FighterWeightClass | null;
   tapology: string;
   instagram: string;
   phoneWhatsapp: string;
@@ -87,20 +87,15 @@ function digitsOnly(value: string) {
   return value.replace(/\D+/g, "");
 }
 
-function validateRequiredText(
+function validateTextLength(
   value: string,
   options: {
     label: string;
-    minLength?: number;
     maxLength: number;
   }
 ) {
   if (!value) {
-    return `${options.label} é obrigatório.`;
-  }
-
-  if (value.length < (options.minLength ?? 1)) {
-    return `${options.label} precisa ter mais detalhes.`;
+    return null;
   }
 
   if (value.length > options.maxLength) {
@@ -144,9 +139,9 @@ function emptyPayload(): FighterApplicationPayload {
     nickname: "",
     birthDate: "",
     city: "",
-    state: "São Paulo",
+    state: null,
     team: "",
-    weightClass: "leve",
+    weightClass: null,
     tapology: "",
     instagram: "",
     phoneWhatsapp: "",
@@ -187,7 +182,8 @@ export function parseFighterApplication(input: unknown): FighterApplicationParse
   const nickname = normalizeShortText(record.nickname);
   const birthDate = normalizeShortText(record.birthDate);
   const city = normalizeShortText(record.city);
-  const state = normalizeBrazilianState(record.state);
+  const stateInput = normalizeShortText(record.state);
+  const state = stateInput ? normalizeBrazilianState(stateInput) || null : null;
   const team = normalizeShortText(record.team);
   const weightClass = normalizeShortText(record.weightClass).toLowerCase();
   const tapology = normalizeShortText(record.tapology);
@@ -195,7 +191,7 @@ export function parseFighterApplication(input: unknown): FighterApplicationParse
   const phoneWhatsapp = normalizeShortText(record.phoneWhatsapp);
   const bookingContactName = normalizeShortText(record.bookingContactName);
   const bookingContactPhoneWhatsapp = normalizeShortText(record.bookingContactPhoneWhatsapp);
-  const specialty = normalizeShortText(record.specialty).toLowerCase();
+  const specialty = normalizeShortText(record.specialty).toLowerCase() || "mma";
   const specialtyOther = normalizeShortText(record.specialtyOther);
   const competitionHistory = normalizeLongText(record.competitionHistory);
   const martialArtsTitles = normalizeLongText(record.martialArtsTitles);
@@ -203,57 +199,48 @@ export function parseFighterApplication(input: unknown): FighterApplicationParse
   const roastConsent = record.roastConsent === true;
 
   const shortFieldError =
-    validateRequiredText(fullName, {
+    validateTextLength(fullName, {
       label: "Nome completo",
-      minLength: 5,
       maxLength: MAX_SHORT_TEXT_LENGTH
     }) ??
-    validateRequiredText(nickname, {
+    validateTextLength(nickname, {
       label: "Apelido",
-      minLength: 2,
       maxLength: MAX_SHORT_TEXT_LENGTH
     }) ??
-    validateRequiredText(birthDate, {
+    validateTextLength(birthDate, {
       label: "Data de nascimento",
       maxLength: 10
     }) ??
-    validateRequiredText(city, {
+    validateTextLength(city, {
       label: "Cidade",
-      minLength: 3,
       maxLength: MAX_SHORT_TEXT_LENGTH
     }) ??
-    validateRequiredText(team, {
+    validateTextLength(team, {
       label: "Equipe",
-      minLength: 2,
       maxLength: MAX_SHORT_TEXT_LENGTH
     }) ??
-    validateRequiredText(weightClass, {
+    validateTextLength(weightClass, {
       label: "Categoria",
       maxLength: MAX_SHORT_TEXT_LENGTH
     }) ??
-    validateRequiredText(tapology, {
+    validateTextLength(tapology, {
       label: "Tapology",
-      minLength: 3,
       maxLength: MAX_PROFILE_FIELD_LENGTH
     }) ??
-    validateRequiredText(instagram, {
+    validateTextLength(instagram, {
       label: "Instagram",
-      minLength: 3,
       maxLength: MAX_PROFILE_FIELD_LENGTH
     }) ??
-    validateRequiredText(phoneWhatsapp, {
+    validateTextLength(phoneWhatsapp, {
       label: "Telefone / WhatsApp do atleta",
-      minLength: 10,
       maxLength: MAX_PHONE_LENGTH
     }) ??
-    validateRequiredText(bookingContactName, {
+    validateTextLength(bookingContactName, {
       label: "Nome do responsável pelo fechamento",
-      minLength: 3,
       maxLength: MAX_SHORT_TEXT_LENGTH
     }) ??
-    validateRequiredText(bookingContactPhoneWhatsapp, {
+    validateTextLength(bookingContactPhoneWhatsapp, {
       label: "Telefone / WhatsApp do responsável",
-      minLength: 10,
       maxLength: MAX_PHONE_LENGTH
     });
 
@@ -264,35 +251,35 @@ export function parseFighterApplication(input: unknown): FighterApplicationParse
     };
   }
 
-  if (!state) {
+  if (stateInput && !state) {
     return {
       ok: false,
       message: "Selecione um estado válido."
     };
   }
 
-  if (!isValidBirthDate(birthDate)) {
+  if (birthDate && !isValidBirthDate(birthDate)) {
     return {
       ok: false,
       message: "Informe uma data de nascimento válida."
     };
   }
 
-  if (!weightClassSet.has(weightClass)) {
+  if (weightClass && !weightClassSet.has(weightClass)) {
     return {
       ok: false,
       message: "Selecione uma categoria válida."
     };
   }
 
-  if (digitsOnly(phoneWhatsapp).length < 10) {
+  if (phoneWhatsapp && digitsOnly(phoneWhatsapp).length < 10) {
     return {
       ok: false,
       message: "Informe um telefone / WhatsApp válido para o atleta."
     };
   }
 
-  if (digitsOnly(bookingContactPhoneWhatsapp).length < 10) {
+  if (bookingContactPhoneWhatsapp && digitsOnly(bookingContactPhoneWhatsapp).length < 10) {
     return {
       ok: false,
       message: "Informe um telefone / WhatsApp válido para o responsável."
@@ -306,35 +293,29 @@ export function parseFighterApplication(input: unknown): FighterApplicationParse
     };
   }
 
-  if (specialty === "other") {
-    const specialtyOtherError = validateRequiredText(specialtyOther, {
-      label: "Outra especialidade",
-      minLength: 2,
-      maxLength: MAX_SPECIALTY_OTHER_LENGTH
-    });
+  const specialtyOtherError = validateTextLength(specialtyOther, {
+    label: "Outra especialidade",
+    maxLength: MAX_SPECIALTY_OTHER_LENGTH
+  });
 
-    if (specialtyOtherError) {
-      return {
-        ok: false,
-        message: specialtyOtherError
-      };
-    }
+  if (specialtyOtherError) {
+    return {
+      ok: false,
+      message: specialtyOtherError
+    };
   }
 
   const longFieldError =
-    validateRequiredText(competitionHistory, {
+    validateTextLength(competitionHistory, {
       label: "Histórico de competição",
-      minLength: 40,
       maxLength: MAX_LONG_TEXT_LENGTH
     }) ??
-    validateRequiredText(martialArtsTitles, {
+    validateTextLength(martialArtsTitles, {
       label: "Principais títulos",
-      minLength: 20,
       maxLength: MAX_LONG_TEXT_LENGTH
     }) ??
-    validateRequiredText(curiosities, {
+    validateTextLength(curiosities, {
       label: "Curiosidades",
-      minLength: 40,
       maxLength: MAX_LONG_TEXT_LENGTH
     });
 
@@ -362,14 +343,14 @@ export function parseFighterApplication(input: unknown): FighterApplicationParse
       city,
       state,
       team,
-      weightClass: weightClass as FighterWeightClass,
+      weightClass: weightClass ? (weightClass as FighterWeightClass) : null,
       tapology,
       instagram,
       phoneWhatsapp,
       bookingContactName,
       bookingContactPhoneWhatsapp,
       specialty: specialty as FighterSpecialty,
-      specialtyOther: specialty === "other" ? specialtyOther : "",
+      specialtyOther,
       competitionHistory,
       martialArtsTitles,
       curiosities,

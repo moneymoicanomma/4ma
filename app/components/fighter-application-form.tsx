@@ -25,6 +25,7 @@ const initialState: FormState = {
 };
 
 const defaultSpecialty: FighterSpecialty = "mma";
+const humanConfirmationMessage = "Confirme que você é humano antes de enviar.";
 
 const specialtyCopy: Record<(typeof FIGHTER_SPECIALTIES)[number], string> = {
   "jiu-jitsu": "Seu jogo gira mais em torno de grappling, finalização e controle.",
@@ -72,6 +73,15 @@ export function FighterApplicationForm() {
   const [turnstileResetSignal, setTurnstileResetSignal] = useState(0);
   const turnstileEnabled = Boolean(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY?.trim());
 
+  function resetTurnstile() {
+    if (!turnstileEnabled) {
+      return;
+    }
+
+    setTurnstileToken("");
+    setTurnstileResetSignal((current) => current + 1);
+  }
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setConfirmationMessage("");
@@ -82,7 +92,7 @@ export function FighterApplicationForm() {
     if (turnstileEnabled && !turnstileToken) {
       setState({
         status: "error",
-        message: "Confirme que você é humano antes de enviar."
+        message: humanConfirmationMessage
       });
       return;
     }
@@ -127,16 +137,25 @@ export function FighterApplicationForm() {
       const payload = (await response.json().catch(() => null)) as FighterApplicationPublicResponse | null;
 
       if (!response.ok || !payload?.ok) {
+        const message = payload?.message ?? "Não foi possível enviar agora. Tenta novamente.";
+
+        if (
+          response.status === 429 ||
+          response.status >= 500 ||
+          message === humanConfirmationMessage
+        ) {
+          resetTurnstile();
+        }
+
         setState({
           status: "error",
-          message: payload?.message ?? "Não foi possível enviar agora. Tenta novamente."
+          message
         });
         return;
       }
 
       form.reset();
-      setTurnstileToken("");
-      setTurnstileResetSignal((current) => current + 1);
+      resetTurnstile();
       setSelectedSpecialty(defaultSpecialty);
       setState({
         status: "success",
@@ -144,6 +163,7 @@ export function FighterApplicationForm() {
       });
       setConfirmationMessage(payload.message);
     } catch {
+      resetTurnstile();
       setState({
         status: "error",
         message: "Não foi possível enviar agora. Tenta novamente."
@@ -155,6 +175,7 @@ export function FighterApplicationForm() {
     <form
       aria-busy={state.status === "submitting"}
       className={styles.form}
+      noValidate
       onInput={() => {
         if (confirmationMessage) {
           setConfirmationMessage("");
@@ -182,10 +203,8 @@ export function FighterApplicationForm() {
                 autoComplete="name"
                 className={styles.input}
                 maxLength={160}
-                minLength={5}
                 name="fullName"
                 placeholder="Nome e sobrenome"
-                required
                 type="text"
               />
             </label>
@@ -196,10 +215,8 @@ export function FighterApplicationForm() {
                 autoComplete="nickname"
                 className={styles.input}
                 maxLength={160}
-                minLength={2}
                 name="nickname"
                 placeholder='Ex.: "The Spider"'
-                required
                 type="text"
               />
               <p className={styles.helper}>
@@ -213,7 +230,6 @@ export function FighterApplicationForm() {
                 autoComplete="bday"
                 className={styles.input}
                 name="birthDate"
-                required
                 type="date"
               />
             </label>
@@ -224,10 +240,8 @@ export function FighterApplicationForm() {
                 autoComplete="address-level2"
                 className={styles.input}
                 maxLength={160}
-                minLength={3}
                 name="city"
                 placeholder="Sua cidade"
-                required
                 type="text"
               />
             </label>
@@ -239,7 +253,6 @@ export function FighterApplicationForm() {
                 className={styles.select}
                 defaultValue=""
                 name="state"
-                required
               >
                 <option disabled value="">
                   Selecione seu estado
@@ -258,17 +271,15 @@ export function FighterApplicationForm() {
                 autoComplete="organization"
                 className={styles.input}
                 maxLength={160}
-                minLength={2}
                 name="team"
                 placeholder="Nome da equipe e treinador principal"
-                required
                 type="text"
               />
             </label>
 
             <label className={styles.field}>
               <span className={styles.label}>Categoria</span>
-              <select className={styles.select} defaultValue="" name="weightClass" required>
+              <select className={styles.select} defaultValue="" name="weightClass">
                 <option disabled value="">
                   Selecione sua categoria
                 </option>
@@ -289,10 +300,8 @@ export function FighterApplicationForm() {
                 autoComplete="url"
                 className={styles.input}
                 maxLength={220}
-                minLength={3}
                 name="tapology"
                 placeholder="Link do perfil no Tapology"
-                required
                 type="text"
               />
             </label>
@@ -303,10 +312,8 @@ export function FighterApplicationForm() {
                 autoComplete="off"
                 className={styles.input}
                 maxLength={220}
-                minLength={3}
                 name="instagram"
                 placeholder="@seuusuario ou link do perfil"
-                required
                 type="text"
               />
             </label>
@@ -318,10 +325,8 @@ export function FighterApplicationForm() {
                 className={styles.input}
                 inputMode="tel"
                 maxLength={40}
-                minLength={10}
                 name="phoneWhatsapp"
                 placeholder="(11) 99999-0000"
-                required
                 type="tel"
               />
               <p className={styles.helper}>
@@ -335,10 +340,8 @@ export function FighterApplicationForm() {
                 autoComplete="off"
                 className={styles.input}
                 maxLength={160}
-                minLength={3}
                 name="bookingContactName"
                 placeholder="Empresário, treinador ou responsável comercial"
-                required
                 type="text"
               />
               <p className={styles.helper}>
@@ -353,10 +356,8 @@ export function FighterApplicationForm() {
                 className={styles.input}
                 inputMode="tel"
                 maxLength={40}
-                minLength={10}
                 name="bookingContactPhoneWhatsapp"
                 placeholder="(11) 99999-0000"
-                required
                 type="tel"
               />
             </label>
@@ -385,7 +386,6 @@ export function FighterApplicationForm() {
                     onChange={() => {
                       setSelectedSpecialty(specialty);
                     }}
-                    required
                     type="radio"
                     value={specialty}
                   />
@@ -405,10 +405,8 @@ export function FighterApplicationForm() {
                 <input
                   className={styles.input}
                   maxLength={120}
-                  minLength={2}
                   name="specialtyOther"
                   placeholder="Ex.: wrestling, karate, taekwondo, sambo..."
-                  required
                   type="text"
                 />
               </label>
@@ -418,10 +416,8 @@ export function FighterApplicationForm() {
               <span className={styles.label}>Histórico de competição</span>
               <textarea
                 className={styles.textarea}
-                minLength={40}
                 name="competitionHistory"
                 placeholder="Conta cartel, eventos em que já competiu, adversários relevantes, resultado das lutas e qualquer contexto que ajude a entender sua trajetória."
-                required
               />
               <p className={styles.helper}>
                 Quanto mais específico, melhor. Esse campo ajuda na avaliação técnica e no matchmaking.
@@ -432,10 +428,8 @@ export function FighterApplicationForm() {
               <span className={styles.label}>Principais títulos em artes marciais</span>
               <textarea
                 className={styles.textarea}
-                minLength={20}
                 name="martialArtsTitles"
                 placeholder="Lista campeonatos, graduações, cinturões, medalhas ou conquistas relevantes. Se tiver contexto do peso, faixa ou evento, coloca também."
-                required
               />
             </label>
           </div>
@@ -456,10 +450,8 @@ export function FighterApplicationForm() {
             <span className={styles.label}>Curiosidades</span>
             <textarea
               className={styles.textarea}
-              minLength={40}
               name="curiosities"
               placeholder="Exemplo: hobby, religião se quiser compartilhar, projeto social, curso/faculdade, instrumento, profissão, competições em outras modalidades e qualquer história boa pra apresentar você."
-              required
             />
             <p className={styles.helper}>
               Responde com detalhes. Esse campo ajuda a equipe a te apresentar melhor e a
@@ -476,7 +468,7 @@ export function FighterApplicationForm() {
 
           <div className={styles.consentBox}>
             <label className={styles.consentLabel}>
-              <input className={styles.checkbox} name="roastConsent" required type="checkbox" />
+              <input className={styles.checkbox} name="roastConsent" type="checkbox" />
               <span>
                 Estou ciente de que as informações deste formulário podem ser usadas na
                 análise do card, na minha apresentação e, sim, em alguma zoeira honesta na
@@ -486,7 +478,7 @@ export function FighterApplicationForm() {
 
             <TurnstileWidget
               errorMessage={
-                state.status === "error" && state.message === "Confirme que você é humano antes de enviar."
+                state.status === "error" && state.message === humanConfirmationMessage
                   ? state.message
                   : undefined
               }
