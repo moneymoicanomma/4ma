@@ -5,6 +5,7 @@ import { AdminTopbar } from "@/app/components/admin-topbar";
 import { LandingMotionController } from "@/app/components/landing-motion-controller";
 import { loadAdminDatabaseOverview } from "@/lib/server/admin-database";
 import { requireAdminSessionIdentity } from "@/lib/server/admin-session";
+import { getServerEnv } from "@/lib/server/env";
 
 import styles from "./page.module.css";
 
@@ -22,8 +23,28 @@ export const metadata: Metadata = {
 
 export const dynamic = "force-dynamic";
 
+const env = getServerEnv();
+
+const directDebug = {
+  processDatabaseUrl: Boolean(process.env.DATABASE_URL?.trim()),
+  envDatabaseUrl: Boolean(env.databaseUrl),
+  envDatabaseSslMode: env.databaseSslMode,
+  envDatabasePoolMaxConnections: env.databasePoolMaxConnections,
+};
+
+console.log("[ADMIN PAGE DEBUG]", directDebug);
+
 export default async function AdminDatabasePage() {
   await requireAdminSessionIdentity("/admin/database");
+
+  const env = getServerEnv();
+
+  const directDebug = {
+    processDatabaseUrl: Boolean(process.env.DATABASE_URL?.trim()),
+    envDatabaseUrl: Boolean(env.databaseUrl),
+    envDatabaseSslMode: env.databaseSslMode,
+    envDatabasePoolMaxConnections: env.databasePoolMaxConnections,
+  };
 
   const overview = await loadAdminDatabaseOverview();
 
@@ -51,6 +72,17 @@ export default async function AdminDatabasePage() {
             </p>
             <p style={{ color: "#fff" }}>
               dbConfigured: {String(overview.databaseConfigured)} | tables:{" "}
+              <p style={{ color: "#fff" }}>
+                process.env.DATABASE_URL:{" "}
+                {String(directDebug.processDatabaseUrl)}
+              </p>
+              <p style={{ color: "#fff" }}>
+                getServerEnv().databaseUrl: {String(directDebug.envDatabaseUrl)}
+              </p>
+              <p style={{ color: "#fff" }}>
+                sslMode: {directDebug.envDatabaseSslMode} | pool:{" "}
+                {directDebug.envDatabasePoolMaxConnections}
+              </p>
               {overview.tables.length}
             </p>
           </div>
