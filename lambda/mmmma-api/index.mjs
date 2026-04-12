@@ -32,6 +32,14 @@ const EVENT_FIGHTER_PHOTO_FIELDS = [
   "diagonalLeftPhoto",
   "diagonalRightPhoto"
 ];
+const EVENT_FIGHTER_PHOTO_FIELD_TO_DB = {
+  fullBodyPhoto: "full_body_photo",
+  facePhoto: "face_photo",
+  frontPhoto: "front_photo",
+  profilePhoto: "profile_photo",
+  diagonalLeftPhoto: "diagonal_left_photo",
+  diagonalRightPhoto: "diagonal_right_photo"
+};
 const BRAZILIAN_STATES = [
   { code: "AC", name: "Acre" },
   { code: "AL", name: "Alagoas" },
@@ -162,6 +170,10 @@ function normalizeText(value) {
 function normalizeNullableText(value) {
   const normalized = normalizeText(value);
   return normalized || null;
+}
+
+function toDatabaseEventPhotoFieldName(fieldName) {
+  return EVENT_FIGHTER_PHOTO_FIELD_TO_DB[fieldName] ?? fieldName;
 }
 
 function buildSerializableRequestContext(input, actorEmail = null) {
@@ -1338,7 +1350,7 @@ async function handleEventFighterIntake(event) {
             `,
             [
               intakeId,
-              photo.fieldName,
+              toDatabaseEventPhotoFieldName(photo.fieldName),
               photo.storageProvider,
               photo.bucket,
               photo.objectKey,

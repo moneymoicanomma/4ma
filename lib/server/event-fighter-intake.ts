@@ -35,6 +35,30 @@ type ExistingIntakePhotoRow = {
   objectKey: string;
 };
 
+const eventPhotoFieldNameToDatabaseValue: Record<string, string> = {
+  fullBodyPhoto: "full_body_photo",
+  facePhoto: "face_photo",
+  frontPhoto: "front_photo",
+  profilePhoto: "profile_photo",
+  diagonalLeftPhoto: "diagonal_left_photo",
+  diagonalRightPhoto: "diagonal_right_photo"
+};
+
+const databaseEventPhotoFieldValueToFieldName = Object.fromEntries(
+  Object.entries(eventPhotoFieldNameToDatabaseValue).map(([fieldName, databaseValue]) => [
+    databaseValue,
+    fieldName
+  ])
+);
+
+function toDatabaseEventPhotoFieldName(fieldName: string) {
+  return eventPhotoFieldNameToDatabaseValue[fieldName] ?? fieldName;
+}
+
+function fromDatabaseEventPhotoFieldName(fieldName: string) {
+  return databaseEventPhotoFieldValueToFieldName[fieldName] ?? fieldName;
+}
+
 async function getPreviousPhotosForIntake(intakeId: string | null) {
   if (!intakeId) {
     return [] as ExistingIntakePhotoRow[];
@@ -43,7 +67,7 @@ async function getPreviousPhotosForIntake(intakeId: string | null) {
   const result = await queryDatabase<ExistingIntakePhotoRow>(
     `
       select
-        field_name as "fieldName",
+        field_name::text as "fieldName",
         storage_bucket as bucket,
         object_key as "objectKey"
       from app.event_fighter_intake_photos
@@ -52,7 +76,10 @@ async function getPreviousPhotosForIntake(intakeId: string | null) {
     [intakeId]
   );
 
-  return result.rows;
+  return result.rows.map((row) => ({
+    ...row,
+    fieldName: fromDatabaseEventPhotoFieldName(row.fieldName)
+  }));
 }
 
 function getReplacedPhotos(
@@ -113,12 +140,12 @@ async function upsertEventFighterIntakePhotos(
           sha256_hex = excluded.sha256_hex,
           updated_at = now()
       `,
-      [
-        intakeId,
-        photo.fieldName,
-        photo.storageProvider,
-        photo.bucket,
-        photo.objectKey,
+        [
+          intakeId,
+          toDatabaseEventPhotoFieldName(photo.fieldName),
+          photo.storageProvider,
+          photo.bucket,
+          photo.objectKey,
         photo.fileName,
         photo.contentType,
         photo.byteSize,
