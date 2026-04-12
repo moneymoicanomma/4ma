@@ -38,6 +38,7 @@ Opcional para Google Sheets com token dedicado:
 
 ```bash
 GOOGLE_SHEETS_EXPORT_BEARER_TOKEN=gere-um-token-so-para-o-apps-script
+GOOGLE_SHEETS_FINANCE_EXPORT_BEARER_TOKEN=gere-um-token-so-para-o-export-financeiro
 ```
 
 ## Como publicar
@@ -84,6 +85,14 @@ Export de uma tabela para Google Sheets:
 ```bash
 curl -i 'https://rufyyaot4xzcbx4tapzd72hgoa0icnnk.lambda-url.us-east-2.on.aws/v1/google-sheets/exports/event_fighter_intakes?limit=1000&offset=0' \
   -H 'Authorization: Bearer SEU_TOKEN_GOOGLE_SHEETS' \
+  -H 'Accept: application/json'
+```
+
+Export financeiro dos intakes com CPF e Pix descriptografados:
+
+```bash
+curl -i 'https://rufyyaot4xzcbx4tapzd72hgoa0icnnk.lambda-url.us-east-2.on.aws/v1/google-sheets/exports/event_fighter_intakes_financeiro?limit=1000&offset=0' \
+  -H 'Authorization: Bearer SEU_TOKEN_FINANCEIRO' \
   -H 'Accept: application/json'
 ```
 

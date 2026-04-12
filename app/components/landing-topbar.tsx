@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, startTransition } from "react";
+
+import { getSiteAssetIntrinsicDimensions } from "@/lib/site-assets";
 
 type NavItem = {
   href: string;
@@ -27,10 +29,10 @@ export function LandingTopbar({
   const activeItem = navItems.find((item) => item.sectionId === activeSection) ?? navItems[0];
   const hasCta = Boolean(ctaHref && ctaLabel);
   const ctaIsExternal = Boolean(ctaHref?.startsWith("http"));
+  const brandLogoDimensions = getSiteAssetIntrinsicDimensions(brandLogo);
 
   useEffect(() => {
     const sections = Array.from(document.querySelectorAll<HTMLElement>("[data-nav-section]"));
-    const footer = document.querySelector<HTMLElement>(".footer");
 
     if (!sections.length || !navItems.length) {
       return;
@@ -44,9 +46,6 @@ export function LandingTopbar({
 
     const syncViewportState = () => {
       const sectionThreshold = window.scrollY + Math.max(120, window.innerHeight * 0.34);
-      const ctaThreshold = Math.max(220, window.innerHeight * 0.38);
-      const footerTop = footer?.getBoundingClientRect().top ?? Number.POSITIVE_INFINITY;
-      const footerReached = footerTop <= window.innerHeight - 24;
       let nextActive = navItems[0].sectionId;
 
       for (const section of sectionOffsets) {
@@ -57,9 +56,9 @@ export function LandingTopbar({
         }
       }
 
-      setActiveSection((current) => (current === nextActive ? current : nextActive));
-      document.body.dataset.mobileCta =
-        window.scrollY > ctaThreshold && !footerReached ? "visible" : "hidden";
+      startTransition(() => {
+        setActiveSection((current) => (current === nextActive ? current : nextActive));
+      });
     };
 
     const requestSync = () => {
@@ -107,7 +106,6 @@ export function LandingTopbar({
       window.removeEventListener("scroll", requestSync);
       window.removeEventListener("resize", requestRefresh);
       window.removeEventListener("load", requestRefresh);
-      delete document.body.dataset.mobileCta;
     };
   }, [navItems]);
 
@@ -140,7 +138,12 @@ export function LandingTopbar({
     <header className={menuOpen ? "topbar is-menu-open" : "topbar"}>
       <div className="topbar__brand-rail">
         <div aria-label="Money Moicano MMA" className="brand-mark">
-          <img src={brandLogo} alt="Money Moicano MMA" />
+          <img
+            src={brandLogo}
+            alt="Money Moicano MMA"
+            width={brandLogoDimensions?.width}
+            height={brandLogoDimensions?.height}
+          />
         </div>
 
         <span className="topbar__current">{activeItem?.label}</span>

@@ -24,6 +24,13 @@ const securityHeaders = [
   }
 ];
 
+const landingAssetCacheHeaders = [
+  {
+    key: "Cache-Control",
+    value: "public, max-age=31536000, immutable"
+  }
+];
+
 const nextConfig: NextConfig = {
   outputFileTracingRoot: repoRoot,
   turbopack: {
@@ -32,13 +39,26 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
+        source: "/assets/landing/:path*",
+        headers: landingAssetCacheHeaders
+      },
+      {
         source: "/:path*",
         headers: securityHeaders
       }
     ];
   },
   images: {
-    unoptimized: true,
+    deviceSizes: [360, 390, 414, 535, 640, 750, 828, 960, 1080, 1200, 1273, 1366, 1440, 1600, 1920],
+    imageSizes: [21, 23, 24, 30, 32, 46, 58, 88, 180, 220, 283, 319, 352],
+    formats: ["image/avif", "image/webp"],
+    localPatterns: [
+      {
+        pathname: "/assets/landing/**",
+        search: "?v=20260412"
+      }
+    ],
+    minimumCacheTTL: 31536000,
     remotePatterns: [
       ...siteAssetRemotePatterns,
       {

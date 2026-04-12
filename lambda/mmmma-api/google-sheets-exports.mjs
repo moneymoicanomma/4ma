@@ -425,5 +425,81 @@ export const GOOGLE_SHEETS_EXPORTS = {
       "created_at",
       "updated_at"
     ]
+  },
+  event_fighter_intakes_financeiro: {
+    key: "event_fighter_intakes_financeiro",
+    sheetName: "financeiro_intakes_atletas",
+    tableName: "app.event_fighter_intakes",
+    fromClause: `
+      app.event_fighter_intakes intake
+      left join app.event_fighters event_fighter on event_fighter.id = intake.event_fighter_id
+      left join app.events event on event.id = event_fighter.event_id
+      left join app.fighters fighter on fighter.id = event_fighter.fighter_id
+    `,
+    orderBy: "intake.submitted_at desc",
+    columns: [
+      "id",
+      "event_name",
+      "fighter_name",
+      "full_name",
+      "nickname",
+      "email",
+      "phone_whatsapp",
+      "birth_date",
+      "cpf",
+      "pix_key_type",
+      "pix_key",
+      "record_summary",
+      "category",
+      "height",
+      "reach",
+      "city",
+      "state_code",
+      "education_level",
+      "team",
+      "coach_name",
+      "coach_contact",
+      "manager_name",
+      "manager_contact",
+      "corner_one_name",
+      "corner_two_name",
+      "tapology_profile",
+      "instagram_profile",
+      "submitted_at",
+      "updated_at"
+    ],
+    select: [
+      "intake.id",
+      "event.name as event_name",
+      "fighter.display_name as fighter_name",
+      "intake.full_name",
+      "intake.nickname",
+      "intake.email",
+      "intake.phone_whatsapp",
+      "intake.birth_date::text as birth_date",
+      "app.decrypt_secret(intake.cpf_ciphertext) as cpf",
+      "intake.pix_key_type::text as pix_key_type",
+      "app.decrypt_secret(intake.pix_key_ciphertext) as pix_key",
+      "intake.record_summary",
+      "intake.category",
+      "intake.height",
+      "intake.reach",
+      "intake.city",
+      "intake.state_code",
+      "intake.education_level",
+      "intake.team",
+      "intake.coach_name",
+      "intake.coach_contact",
+      "intake.manager_name",
+      "intake.manager_contact",
+      "intake.corner_one_name",
+      "intake.corner_two_name",
+      "intake.tapology_profile",
+      "intake.instagram_profile",
+      "intake.submitted_at",
+      "intake.updated_at"
+    ],
+    requiresEncryptionKey: true,
+    bearerEnvName: "GOOGLE_SHEETS_FINANCE_EXPORT_BEARER_TOKEN"
   }
 };

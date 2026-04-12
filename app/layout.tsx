@@ -20,8 +20,9 @@ export default function RootLayout({
   return (
     <html lang="pt-BR">
       <head>
-        <link rel="preconnect" href="https://use.typekit.net" />
+        <link rel="preconnect" href="https://use.typekit.net" crossOrigin="anonymous" />
         <link rel="preconnect" href="https://p.typekit.net" crossOrigin="anonymous" />
+        <link rel="preload" href="https://use.typekit.net/wrq6fdd.css" as="style" crossOrigin="anonymous" />
         <link rel="stylesheet" href="https://use.typekit.net/wrq6fdd.css" />
         <script
           dangerouslySetInnerHTML={{

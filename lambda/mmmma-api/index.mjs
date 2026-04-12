@@ -193,9 +193,26 @@ function assertInternalBearer(event) {
   return true;
 }
 
-function assertGoogleSheetsExportBearer(event) {
-  const expectedToken =
-    process.env.GOOGLE_SHEETS_EXPORT_BEARER_TOKEN?.trim() || getRequiredEnv("INTERNAL_API_BEARER_TOKEN");
+function getGoogleSheetsExportExpectedToken(exportConfig) {
+  if (exportConfig?.bearerEnvName) {
+    const dedicatedToken = process.env[exportConfig.bearerEnvName]?.trim();
+
+    if (dedicatedToken) {
+      return dedicatedToken;
+    }
+  }
+
+  const sharedToken = process.env.GOOGLE_SHEETS_EXPORT_BEARER_TOKEN?.trim();
+
+  if (sharedToken) {
+    return sharedToken;
+  }
+
+  return getRequiredEnv("INTERNAL_API_BEARER_TOKEN");
+}
+
+function assertGoogleSheetsExportBearer(event, exportConfig) {
+  const expectedToken = getGoogleSheetsExportExpectedToken(exportConfig);
   const authorization = getHeader(event.headers, "authorization") ?? "";
   const [scheme, token] = authorization.split(/\s+/, 2);
 
@@ -307,15 +324,29 @@ function parsePositiveInteger(value, fallback, maxValue = Number.MAX_SAFE_INTEGE
 async function loadGoogleSheetsExportPage(exportConfig, options) {
   const limit = Math.max(1, Math.min(options.limit ?? 1000, 1000));
   const offset = Math.max(0, options.offset ?? 0);
-  const result = await getDatabasePool().query(
-    `
-      select ${exportConfig.columns.join(", ")}
-      from ${exportConfig.tableName}
-      order by ${exportConfig.orderBy}
-      limit $1
-      offset $2
-    `,
-    [limit, offset]
+  const selectList = exportConfig.select ?? exportConfig.columns;
+  const fromClause = exportConfig.fromClause ?? exportConfig.tableName;
+  const queryText = `
+    select ${selectList.join(", ")}
+    from ${fromClause}
+    order by ${exportConfig.orderBy}
+    limit $1
+    offset $2
+  `;
+  const result = await withDatabaseTransaction(
+    {
+      actorId: null,
+      actorRole: "service",
+      actorEmail: null,
+      requestId: `google-sheets-export-${exportConfig.key}-${offset}`,
+      clientIp: null,
+      origin: "google-sheets-export",
+      userAgent: "google-sheets-export"
+    },
+    async (client) => client.query(queryText, [limit, offset]),
+    {
+      requiresEncryptionKey: exportConfig.requiresEncryptionKey === true
+    }
   );
 
   return {
@@ -2201,17 +2232,17 @@ async function handleAdminDatabaseRecord(event, tableId, rowId) {
 }
 
 async function handleGoogleSheetsExportTable(event, exportKey) {
-  if (!assertGoogleSheetsExportBearer(event)) {
-    return buildJsonResponse(401, {
-      ok: false,
-      message: "Unauthorized."
-    });
-  }
-
   const exportConfig = GOOGLE_SHEETS_EXPORTS[exportKey];
 
   if (!exportConfig) {
     return buildNotFoundResponse();
+  }
+
+  if (!assertGoogleSheetsExportBearer(event, exportConfig)) {
+    return buildJsonResponse(401, {
+      ok: false,
+      message: "Unauthorized."
+    });
   }
 
   const limit = parsePositiveInteger(event.queryStringParameters?.limit, 1000, 1000);

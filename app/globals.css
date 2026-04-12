@@ -880,9 +880,39 @@ section[id] {
   flex-direction: column;
   gap: 40px;
   padding: 56px 48px;
+  isolation: isolate;
+  overflow: hidden;
+  background: linear-gradient(180deg, rgba(12, 12, 12, 0.74) 0%, rgba(12, 12, 12, 0.94) 100%);
+}
+
+.section__media {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.section__media-image {
+  object-fit: cover;
+}
+
+.section__media--tickets {
+  z-index: -2;
+}
+
+.section__media-image--tickets {
+  object-position: center 54%;
+  filter: saturate(0.92);
+}
+
+.section__media-scrim {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
   background:
-    linear-gradient(180deg, rgba(12, 12, 12, 0.74) 0%, rgba(12, 12, 12, 0.94) 100%),
-    var(--tickets-bg-image) center/cover no-repeat;
+    linear-gradient(180deg, rgba(12, 12, 12, 0.66) 0%, rgba(12, 12, 12, 0.92) 100%),
+    linear-gradient(90deg, rgba(0, 0, 0, 0.2) 12%, rgba(0, 0, 0, 0.5) 100%);
 }
 
 .ticket-grid {
@@ -925,7 +955,7 @@ section[id] {
 }
 
 .ticket-card--featured .ticket-card__label {
-  color: rgba(255, 255, 255, 0.92);
+  color: #ffffff;
 }
 
 .ticket-card__price-block {
@@ -1078,6 +1108,28 @@ section[id] {
   gap: 14px;
   width: 100%;
   max-width: 1320px;
+}
+
+.newsletter-form-shell {
+  width: 100%;
+}
+
+.newsletter-form--placeholder {
+  align-items: stretch;
+}
+
+.newsletter-form__placeholder-field,
+.newsletter-form__placeholder-button {
+  min-height: 64px;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.12));
+}
+
+.newsletter-form__placeholder-field {
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.newsletter-form__placeholder-button {
+  box-shadow: 0 16px 34px rgba(232, 24, 26, 0.12);
 }
 
 .newsletter-form__input {
@@ -2711,6 +2763,8 @@ section[id] {
     gap: 10px;
   }
 
+  .newsletter-form__placeholder-field,
+  .newsletter-form__placeholder-button,
   .newsletter-form__input,
   .newsletter-form__button {
     min-height: 56px;

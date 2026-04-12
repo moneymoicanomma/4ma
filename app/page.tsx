@@ -1,27 +1,35 @@
+import dynamic from "next/dynamic";
 import Image from "next/image";
 
-import { siteAsset } from "@/lib/site-assets";
+import {
+  getSiteAssetIntrinsicDimensions,
+  publicSiteAsset,
+  siteAsset
+} from "@/lib/site-assets";
 
-import { LandingMotionController } from "./components/landing-motion-controller";
+import { DeferredNewsletterSignupForm } from "./components/deferred-newsletter-signup-form";
 import { LandingTopbar } from "./components/landing-topbar";
-import { NewsletterSignupForm } from "./components/newsletter-signup-form";
+
+const LandingMotionController = dynamic(() =>
+  import("./components/landing-motion-controller").then((module) => module.LandingMotionController)
+);
 
 const heroImage = siteAsset("hero-main-v4.webp");
-const brandLogo = siteAsset("logo money moicano mma.svg");
-const brandLogoWide = siteAsset("logo money moicano mma extenso.svg");
-const streamIcon = siteAsset("Video-Game-Logo-Streamplay--Streamline-Ultimate.svg");
-const fightsIcon = siteAsset("Fists-Crashing-Conflict--Streamline-Ultimate.svg");
-const stadiumIcon = siteAsset("Stadium-Classic-2--Streamline-Ultimate.svg");
-const microphoneIcon = siteAsset("Microphone-Podcast-2--Streamline-Ultimate.svg");
-const cornermanIcon = siteAsset("cornerman.svg");
-const cornermanSloganLogo = siteAsset("cornerman - slogan.svg");
+const brandLogo = publicSiteAsset("logo money moicano mma.svg");
+const brandLogoWide = publicSiteAsset("logo money moicano mma extenso.svg");
+const streamIcon = publicSiteAsset("Video-Game-Logo-Streamplay--Streamline-Ultimate.svg");
+const fightsIcon = publicSiteAsset("Fists-Crashing-Conflict--Streamline-Ultimate.svg");
+const stadiumIcon = publicSiteAsset("Stadium-Classic-2--Streamline-Ultimate.svg");
+const microphoneIcon = publicSiteAsset("Microphone-Podcast-2--Streamline-Ultimate.svg");
+const cornermanIcon = publicSiteAsset("cornerman.svg");
+const cornermanSloganLogo = publicSiteAsset("cornerman - slogan.svg");
 const cabmmaLogo = siteAsset("cabmma.svg");
-const joyaGearLogo = siteAsset("joyagear.svg");
-const instagramIcon = siteAsset("instagram_logo.svg");
-const youtubeIcon = siteAsset("youtube_logo.svg");
-const xIcon = siteAsset("x_logo.svg.svg");
-const ticketBackgroundImage = siteAsset("ingressos-bg.webp");
-const transmissionOverlayImage = "https://moneymoicanomma.com.br/transmissao-overlay.webp";
+const joyaGearLogo = publicSiteAsset("joyagear.svg");
+const instagramIcon = publicSiteAsset("instagram_logo.svg");
+const youtubeIcon = publicSiteAsset("youtube_logo.svg");
+const xIcon = publicSiteAsset("x_logo.svg.svg");
+const ticketBackgroundImage = publicSiteAsset("ingressos-bg.webp");
+const transmissionOverlayImage = publicSiteAsset("transmissao-overlay.webp");
 const cornermanUrl = "https://cornerman.com.br/";
 const cabmmaUrl = "https://www.instagram.com/cab_mma/";
 const transmissionUrl = "https://www.youtube.com/@RenatoMoneyMoicano";
@@ -87,14 +95,14 @@ const transmissionTiles = [
   },
   {
     title: "Torcida maluca",
-    image: siteAsset("torcida-maluca.webp"),
+    image: publicSiteAsset("torcida-maluca.webp"),
     className: "transmission-tile transmission-tile--crowd",
     sizes: "(max-width: 780px) 72vw, (min-width: 1600px) 18vw, 319px"
   },
   {
     title: "Certeza de luta boa",
     titleSecondary: "(Isso realmente aconteceu)",
-    image: siteAsset("luta-boa.webp"),
+    image: publicSiteAsset("luta-boa.webp"),
     className: "transmission-tile transmission-tile--fight",
     sizes: "(max-width: 780px) 74vw, (min-width: 1600px) 24vw, 299px"
   }
@@ -104,13 +112,13 @@ const casterCards = [
   {
     name: "Renato Money Moicano",
     copy: "Dono dessa parada, lutador do UFC, cansado e calvo.",
-    image: siteAsset("caster-renato-moicano.webp"),
+    image: publicSiteAsset("caster-renato-moicano.webp"),
     imagePosition: "center 24%"
   },
   {
     name: "Tiago Pamplona",
     copy: "Amigo do Moicano, comentarista do UFC e tem um podcast fracassado.",
-    image: siteAsset("caster-tiago-pamplona.webp"),
+    image: publicSiteAsset("caster-tiago-pamplona.webp"),
     imagePosition: "center 18%"
   }
 ];
@@ -191,9 +199,23 @@ function AssetImage({
   lazy = true,
   decoding = "async",
   loading,
+  width,
+  height,
+  src,
   ...props
 }: Readonly<AssetImageProps>) {
-  return <img {...props} decoding={decoding} loading={lazy ? loading ?? "lazy" : loading} />;
+  const dimensions = typeof src === "string" ? getSiteAssetIntrinsicDimensions(src) : null;
+
+  return (
+    <img
+      {...props}
+      src={src}
+      decoding={decoding}
+      loading={lazy ? loading ?? "lazy" : loading}
+      width={width ?? dimensions?.width}
+      height={height ?? dimensions?.height}
+    />
+  );
 }
 
 function LandingButton({
@@ -286,7 +308,9 @@ export default function Home() {
             fill
             className="hero__image"
             alt=""
+            fetchPriority="high"
             priority
+            quality={72}
             sizes="(max-width: 780px) 100vw, (min-width: 1600px) 80vw, 1273px"
             src={heroImage}
           />
@@ -417,6 +441,7 @@ export default function Home() {
                     alt=""
                     className="transmission-tile__image"
                     fill
+                    quality={66}
                     sizes={tile.sizes}
                     src={tile.image}
                   />
@@ -453,6 +478,7 @@ export default function Home() {
                     alt={caster.name}
                     className="caster-card__image"
                     fill
+                    quality={70}
                     sizes="(max-width: 780px) 72vw, (min-width: 1600px) 32vw, 352px"
                     src={caster.image}
                     style={{ objectPosition: caster.imagePosition }}
@@ -472,8 +498,19 @@ export default function Home() {
         className="section section--tickets"
         data-nav-section="ingressos"
         id="ingressos"
-        style={{ "--tickets-bg-image": `url("${ticketBackgroundImage}")` } as React.CSSProperties}
       >
+        <div className="section__media section__media--tickets" aria-hidden="true">
+          <Image
+            fill
+            alt=""
+            className="section__media-image section__media-image--tickets"
+            quality={68}
+            sizes="100vw"
+            src={ticketBackgroundImage}
+          />
+          <span className="section__media-scrim" />
+        </div>
+
         <div className="section__headline section__headline--centered" data-reveal>
           <SectionEyebrow centered>Ingressos</SectionEyebrow>
 
@@ -541,8 +578,9 @@ export default function Home() {
             alt="Audiência internacional do Money Moicano MMA"
             className="audience-media__image"
             fill
+            quality={72}
             sizes="(max-width: 980px) 100vw, (min-width: 1600px) 42vw, 535px"
-            src={siteAsset("audiencia-internacional.webp")}
+            src={publicSiteAsset("audiencia-internacional.webp")}
           />
         </div>
 
@@ -581,7 +619,7 @@ export default function Home() {
             </p>
           </div>
 
-          <NewsletterSignupForm />
+          <DeferredNewsletterSignupForm />
         </div>
       </section>
 
