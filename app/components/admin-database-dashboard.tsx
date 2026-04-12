@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import type { AdminDatabaseOverview } from "@/lib/server/admin-database";
 
 import styles from "./admin-database-dashboard.module.css";
@@ -7,6 +9,23 @@ const numberFormatter = new Intl.NumberFormat("pt-BR");
 type AdminDatabaseDashboardProps = {
   overview: AdminDatabaseOverview;
 };
+
+function getRowDetailColumnKey(tableId: AdminDatabaseOverview["tables"][number]["id"]) {
+  switch (tableId) {
+    case "contact-messages":
+      return "fullName";
+    case "newsletter-subscriptions":
+      return "email";
+    case "partner-inquiries":
+      return "fullName";
+    case "fighter-applications":
+      return "fighter";
+    case "event-fighter-intakes":
+      return "fighter";
+    case "fantasy-entries":
+      return "displayName";
+  }
+}
 
 export function AdminDatabaseDashboard({
   overview
@@ -36,9 +55,9 @@ export function AdminDatabaseDashboard({
 
       <nav aria-label="Atalhos das tabelas" className={styles.anchorMenu}>
         {overview.tables.map((table) => (
-          <a
+          <Link
             className={table.errorMessage ? styles.anchorLinkMuted : styles.anchorLink}
-            href={`#${table.id}`}
+            href={table.errorMessage ? "/admin/database" : `/admin/database/${table.id}`}
             key={table.id}
           >
             <strong>{table.label}</strong>
@@ -47,82 +66,108 @@ export function AdminDatabaseDashboard({
                 ? "Sem leitura"
                 : `${numberFormatter.format(table.totalRows)} registros`}
             </span>
-          </a>
+          </Link>
         ))}
       </nav>
 
       <div className={styles.tableList}>
-        {overview.tables.map((table) => (
-          <section className={styles.tableCard} id={table.id} key={table.id}>
-            <header className={styles.tableHeader}>
-              <div className={styles.tableCopy}>
-                <span className={styles.tableName}>{table.tableName}</span>
-                <h2>{table.label}</h2>
-                <p>{table.description}</p>
-              </div>
+        {overview.tables.map((table) => {
+          const detailColumnKey = getRowDetailColumnKey(table.id);
 
-              <div className={styles.tableMetrics}>
-                <div className={styles.metricCard}>
-                  <span>Registros</span>
-                  <strong>{table.totalRows === null ? "—" : numberFormatter.format(table.totalRows)}</strong>
+          return (
+            <section className={styles.tableCard} id={table.id} key={table.id}>
+              <header className={styles.tableHeader}>
+                <div className={styles.tableCopy}>
+                  <span className={styles.tableName}>{table.tableName}</span>
+                  <h2>{table.label}</h2>
+                  <p>{table.description}</p>
                 </div>
-                <div className={styles.metricCard}>
-                  <span>Última atividade</span>
-                  <strong>{table.lastActivityAt ?? "Sem histórico"}</strong>
+
+                <div className={styles.tableMetrics}>
+                  <div className={styles.metricCard}>
+                    <span>Registros</span>
+                    <strong>{table.totalRows === null ? "—" : numberFormatter.format(table.totalRows)}</strong>
+                  </div>
+                  <div className={styles.metricCard}>
+                    <span>Última atividade</span>
+                    <strong>{table.lastActivityAt ?? "Sem histórico"}</strong>
+                  </div>
                 </div>
-              </div>
-            </header>
+              </header>
 
-            {table.statusCounts.length > 0 ? (
-              <div className={styles.statusRow}>
-                {table.statusCounts.map((statusCount) => (
-                  <span className={styles.statusChip} key={`${table.id}-${statusCount.label}`}>
-                    {statusCount.label}: {numberFormatter.format(statusCount.value)}
-                  </span>
-                ))}
-              </div>
-            ) : null}
+              {table.statusCounts.length > 0 ? (
+                <div className={styles.statusRow}>
+                  {table.statusCounts.map((statusCount) => (
+                    <span className={styles.statusChip} key={`${table.id}-${statusCount.label}`}>
+                      {statusCount.label}: {numberFormatter.format(statusCount.value)}
+                    </span>
+                  ))}
+                </div>
+              ) : null}
 
-            {table.errorMessage ? (
-              <div className={styles.errorState}>
-                <strong>Leitura indisponível</strong>
-                <p>{table.errorMessage}</p>
-              </div>
-            ) : table.rows.length > 0 ? (
-              <>
-                <p className={styles.previewLabel}>{table.previewLabel}</p>
+              {table.errorMessage ? (
+                <div className={styles.errorState}>
+                  <strong>Leitura indisponível</strong>
+                  <p>{table.errorMessage}</p>
+                </div>
+              ) : table.rows.length > 0 ? (
+                <>
+                  <div className={styles.previewHeader}>
+                    <p className={styles.previewLabel}>{table.previewLabel}</p>
+                    <Link className={styles.openTableLink} href={`/admin/database/${table.id}`}>
+                      Ver tabela completa
+                    </Link>
+                  </div>
 
-                <div className={styles.tableScroller}>
-                  <table className={styles.table}>
-                    <thead>
-                      <tr>
-                        {table.columns.map((column) => (
-                          <th key={`${table.id}-${column.key}`} scope="col">
-                            {column.label}
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {table.rows.map((row) => (
-                        <tr key={row.id}>
+                  <div className={styles.tableScroller}>
+                    <table className={styles.table}>
+                      <thead>
+                        <tr>
                           {table.columns.map((column) => (
-                            <td key={`${row.id}-${column.key}`}>{row.cells[column.key] ?? "—"}</td>
+                            <th key={`${table.id}-${column.key}`} scope="col">
+                              {column.label}
+                            </th>
                           ))}
+                          <th scope="col">Detalhe</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody>
+                        {table.rows.map((row) => (
+                          <tr key={row.id}>
+                            {table.columns.map((column) => (
+                              <td key={`${row.id}-${column.key}`}>
+                                {column.key === detailColumnKey ? (
+                                  <Link
+                                    className={styles.rowLink}
+                                    href={`/admin/database/${table.id}/${row.id}`}
+                                  >
+                                    {row.cells[column.key] ?? "—"}
+                                  </Link>
+                                ) : (
+                                  row.cells[column.key] ?? "—"
+                                )}
+                              </td>
+                            ))}
+                            <td>
+                              <Link className={styles.rowLink} href={`/admin/database/${table.id}/${row.id}`}>
+                                Ver emitente
+                              </Link>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
+              ) : (
+                <div className={styles.emptyTableState}>
+                  <strong>Sem registros por aqui ainda.</strong>
+                  <p>Quando novas linhas entrarem nessa tabela, o preview aparece automaticamente.</p>
                 </div>
-              </>
-            ) : (
-              <div className={styles.emptyTableState}>
-                <strong>Sem registros por aqui ainda.</strong>
-                <p>Quando novas linhas entrarem nessa tabela, o preview aparece automaticamente.</p>
-              </div>
-            )}
-          </section>
-        ))}
+              )}
+            </section>
+          );
+        })}
       </div>
     </div>
   );

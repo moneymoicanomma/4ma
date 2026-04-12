@@ -1,0 +1,100 @@
+.wrapper {
+  display: grid;
+  gap: 18px;
+}
+
+.sectionCard,
+.emptyState {
+  display: grid;
+  gap: 16px;
+  padding: 22px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background:
+    radial-gradient(circle at top left, rgba(232, 24, 26, 0.14), transparent 42%),
+    rgba(8, 8, 8, 0.92);
+}
+
+.sectionHeader {
+  display: grid;
+  gap: 8px;
+}
+
+.sectionEyebrow,
+.fieldLabel,
+.objectLabel {
+  color: rgba(255, 255, 255, 0.56);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+}
+
+.sectionHeader h2 {
+  margin: 0;
+  color: #ffffff;
+  font-family: var(--font-title);
+  font-size: clamp(24px, 3vw, 34px);
+  line-height: 0.98;
+  text-transform: uppercase;
+}
+
+.fieldList {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+}
+
+.fieldCard,
+.arrayCard,
+.objectField {
+  display: grid;
+  gap: 8px;
+  padding: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.fieldValue,
+.objectValue {
+  color: rgba(242, 241, 240, 0.92);
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.scalarValue {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.arrayList,
+.objectGrid {
+  display: grid;
+  gap: 10px;
+}
+
+.emptyValue {
+  color: rgba(255, 255, 255, 0.42);
+}
+
+.emptyState strong {
+  color: #ffffff;
+  font-size: 18px;
+}
+
+.emptyState p {
+  margin: 0;
+  color: rgba(227, 226, 225, 0.72);
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+@media (max-width: 720px) {
+  .sectionCard,
+  .emptyState {
+    padding: 18px;
+  }
+
+  .fieldList {
+    grid-template-columns: 1fr;
+  }
+}

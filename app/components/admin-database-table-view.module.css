@@ -1,0 +1,128 @@
+.wrapper {
+  display: grid;
+  gap: 18px;
+}
+
+.summaryRow {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.metricCard,
+.emptyState {
+  display: grid;
+  gap: 8px;
+  padding: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background:
+    radial-gradient(circle at top left, rgba(232, 24, 26, 0.14), transparent 40%),
+    rgba(8, 8, 8, 0.92);
+}
+
+.metricCard span {
+  color: rgba(255, 255, 255, 0.54);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+}
+
+.metricCard strong,
+.emptyState strong {
+  color: #ffffff;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.emptyState p {
+  margin: 0;
+  color: rgba(227, 226, 225, 0.72);
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.statusRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.statusChip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  padding: 0 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+  color: rgba(255, 255, 255, 0.86);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.tableScroller {
+  overflow-x: auto;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(3, 3, 3, 0.72);
+}
+
+.table {
+  width: 100%;
+  min-width: 860px;
+  border-collapse: collapse;
+}
+
+.table th,
+.table td {
+  padding: 14px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  text-align: left;
+  vertical-align: top;
+}
+
+.table th {
+  color: rgba(255, 255, 255, 0.52);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+}
+
+.table td {
+  color: rgba(242, 241, 240, 0.9);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.primaryCellLink,
+.detailLink {
+  color: #ffffff;
+  text-decoration: none;
+}
+
+.primaryCellLink {
+  font-weight: 600;
+}
+
+.detailLink {
+  color: rgba(255, 120, 120, 0.92);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.primaryCellLink:hover,
+.primaryCellLink:focus-visible,
+.detailLink:hover,
+.detailLink:focus-visible {
+  text-decoration: underline;
+}
+
+@media (max-width: 720px) {
+  .table {
+    min-width: 720px;
+  }
+}
