@@ -3,9 +3,8 @@ import type { Metadata } from "next";
 import { AdminTopbar } from "@/app/components/admin-topbar";
 import { FantasyAdminDashboard } from "@/app/components/fantasy-admin-dashboard";
 import { LandingMotionController } from "@/app/components/landing-motion-controller";
-import { FANTASY_SCORING_RULES, cloneFantasyMockEvents } from "@/lib/fantasy/mock-data";
 import { requireAdminSessionIdentity } from "@/lib/server/admin-session";
-import { getServerEnv } from "@/lib/server/env";
+import { getServerEnv, isDatabaseConfigured } from "@/lib/server/env";
 import { loadFantasyEventsFromDatabase } from "@/lib/server/fantasy";
 
 import styles from "./page.module.css";
@@ -26,10 +25,10 @@ export default async function FantasyAdminPage() {
   const env = getServerEnv();
   await requireAdminSessionIdentity("/admin/fantasy", env);
 
-  const databaseFantasy = await loadFantasyEventsFromDatabase(env);
-  const initialEvents =
-    databaseFantasy?.events.length ? databaseFantasy.events : cloneFantasyMockEvents();
-  const scoringRules = databaseFantasy?.scoringRules ?? FANTASY_SCORING_RULES;
+  const databaseReady = isDatabaseConfigured(env);
+  const databaseFantasy = databaseReady ? await loadFantasyEventsFromDatabase(env) : null;
+  const initialEvents = databaseFantasy?.events ?? [];
+  const databaseState = !databaseReady ? "unavailable" : databaseFantasy ? "ready" : "error";
 
   return (
     <main className={styles.page}>
@@ -69,7 +68,25 @@ export default async function FantasyAdminPage() {
 
       <section className={styles.dashboardSection}>
         <div className={styles.dashboardShell} data-reveal>
-          <FantasyAdminDashboard initialEvents={initialEvents} scoringRules={scoringRules} />
+          {databaseState === "ready" ? (
+            <FantasyAdminDashboard initialEvents={initialEvents} />
+          ) : (
+            <div className={styles.unavailableCard}>
+              <span className={styles.unavailableEyebrow}>
+                {databaseState === "unavailable" ? "Banco indisponível" : "Falha na leitura"}
+              </span>
+              <h2>
+                {databaseState === "unavailable"
+                  ? "O admin do fantasy precisa de conexão com o banco."
+                  : "Não foi possível carregar os eventos reais do fantasy."}
+              </h2>
+              <p>
+                {databaseState === "unavailable"
+                  ? "Neste ambiente a leitura administrativa do fantasy não está ligada, então o painel não vai mais abrir com dados de exemplo."
+                  : "A leitura falhou e a tela foi travada para evitar mostrar eventos mock como se fossem reais. Vale revisar a conexão e tentar novamente."}
+              </p>
+            </div>
+          )}
         </div>
       </section>
     </main>

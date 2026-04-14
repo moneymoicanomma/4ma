@@ -204,6 +204,52 @@
   padding: 0 32px 88px;
 }
 
+.unavailableCard {
+  display: grid;
+  gap: 14px;
+  padding: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background:
+    radial-gradient(circle at top left, rgba(232, 24, 26, 0.16), transparent 38%),
+    rgba(10, 10, 10, 0.92);
+}
+
+.unavailableEyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1.8px;
+  text-transform: uppercase;
+}
+
+.unavailableEyebrow::before {
+  content: "";
+  width: 44px;
+  height: 1px;
+  background: rgba(232, 24, 26, 0.8);
+}
+
+.unavailableCard h2 {
+  margin: 0;
+  color: #ffffff;
+  font-family: var(--font-title);
+  font-size: clamp(28px, 4vw, 44px);
+  line-height: 0.94;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+}
+
+.unavailableCard p {
+  margin: 0;
+  max-width: 52rem;
+  color: rgba(227, 226, 225, 0.74);
+  font-size: 15px;
+  line-height: 1.7;
+}
+
 @media (max-width: 1040px) {
   .heroGrid {
     grid-template-columns: 1fr;

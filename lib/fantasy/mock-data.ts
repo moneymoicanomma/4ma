@@ -43,6 +43,7 @@ export type FantasyMockEvent = Omit<FantasyEventCard, "fights"> & {
   heroLabel: string;
   broadcastLabel: string;
   statusText: string;
+  scoringRules: FantasyScoringRules;
   fights: FantasyMockFight[];
   entries: FantasyMockEntry[];
 };
@@ -90,6 +91,7 @@ const fantasyEventsSeed: FantasyMockEvent[] = [
     heroLabel: "Fantasy oficial do card",
     broadcastLabel: "Canal Money Moicano",
     statusText: "Picks liberados até 30 minutos antes do primeiro sino.",
+    scoringRules: { ...FANTASY_SCORING_RULES },
     fights: [
       {
         id: "fight-2026-05-01",
@@ -258,6 +260,7 @@ const fantasyEventsSeed: FantasyMockEvent[] = [
     heroLabel: "Último ranking publicado",
     broadcastLabel: "Canal Money Moicano",
     statusText: "Evento encerrado com ranking consolidado.",
+    scoringRules: { ...FANTASY_SCORING_RULES },
     fights: [
       {
         id: "fight-2026-03-01",
@@ -485,7 +488,7 @@ function getFightResultScore(
 
 export function calculateFantasyLeaderboard(
   event: FantasyMockEvent,
-  scoringRules: FantasyScoringRules = FANTASY_SCORING_RULES
+  scoringRules: FantasyScoringRules = event.scoringRules
 ): FantasyLeaderboardRow[] {
   const resultsByFightId = new Map(event.fights.map((fight) => [fight.id, fight.result]));
 
@@ -548,6 +551,7 @@ export function getLatestFinishedFantasyEvent(events: FantasyMockEvent[]) {
 export function cloneFantasyMockEvents() {
   return fantasyEventsSeed.map((event) => ({
     ...event,
+    scoringRules: { ...event.scoringRules },
     fights: event.fights.map((fight) => ({
       ...fight,
       redCorner: { ...fight.redCorner },

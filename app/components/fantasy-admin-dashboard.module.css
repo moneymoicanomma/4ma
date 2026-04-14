@@ -195,6 +195,29 @@
   line-height: 1.6;
 }
 
+.emptyEditorState {
+  display: grid;
+  gap: 14px;
+}
+
+.emptyEditorState h3 {
+  margin: 0;
+  color: #ffffff;
+  font-family: var(--font-title);
+  font-size: clamp(26px, 3vw, 38px);
+  line-height: 0.94;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+}
+
+.emptyEditorState p {
+  margin: 0;
+  max-width: 42rem;
+  color: rgba(227, 226, 225, 0.72);
+  font-size: 15px;
+  line-height: 1.7;
+}
+
 .commandActions {
   display: flex;
   align-items: center;

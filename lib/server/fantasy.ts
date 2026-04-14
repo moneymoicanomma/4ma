@@ -8,8 +8,7 @@ import {
 import type {
   FantasyMockEntry,
   FantasyMockEvent,
-  FantasyMockFight,
-  FantasyScoringRules
+  FantasyMockFight
 } from "@/lib/fantasy/mock-data";
 import { queryDatabase, withDatabaseTransaction } from "@/lib/server/database";
 import {
@@ -103,6 +102,12 @@ function buildEventSkeleton(row: EventRow): FantasyMockEvent {
     heroLabel: row.heroLabel,
     broadcastLabel: row.broadcastLabel,
     statusText: row.statusText,
+    scoringRules: {
+      winner: row.winnerPoints,
+      method: row.methodPoints,
+      round: row.roundPoints,
+      perfectPickBonus: row.perfectPickBonus
+    },
     fights: [],
     entries: []
   };
@@ -143,8 +148,7 @@ export async function loadFantasyEventsFromDatabase(env: ServerEnv = getServerEn
 
     if (!eventResult.rowCount) {
       return {
-        events: [] as FantasyMockEvent[],
-        scoringRules: null as FantasyScoringRules | null
+        events: [] as FantasyMockEvent[]
       };
     }
 
@@ -286,22 +290,15 @@ export async function loadFantasyEventsFromDatabase(env: ServerEnv = getServerEn
       }
     }
 
-    const scoringSource = eventResult.rows[0]!;
-
     return {
       events: eventResult.rows
         .map((row: EventRow) => events.get(row.id))
         .filter((event: FantasyMockEvent | undefined): event is FantasyMockEvent =>
           Boolean(event)
-        ),
-      scoringRules: {
-        winner: scoringSource.winnerPoints,
-        method: scoringSource.methodPoints,
-        round: scoringSource.roundPoints,
-        perfectPickBonus: scoringSource.perfectPickBonus
-      }
+        )
     };
-  } catch {
+  } catch (error) {
+    console.error("[fantasy] failed to load events from database", error);
     return null;
   }
 }

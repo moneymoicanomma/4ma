@@ -5,7 +5,6 @@ import Link from "next/link";
 import { FantasyExperience } from "@/app/components/fantasy-experience";
 import { LandingMotionController } from "@/app/components/landing-motion-controller";
 import {
-  FANTASY_SCORING_RULES,
   calculateFantasyLeaderboard,
   cloneFantasyMockEvents,
   countFantasyOfficialResults,
@@ -33,12 +32,10 @@ export const dynamic = "force-dynamic";
 
 export default async function FantasyPage() {
   const databaseFantasy = await loadFantasyEventsFromDatabase();
-  const events =
-    databaseFantasy?.events.length ? databaseFantasy.events : cloneFantasyMockEvents();
-  const scoringRules = databaseFantasy?.scoringRules ?? FANTASY_SCORING_RULES;
+  const events = databaseFantasy?.events.length ? databaseFantasy.events : cloneFantasyMockEvents();
   const currentEvent = getFantasyCurrentEvent(events);
   const latestFinishedEvent = getLatestFinishedFantasyEvent(events);
-  const publishedLeaderboard = calculateFantasyLeaderboard(latestFinishedEvent, scoringRules);
+  const publishedLeaderboard = calculateFantasyLeaderboard(latestFinishedEvent);
   const resolvedFightCount = countFantasyOfficialResults(latestFinishedEvent);
 
   return (
@@ -131,7 +128,7 @@ export default async function FantasyPage() {
             currentEvent={currentEvent}
             leaderboardEvent={latestFinishedEvent}
             leaderboardRows={publishedLeaderboard}
-            scoringRules={scoringRules}
+            scoringRules={currentEvent.scoringRules}
           />
         </div>
       </section>

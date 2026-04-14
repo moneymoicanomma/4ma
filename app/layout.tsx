@@ -24,8 +24,7 @@ export default function RootLayout({
       <head>
         <link rel="preconnect" href="https://use.typekit.net" crossOrigin="anonymous" />
         <link rel="preconnect" href="https://p.typekit.net" crossOrigin="anonymous" />
-        <link rel="preload" href="https://use.typekit.net/wrq6fdd.css" as="style" crossOrigin="anonymous" />
-        <link rel="stylesheet" href="https://use.typekit.net/wrq6fdd.css" />
+        <link rel="stylesheet" href="https://use.typekit.net/wrq6fdd.css" crossOrigin="anonymous" />
         <script
           dangerouslySetInnerHTML={{
             __html: JSON.stringify(siteStructuredData)

@@ -148,7 +148,17 @@ export const rootMetadata: Metadata = {
   category: "sports",
   verification: createVerification(),
   icons: {
-    icon: "/favicon.svg"
+    icon: [
+      {
+        url: "/favicon.svg",
+        type: "image/svg+xml"
+      },
+      {
+        url: "/favicon.ico",
+        sizes: "any"
+      }
+    ],
+    shortcut: "/favicon.ico"
   },
   ...createPageMetadata({
     path: "/",

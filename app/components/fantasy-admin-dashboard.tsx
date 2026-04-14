@@ -1,23 +1,22 @@
 "use client";
 
-import { startTransition, useState } from "react";
+import { startTransition, useEffect, useState } from "react";
 
 import type { FantasyRound, FantasyVictoryMethod } from "@/lib/contracts/fantasy";
 import {
+  FANTASY_SCORING_RULES,
   calculateFantasyLeaderboard,
   countFantasyOfficialResults,
   getFantasyCurrentEvent,
   getFantasyStatusTone,
   type FantasyMockEvent,
-  type FantasyMockFight,
-  type FantasyScoringRules
+  type FantasyMockFight
 } from "@/lib/fantasy/mock-data";
 
 import styles from "./fantasy-admin-dashboard.module.css";
 
 type FantasyAdminDashboardProps = {
   initialEvents: FantasyMockEvent[];
-  scoringRules: FantasyScoringRules;
 };
 
 const statusOptions = [
@@ -36,31 +35,88 @@ const methodOptions: Array<{
   { value: "nocaute", label: "Nocaute" }
 ];
 
-function formatDateTimeInput(value: string) {
+const FANTASY_ADMIN_TIME_ZONE = "America/Sao_Paulo";
+const FANTASY_ADMIN_TIME_OFFSET = "-03:00";
+const dateDisplayFormatter = new Intl.DateTimeFormat("pt-BR", {
+  dateStyle: "medium",
+  timeStyle: "short",
+  timeZone: FANTASY_ADMIN_TIME_ZONE
+});
+const datePartFormatter = new Intl.DateTimeFormat("en-CA", {
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+  hour: "2-digit",
+  minute: "2-digit",
+  hourCycle: "h23",
+  timeZone: FANTASY_ADMIN_TIME_ZONE
+});
+
+function getInitialSelectedEventId(events: FantasyMockEvent[]) {
+  return events.length ? getFantasyCurrentEvent(events).id : null;
+}
+
+function getDatePartMap(value: string) {
   const date = new Date(value);
 
   if (Number.isNaN(date.getTime())) {
+    return null;
+  }
+
+  return new Map(
+    datePartFormatter
+      .formatToParts(date)
+      .filter((part) => part.type !== "literal")
+      .map((part) => [part.type, part.value])
+  );
+}
+
+function formatDateTimeInput(value: string) {
+  const partMap = getDatePartMap(value);
+
+  if (!partMap) {
     return "";
   }
 
-  const year = date.getFullYear();
-  const month = `${date.getMonth() + 1}`.padStart(2, "0");
-  const day = `${date.getDate()}`.padStart(2, "0");
-  const hours = `${date.getHours()}`.padStart(2, "0");
-  const minutes = `${date.getMinutes()}`.padStart(2, "0");
+  const year = partMap.get("year");
+  const month = partMap.get("month");
+  const day = partMap.get("day");
+  const hours = partMap.get("hour");
+  const minutes = partMap.get("minute");
+
+  if (!year || !month || !day || !hours || !minutes) {
+    return "";
+  }
 
   return `${year}-${month}-${day}T${hours}:${minutes}`;
 }
 
 function parseDateTimeInput(value: string) {
-  return value ? new Date(value).toISOString() : "";
+  if (!value) {
+    return "";
+  }
+
+  if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(value)) {
+    return null;
+  }
+
+  const date = new Date(`${value}:00${FANTASY_ADMIN_TIME_OFFSET}`);
+
+  if (Number.isNaN(date.getTime())) {
+    return null;
+  }
+
+  return date.toISOString();
 }
 
 function formatDate(value: string) {
-  return new Intl.DateTimeFormat("pt-BR", {
-    dateStyle: "medium",
-    timeStyle: "short"
-  }).format(new Date(value));
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return "Data indefinida";
+  }
+
+  return dateDisplayFormatter.format(date);
 }
 
 function createDraftFight(seed: number, order: number): FantasyMockFight {
@@ -102,24 +158,40 @@ function createDraftEvent(seed: number): FantasyMockEvent {
     heroLabel: "Fantasy oficial do card",
     broadcastLabel: "Canal Money Moicano",
     statusText: "Configure o evento, monte o card e publique quando o deadline estiver validado.",
+    scoringRules: { ...FANTASY_SCORING_RULES },
     fights: [createDraftFight(seed, 1)],
     entries: []
   };
 }
 
 export function FantasyAdminDashboard({
-  initialEvents,
-  scoringRules
+  initialEvents
 }: Readonly<FantasyAdminDashboardProps>) {
   const [events, setEvents] = useState(initialEvents);
-  const [selectedEventId, setSelectedEventId] = useState(getFantasyCurrentEvent(initialEvents).id);
+  const [selectedEventId, setSelectedEventId] = useState<string | null>(
+    getInitialSelectedEventId(initialEvents)
+  );
   const [notice, setNotice] = useState(
-    "Leitura do fantasy já está ligada ao estado atual. A persistência do editor admin é o próximo passo."
+    initialEvents.length
+      ? "Leitura do fantasy já está ligada ao estado atual. A persistência do editor admin é o próximo passo."
+      : "Nenhum evento real foi encontrado no banco. Você pode criar um rascunho local para montar a estrutura."
   );
 
-  const selectedEvent = events.find((event) => event.id === selectedEventId) ?? events[0];
-  const leaderboardRows = calculateFantasyLeaderboard(selectedEvent, scoringRules);
-  const officialResultCount = countFantasyOfficialResults(selectedEvent);
+  const selectedEvent =
+    (selectedEventId ? events.find((event) => event.id === selectedEventId) : null) ?? events[0] ?? null;
+  const [dateInputDraft, setDateInputDraft] = useState(() => ({
+    startsAt: initialEvents[0] ? formatDateTimeInput(initialEvents[0].startsAt) : "",
+    lockAt: initialEvents[0] ? formatDateTimeInput(initialEvents[0].lockAt) : ""
+  }));
+  const leaderboardRows = selectedEvent ? calculateFantasyLeaderboard(selectedEvent) : [];
+  const officialResultCount = selectedEvent ? countFantasyOfficialResults(selectedEvent) : 0;
+
+  useEffect(() => {
+    setDateInputDraft({
+      startsAt: selectedEvent ? formatDateTimeInput(selectedEvent.startsAt) : "",
+      lockAt: selectedEvent ? formatDateTimeInput(selectedEvent.lockAt) : ""
+    });
+  }, [selectedEvent?.id, selectedEvent?.startsAt, selectedEvent?.lockAt]);
 
   function updateSelectedEvent(mutator: (event: FantasyMockEvent) => FantasyMockEvent) {
     setEvents((current) =>
@@ -139,17 +211,21 @@ export function FantasyAdminDashboard({
   }
 
   function deleteSelectedEvent() {
+    if (!selectedEventId) {
+      return;
+    }
+
     if (events.length === 1) {
       setNotice("Mantenha pelo menos um evento no painel antes de excluir o atual.");
       return;
     }
 
     const remainingEvents = events.filter((event) => event.id !== selectedEventId);
-    const fallbackEvent = remainingEvents[0];
+    const fallbackEventId = remainingEvents[0]?.id ?? null;
 
     setEvents(remainingEvents);
     startTransition(() => {
-      setSelectedEventId(fallbackEvent.id);
+      setSelectedEventId(fallbackEventId);
     });
     setNotice("Evento removido da interface. Quando a API entrar, esta ação pode virar delete real.");
   }
@@ -246,72 +322,76 @@ export function FantasyAdminDashboard({
       </aside>
 
       <div className={styles.main}>
-        <section className={styles.commandBar}>
-          <div>
-            <span className={styles.kicker}>Evento selecionado</span>
-            <h2>{selectedEvent.name}</h2>
-            <p>{notice}</p>
-          </div>
+        {selectedEvent ? (
+          <>
+            <section className={styles.commandBar}>
+              <div>
+                <span className={styles.kicker}>Evento selecionado</span>
+                <h2>{selectedEvent.name}</h2>
+                <p>{notice}</p>
+              </div>
 
-          <div className={styles.commandActions}>
-            <button
-              className={styles.secondaryButton}
-              type="button"
-              onClick={() => {
-                setNotice(
-                  "Esta tela já ajuda a revisar o estado atual do fantasy. O save persistido do editor admin ainda é o próximo passo."
-                );
-              }}
-            >
-              Salvar estrutura
-            </button>
-            <button className={styles.ghostButton} type="button" onClick={deleteSelectedEvent}>
-              Deletar evento
-            </button>
-          </div>
-        </section>
+              <div className={styles.commandActions}>
+                <button
+                  className={styles.secondaryButton}
+                  type="button"
+                  onClick={() => {
+                    setNotice(
+                      "Esta tela já ajuda a revisar o estado atual do fantasy. O save persistido do editor admin ainda é o próximo passo."
+                    );
+                  }}
+                >
+                  Salvar estrutura
+                </button>
+                <button className={styles.ghostButton} type="button" onClick={deleteSelectedEvent}>
+                  Deletar evento
+                </button>
+              </div>
+            </section>
 
-        <section className={styles.overviewGrid}>
-          <div className={styles.overviewCard}>
-            <span>Status</span>
-            <strong>{getFantasyStatusTone(selectedEvent.status)}</strong>
-            <small>{selectedEvent.statusText}</small>
-          </div>
-          <div className={styles.overviewCard}>
-            <span>Inscrições</span>
-            <strong>{selectedEvent.entries.length}</strong>
-            <small>leads vinculados ao evento</small>
-          </div>
-          <div className={styles.overviewCard}>
-            <span>Lutas</span>
-            <strong>{selectedEvent.fights.length}</strong>
-            <small>slots ativos no card</small>
-          </div>
-          <div className={styles.overviewCard}>
-            <span>Resultados oficiais</span>
-            <strong>{officialResultCount}</strong>
-            <small>lançados para o ranking</small>
-          </div>
-        </section>
+            <section className={styles.overviewGrid}>
+              <div className={styles.overviewCard}>
+                <span>Status</span>
+                <strong>{getFantasyStatusTone(selectedEvent.status)}</strong>
+                <small>{selectedEvent.statusText}</small>
+              </div>
+              <div className={styles.overviewCard}>
+                <span>Inscrições</span>
+                <strong>{selectedEvent.entries.length}</strong>
+                <small>leads vinculados ao evento</small>
+              </div>
+              <div className={styles.overviewCard}>
+                <span>Lutas</span>
+                <strong>{selectedEvent.fights.length}</strong>
+                <small>slots ativos no card</small>
+              </div>
+              <div className={styles.overviewCard}>
+                <span>Resultados oficiais</span>
+                <strong>{officialResultCount}</strong>
+                <small>lançados para o ranking</small>
+              </div>
+            </section>
 
-        <section className={styles.section}>
-          <div className={styles.sectionHeader}>
-            <div>
-              <span className={styles.kicker}>Configuração</span>
-              <h3>Evento e deadline</h3>
-            </div>
-          </div>
+            <section className={styles.section}>
+              <div className={styles.sectionHeader}>
+                <div>
+                  <span className={styles.kicker}>Configuração</span>
+                  <h3>Evento e deadline</h3>
+                </div>
+              </div>
 
-          <div className={styles.formGrid}>
+              <div className={styles.formGrid}>
             <label className={styles.field}>
               <span>Nome do evento</span>
               <input
                 type="text"
                 value={selectedEvent.name}
                 onChange={(event) => {
+                  const nextValue = event.currentTarget.value;
+
                   updateSelectedEvent((current) => ({
                     ...current,
-                    name: event.currentTarget.value
+                    name: nextValue
                   }));
                 }}
               />
@@ -323,9 +403,11 @@ export function FantasyAdminDashboard({
                 type="text"
                 value={selectedEvent.slug}
                 onChange={(event) => {
+                  const nextValue = event.currentTarget.value;
+
                   updateSelectedEvent((current) => ({
                     ...current,
-                    slug: event.currentTarget.value
+                    slug: nextValue
                   }));
                 }}
               />
@@ -337,9 +419,11 @@ export function FantasyAdminDashboard({
                 type="text"
                 value={selectedEvent.venue}
                 onChange={(event) => {
+                  const nextValue = event.currentTarget.value;
+
                   updateSelectedEvent((current) => ({
                     ...current,
-                    venue: event.currentTarget.value
+                    venue: nextValue
                   }));
                 }}
               />
@@ -351,9 +435,11 @@ export function FantasyAdminDashboard({
                 type="text"
                 value={selectedEvent.cityLabel}
                 onChange={(event) => {
+                  const nextValue = event.currentTarget.value;
+
                   updateSelectedEvent((current) => ({
                     ...current,
-                    cityLabel: event.currentTarget.value
+                    cityLabel: nextValue
                   }));
                 }}
               />
@@ -363,11 +449,23 @@ export function FantasyAdminDashboard({
               <span>Início do evento</span>
               <input
                 type="datetime-local"
-                value={formatDateTimeInput(selectedEvent.startsAt)}
+                value={dateInputDraft.startsAt}
                 onChange={(event) => {
+                  const nextValue = event.currentTarget.value;
+                  const nextStartsAt = parseDateTimeInput(nextValue);
+
+                  setDateInputDraft((current) => ({
+                    ...current,
+                    startsAt: nextValue
+                  }));
+
+                  if (nextStartsAt === null) {
+                    return;
+                  }
+
                   updateSelectedEvent((current) => ({
                     ...current,
-                    startsAt: parseDateTimeInput(event.currentTarget.value)
+                    startsAt: nextStartsAt
                   }));
                 }}
               />
@@ -377,11 +475,23 @@ export function FantasyAdminDashboard({
               <span>Lock das picks</span>
               <input
                 type="datetime-local"
-                value={formatDateTimeInput(selectedEvent.lockAt)}
+                value={dateInputDraft.lockAt}
                 onChange={(event) => {
+                  const nextValue = event.currentTarget.value;
+                  const nextLockAt = parseDateTimeInput(nextValue);
+
+                  setDateInputDraft((current) => ({
+                    ...current,
+                    lockAt: nextValue
+                  }));
+
+                  if (nextLockAt === null) {
+                    return;
+                  }
+
                   updateSelectedEvent((current) => ({
                     ...current,
-                    lockAt: parseDateTimeInput(event.currentTarget.value)
+                    lockAt: nextLockAt
                   }));
                 }}
               />
@@ -419,28 +529,30 @@ export function FantasyAdminDashboard({
               <textarea
                 value={selectedEvent.statusText}
                 onChange={(event) => {
+                  const nextValue = event.currentTarget.value;
+
                   updateSelectedEvent((current) => ({
                     ...current,
-                    statusText: event.currentTarget.value
+                    statusText: nextValue
                   }));
                 }}
               />
             </label>
-          </div>
-        </section>
+              </div>
+            </section>
 
-        <section className={styles.section}>
-          <div className={styles.sectionHeader}>
-            <div>
-              <span className={styles.kicker}>Card</span>
-              <h3>Lutas e resultado oficial</h3>
-            </div>
-            <button className={styles.secondaryButton} type="button" onClick={addFight}>
-              Adicionar luta
-            </button>
-          </div>
+            <section className={styles.section}>
+              <div className={styles.sectionHeader}>
+                <div>
+                  <span className={styles.kicker}>Card</span>
+                  <h3>Lutas e resultado oficial</h3>
+                </div>
+                <button className={styles.secondaryButton} type="button" onClick={addFight}>
+                  Adicionar luta
+                </button>
+              </div>
 
-          <div className={styles.fightList}>
+              <div className={styles.fightList}>
             {selectedEvent.fights.map((fight) => (
               <article className={styles.fightEditor} key={fight.id}>
                 <div className={styles.fightEditorHeader}>
@@ -466,9 +578,11 @@ export function FantasyAdminDashboard({
                       type="text"
                       value={fight.label}
                       onChange={(event) => {
+                        const nextValue = event.currentTarget.value;
+
                         updateFight(fight.id, (currentFight) => ({
                           ...currentFight,
-                          label: event.currentTarget.value
+                          label: nextValue
                         }));
                       }}
                     />
@@ -505,11 +619,13 @@ export function FantasyAdminDashboard({
                       type="text"
                       value={fight.redCorner.name}
                       onChange={(event) => {
+                        const nextValue = event.currentTarget.value;
+
                         updateFight(fight.id, (currentFight) => ({
                           ...currentFight,
                           redCorner: {
                             ...currentFight.redCorner,
-                            name: event.currentTarget.value
+                            name: nextValue
                           }
                         }));
                       }}
@@ -522,11 +638,13 @@ export function FantasyAdminDashboard({
                       type="text"
                       value={fight.redCorner.country}
                       onChange={(event) => {
+                        const nextValue = event.currentTarget.value;
+
                         updateFight(fight.id, (currentFight) => ({
                           ...currentFight,
                           redCorner: {
                             ...currentFight.redCorner,
-                            country: event.currentTarget.value
+                            country: nextValue
                           }
                         }));
                       }}
@@ -539,11 +657,13 @@ export function FantasyAdminDashboard({
                       type="text"
                       value={fight.blueCorner.name}
                       onChange={(event) => {
+                        const nextValue = event.currentTarget.value;
+
                         updateFight(fight.id, (currentFight) => ({
                           ...currentFight,
                           blueCorner: {
                             ...currentFight.blueCorner,
-                            name: event.currentTarget.value
+                            name: nextValue
                           }
                         }));
                       }}
@@ -556,11 +676,13 @@ export function FantasyAdminDashboard({
                       type="text"
                       value={fight.blueCorner.country}
                       onChange={(event) => {
+                        const nextValue = event.currentTarget.value;
+
                         updateFight(fight.id, (currentFight) => ({
                           ...currentFight,
                           blueCorner: {
                             ...currentFight.blueCorner,
-                            country: event.currentTarget.value
+                            country: nextValue
                           }
                         }));
                       }}
@@ -670,41 +792,59 @@ export function FantasyAdminDashboard({
                 </div>
               </article>
             ))}
-          </div>
-        </section>
+              </div>
+            </section>
 
-        <section className={styles.section}>
-          <div className={styles.sectionHeader}>
-            <div>
-              <span className={styles.kicker}>Leaderboard</span>
-              <h3>Prévia do ranking público</h3>
-            </div>
-          </div>
-
-          {leaderboardRows.length ? (
-            <div className={styles.leaderboardTable}>
-              {leaderboardRows.map((row) => (
-                <div className={styles.leaderboardRow} key={row.id}>
-                  <div className={styles.leaderboardIdentity}>
-                    <span className={styles.leaderboardRank}>#{row.rank}</span>
-                    <div>
-                      <strong>{row.displayName}</strong>
-                      <small>
-                        {row.picksSubmitted} picks · {row.perfectPicks} perfeitas
-                      </small>
-                    </div>
-                  </div>
-                  <span className={styles.leaderboardScore}>{row.score} pts</span>
+            <section className={styles.section}>
+              <div className={styles.sectionHeader}>
+                <div>
+                  <span className={styles.kicker}>Leaderboard</span>
+                  <h3>Prévia do ranking público</h3>
                 </div>
-              ))}
+              </div>
+
+              {leaderboardRows.length ? (
+                <div className={styles.leaderboardTable}>
+                  {leaderboardRows.map((row) => (
+                    <div className={styles.leaderboardRow} key={row.id}>
+                      <div className={styles.leaderboardIdentity}>
+                        <span className={styles.leaderboardRank}>#{row.rank}</span>
+                        <div>
+                          <strong>{row.displayName}</strong>
+                          <small>
+                            {row.picksSubmitted} picks · {row.perfectPicks} perfeitas
+                          </small>
+                        </div>
+                      </div>
+                      <span className={styles.leaderboardScore}>{row.score} pts</span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className={styles.emptyState}>
+                  Sem inscrições neste evento ainda. Quando as entradas chegarem, o ranking aparece aqui
+                  com base nos resultados oficiais lançados acima.
+                </p>
+              )}
+            </section>
+          </>
+        ) : (
+          <section className={styles.section}>
+            <div className={styles.emptyEditorState}>
+              <span className={styles.kicker}>Sem evento selecionado</span>
+              <h3>Nenhum evento real foi carregado ainda.</h3>
+              <p>
+                Você pode criar um rascunho local para desenhar a estrutura, mas ele não será salvo no
+                banco até a etapa de persistência ser implementada.
+              </p>
+              <div className={styles.commandActions}>
+                <button className={styles.primaryButton} type="button" onClick={addEvent}>
+                  Criar rascunho local
+                </button>
+              </div>
             </div>
-          ) : (
-            <p className={styles.emptyState}>
-              Sem inscrições neste evento ainda. Quando as entradas chegarem, o ranking aparece aqui
-              com base nos resultados oficiais lançados acima.
-            </p>
-          )}
-        </section>
+          </section>
+        )}
       </div>
     </div>
   );
