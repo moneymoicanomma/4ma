@@ -4,7 +4,7 @@ import { AdminTopbar } from "@/app/components/admin-topbar";
 import { FantasyAdminDashboard } from "@/app/components/fantasy-admin-dashboard";
 import { LandingMotionController } from "@/app/components/landing-motion-controller";
 import { requireAdminSessionIdentity } from "@/lib/server/admin-session";
-import { getServerEnv, isDatabaseConfigured } from "@/lib/server/env";
+import { getServerEnv, isDatabaseConfigured, isUpstreamConfigured } from "@/lib/server/env";
 import { loadFantasyEventsFromDatabase } from "@/lib/server/fantasy";
 
 import styles from "./page.module.css";
@@ -25,10 +25,10 @@ export default async function FantasyAdminPage() {
   const env = getServerEnv();
   await requireAdminSessionIdentity("/admin/fantasy", env);
 
-  const databaseReady = isDatabaseConfigured(env);
-  const databaseFantasy = databaseReady ? await loadFantasyEventsFromDatabase(env) : null;
+  const fantasyReadable = isDatabaseConfigured(env) || isUpstreamConfigured(env);
+  const databaseFantasy = fantasyReadable ? await loadFantasyEventsFromDatabase(env) : null;
   const initialEvents = databaseFantasy?.events ?? [];
-  const databaseState = !databaseReady ? "unavailable" : databaseFantasy ? "ready" : "error";
+  const databaseState = !fantasyReadable ? "unavailable" : databaseFantasy ? "ready" : "error";
 
   return (
     <main className={styles.page}>

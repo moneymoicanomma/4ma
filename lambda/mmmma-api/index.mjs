@@ -24,6 +24,7 @@ const NEWSLETTER_SUBSCRIBE_PATH = "/v1/newsletter/subscriptions";
 const CONTACT_MESSAGES_PATH = "/v1/contact-messages";
 const FIGHTER_APPLICATIONS_PATH = "/v1/fighter-applications";
 const PARTNER_INQUIRIES_PATH = "/v1/partner-inquiries";
+const FANTASY_EVENTS_PATH = "/v1/fantasy/events";
 const FANTASY_ENTRIES_PATH = "/v1/fantasy/entries";
 const HEALTHCHECK_PATH = "/health";
 const ADMIN_TABLE_PREVIEW_LIMIT = 6;
@@ -288,6 +289,7 @@ function getRequestContextBody(body) {
 const stateNameToCode = new Map(
   BRAZILIAN_STATES.map((state) => [normalizeNameForMatch(state.name), state.code])
 );
+const fantasyStateCodeToName = new Map(BRAZILIAN_STATES.map((state) => [state.code, state.name]));
 
 function getBrazilianStateCode(value) {
   const normalized = normalizeNameForMatch(value);
@@ -1097,6 +1099,229 @@ async function handleAdminDatabaseOverview(event) {
     return buildJsonResponse(200, await loadAdminDatabaseOverviewFromDatabase());
   } catch (error) {
     console.error("admin database overview failed", { error });
+
+    return buildJsonResponse(503, {
+      ok: false,
+      message: "Serviço temporariamente indisponível."
+    });
+  }
+}
+
+function mapFantasyEntryState(stateCode) {
+  return fantasyStateCodeToName.get(stateCode) ?? "São Paulo";
+}
+
+function buildFantasyEventSkeleton(row) {
+  return {
+    id: row.id,
+    slug: row.slug,
+    name: row.name,
+    startsAt: row.startsAt,
+    lockAt: row.lockAt,
+    status: row.status,
+    venue: row.venue,
+    cityLabel: adminBuildLocation(row.cityName, row.stateCode),
+    heroLabel: row.heroLabel,
+    broadcastLabel: row.broadcastLabel,
+    statusText: row.statusText,
+    scoringRules: {
+      winner: adminParseCount(row.winnerPoints),
+      method: adminParseCount(row.methodPoints),
+      round: adminParseCount(row.roundPoints),
+      perfectPickBonus: adminParseCount(row.perfectPickBonus)
+    },
+    fights: [],
+    entries: []
+  };
+}
+
+async function loadFantasyEventsPayload() {
+  const eventResult = await getDatabasePool().query(`
+    select
+      e.id,
+      e.slug,
+      e.name,
+      e.status,
+      e.starts_at as "startsAt",
+      e.lock_at as "lockAt",
+      e.venue_name as venue,
+      e.city_name as "cityName",
+      e.state_code as "stateCode",
+      e.hero_label as "heroLabel",
+      e.broadcast_label as "broadcastLabel",
+      e.status_text as "statusText",
+      sp.winner_points as "winnerPoints",
+      sp.method_points as "methodPoints",
+      sp.round_points as "roundPoints",
+      sp.perfect_pick_bonus as "perfectPickBonus"
+    from app.events e
+    join app.fantasy_scoring_profiles sp
+      on sp.id = e.scoring_profile_id
+    where e.status <> 'archived'
+    order by e.starts_at desc, e.created_at desc
+  `);
+
+  if (!eventResult.rowCount) {
+    return {
+      events: []
+    };
+  }
+
+  const eventIds = eventResult.rows.map((row) => row.id);
+  const events = new Map();
+
+  for (const row of eventResult.rows) {
+    events.set(row.id, buildFantasyEventSkeleton(row));
+  }
+
+  const fightResult = await getDatabasePool().query(
+    `
+      select
+        f.id,
+        f.event_id as "eventId",
+        f.display_order as "order",
+        f.label,
+        f.max_rounds as "maxRound",
+        red_ef.id as "redCornerId",
+        red_f.display_name as "redCornerName",
+        red_f.country_name as "redCornerCountry",
+        red_f.image_url as "redCornerImageUrl",
+        blue_ef.id as "blueCornerId",
+        blue_f.display_name as "blueCornerName",
+        blue_f.country_name as "blueCornerCountry",
+        blue_f.image_url as "blueCornerImageUrl",
+        fr.winner_event_fighter_id as "winnerId",
+        fr.victory_method as "victoryMethod",
+        fr.official_round as round
+      from app.fights f
+      join app.event_fighters red_ef
+        on red_ef.id = f.red_corner_event_fighter_id
+      join app.fighters red_f
+        on red_f.id = red_ef.fighter_id
+      join app.event_fighters blue_ef
+        on blue_ef.id = f.blue_corner_event_fighter_id
+      join app.fighters blue_f
+        on blue_f.id = blue_ef.fighter_id
+      left join app.fight_results fr
+        on fr.fight_id = f.id
+      where f.event_id = any($1::uuid[])
+      order by f.event_id, f.display_order
+    `,
+    [eventIds]
+  );
+
+  for (const row of fightResult.rows) {
+    const event = events.get(row.eventId);
+
+    if (!event) {
+      continue;
+    }
+
+    event.fights.push({
+      id: row.id,
+      order: row.order,
+      label: row.label,
+      maxRound: row.maxRound,
+      redCorner: {
+        id: row.redCornerId,
+        name: row.redCornerName,
+        country: row.redCornerCountry,
+        imageUrl: row.redCornerImageUrl ?? ""
+      },
+      blueCorner: {
+        id: row.blueCornerId,
+        name: row.blueCornerName,
+        country: row.blueCornerCountry,
+        imageUrl: row.blueCornerImageUrl ?? ""
+      },
+      result: {
+        winnerId: row.winnerId,
+        victoryMethod: row.victoryMethod,
+        round: row.round
+      }
+    });
+  }
+
+  const entryResult = await getDatabasePool().query(
+    `
+      select
+        fe.id,
+        fe.event_id as "eventId",
+        fe.display_name as "displayName",
+        fe.full_name as "fullName",
+        fe.email,
+        fe.whatsapp,
+        fe.city,
+        fe.state_code as "stateCode",
+        fe.submitted_at as "submittedAt",
+        fp.fight_id as "fightId",
+        fp.picked_event_fighter_id as "fighterId",
+        fp.predicted_victory_method as "victoryMethod",
+        fp.predicted_round as round
+      from app.fantasy_entries fe
+      left join app.fantasy_picks fp
+        on fp.fantasy_entry_id = fe.id
+      where fe.event_id = any($1::uuid[])
+      order by fe.event_id, fe.submitted_at, fp.fight_id
+    `,
+    [eventIds]
+  );
+
+  const entryMap = new Map();
+
+  for (const row of entryResult.rows) {
+    const event = events.get(row.eventId);
+
+    if (!event) {
+      continue;
+    }
+
+    let entry = entryMap.get(row.id);
+
+    if (!entry) {
+      entry = {
+        id: row.id,
+        displayName: row.displayName,
+        fullName: row.fullName,
+        email: row.email,
+        whatsapp: row.whatsapp,
+        city: row.city,
+        state: mapFantasyEntryState(row.stateCode),
+        marketingConsent: true,
+        submittedAt: row.submittedAt,
+        picks: []
+      };
+      entryMap.set(row.id, entry);
+      event.entries.push(entry);
+    }
+
+    if (row.fightId && row.fighterId && row.victoryMethod && row.round) {
+      entry.picks.push({
+        fightId: row.fightId,
+        fighterId: row.fighterId,
+        victoryMethod: row.victoryMethod,
+        round: row.round
+      });
+    }
+  }
+
+  return {
+    events: eventResult.rows.map((row) => events.get(row.id)).filter(Boolean)
+  };
+}
+
+async function handleFantasyEvents(event) {
+  if (!assertInternalBearer(event)) {
+    return buildJsonResponse(401, {
+      ok: false,
+      message: "Unauthorized."
+    });
+  }
+
+  try {
+    return buildJsonResponse(200, await loadFantasyEventsPayload());
+  } catch (error) {
+    console.error("fantasy events failed", { error });
 
     return buildJsonResponse(503, {
       ok: false,
@@ -3470,6 +3695,10 @@ export const handler = async (event) => {
 
     if (method === "GET" && rawPath === ADMIN_DATABASE_OVERVIEW_PATH) {
       return await handleAdminDatabaseOverview(event);
+    }
+
+    if (method === "GET" && rawPath === FANTASY_EVENTS_PATH) {
+      return await handleFantasyEvents(event);
     }
 
     if (method === "GET" && rawPath.startsWith(`${ADMIN_DATABASE_ROUTE_BASE}/`)) {

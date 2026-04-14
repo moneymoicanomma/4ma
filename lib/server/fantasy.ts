@@ -17,7 +17,7 @@ import {
   isUpstreamConfigured,
   type ServerEnv
 } from "@/lib/server/env";
-import { postJsonToUpstream } from "@/lib/server/http";
+import { getJsonFromUpstream, postJsonToUpstream } from "@/lib/server/http";
 import type { RequestAuditContext } from "@/lib/server/request-context";
 
 type EventRow = {
@@ -113,9 +113,28 @@ function buildEventSkeleton(row: EventRow): FantasyMockEvent {
   };
 }
 
+async function loadFantasyEventsFromUpstream(env: ServerEnv) {
+  if (!isUpstreamConfigured(env)) {
+    return null;
+  }
+
+  try {
+    return await getJsonFromUpstream<{ events: FantasyMockEvent[] }>(
+      `${env.upstreamApiBaseUrl}${env.fantasyEventsPath}`,
+      {
+        bearerToken: env.upstreamApiBearerToken!,
+        timeoutMs: env.upstreamRequestTimeoutMs
+      }
+    );
+  } catch (error) {
+    console.error("[fantasy] failed to load events from upstream", error);
+    return null;
+  }
+}
+
 export async function loadFantasyEventsFromDatabase(env: ServerEnv = getServerEnv()) {
   if (!isDatabaseConfigured(env)) {
-    return null;
+    return loadFantasyEventsFromUpstream(env);
   }
 
   try {
@@ -299,7 +318,7 @@ export async function loadFantasyEventsFromDatabase(env: ServerEnv = getServerEn
     };
   } catch (error) {
     console.error("[fantasy] failed to load events from database", error);
-    return null;
+    return loadFantasyEventsFromUpstream(env);
   }
 }
 

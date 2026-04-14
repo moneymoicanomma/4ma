@@ -20,6 +20,7 @@ export type ServerEnv = {
   upstreamApiBearerToken: string | null;
   eventFighterAccessPath: string;
   adminDatabaseOverviewPath: string;
+  fantasyEventsPath: string;
   newsletterSubscribePath: string;
   contactMessageSubmitPath: string;
   fighterApplicationSubmitPath: string;
@@ -79,6 +80,10 @@ function createServerEnv(): ServerEnv {
     adminDatabaseOverviewPath: normalizePath(
       process.env.UPSTREAM_ADMIN_DATABASE_OVERVIEW_PATH ?? "",
       "/v1/admin/database-overview"
+    ),
+    fantasyEventsPath: normalizePath(
+      process.env.UPSTREAM_FANTASY_EVENTS_PATH ?? "",
+      "/v1/fantasy/events"
     ),
     newsletterSubscribePath: normalizePath(
       process.env.UPSTREAM_NEWSLETTER_PATH ?? "",
