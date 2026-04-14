@@ -34,9 +34,27 @@ const methodOptions: Array<{
   { value: "finalizacao", label: "Finalização" },
   { value: "nocaute", label: "Nocaute" }
 ];
+const weightClassOptions = [
+  "Peso átomo feminino",
+  "Peso palha feminino",
+  "Peso mosca feminino",
+  "Peso galo feminino",
+  "Peso pena feminino",
+  "Peso mosca",
+  "Peso galo",
+  "Peso pena",
+  "Peso leve",
+  "Peso meio-médio",
+  "Peso médio",
+  "Peso meio-pesado",
+  "Peso pesado",
+  "Peso combinado",
+  "Peso aberto"
+] as const;
 
 const FANTASY_ADMIN_TIME_ZONE = "America/Sao_Paulo";
 const FANTASY_ADMIN_TIME_OFFSET = "-03:00";
+const weightClassOptionSet = new Set<string>(weightClassOptions);
 const dateDisplayFormatter = new Intl.DateTimeFormat("pt-BR", {
   dateStyle: "medium",
   timeStyle: "short",
@@ -117,6 +135,10 @@ function formatDate(value: string) {
   }
 
   return dateDisplayFormatter.format(date);
+}
+
+function getWeightClassSelectValue(label: string) {
+  return weightClassOptionSet.has(label) ? label : "";
 }
 
 function createDraftFight(seed: number, order: number): FantasyMockFight {
@@ -573,7 +595,33 @@ export function FantasyAdminDashboard({
 
                 <div className={styles.formGrid}>
                   <label className={styles.field}>
-                    <span>Categoria</span>
+                    <span>Peso padrão</span>
+                    <select
+                      value={getWeightClassSelectValue(fight.label)}
+                      onChange={(event) => {
+                        const nextValue = event.currentTarget.value;
+
+                        if (!nextValue) {
+                          return;
+                        }
+
+                        updateFight(fight.id, (currentFight) => ({
+                          ...currentFight,
+                          label: nextValue
+                        }));
+                      }}
+                    >
+                      <option value="">Selecione uma categoria</option>
+                      {weightClassOptions.map((weightClass) => (
+                        <option key={weightClass} value={weightClass}>
+                          {weightClass}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <label className={styles.field}>
+                    <span>Categoria exibida</span>
                     <input
                       type="text"
                       value={fight.label}
