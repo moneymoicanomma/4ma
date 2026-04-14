@@ -14,6 +14,7 @@ import { getServerEnv, isDatabaseConfigured, type ServerEnv } from "@/lib/server
 export type AdminSessionIdentity =
   | {
       kind: "account";
+      accountId: string;
       username: string;
       displayName: string;
       role: "admin" | "operator";
@@ -49,6 +50,7 @@ export async function getCurrentAdminSessionIdentity(
     if (session) {
       return {
         kind: "account",
+        accountId: session.accountId,
         username: session.email,
         displayName: session.displayName,
         role: session.role as "admin" | "operator"

@@ -19,6 +19,17 @@ type FantasyAdminDashboardProps = {
   initialEvents: FantasyMockEvent[];
 };
 
+type FantasyAdminSaveResponse =
+  | {
+      ok: true;
+      message: string;
+      event: FantasyMockEvent;
+    }
+  | {
+      ok: false;
+      message: string;
+    };
+
 const statusOptions = [
   { value: "draft", label: "Rascunho" },
   { value: "published", label: "Aberto" },
@@ -193,10 +204,11 @@ export function FantasyAdminDashboard({
   const [selectedEventId, setSelectedEventId] = useState<string | null>(
     getInitialSelectedEventId(initialEvents)
   );
+  const [isSaving, setIsSaving] = useState(false);
   const [notice, setNotice] = useState(
     initialEvents.length
-      ? "Leitura do fantasy já está ligada ao estado atual. A persistência do editor admin é o próximo passo."
-      : "Nenhum evento real foi encontrado no banco. Você pode criar um rascunho local para montar a estrutura."
+      ? "Edite o evento e use salvar para persistir as mudanças reais do fantasy."
+      : "Nenhum evento real foi encontrado no banco. Você pode criar um rascunho local e salvar quando quiser persistir."
   );
 
   const selectedEvent =
@@ -249,7 +261,47 @@ export function FantasyAdminDashboard({
     startTransition(() => {
       setSelectedEventId(fallbackEventId);
     });
-    setNotice("Evento removido da interface. Quando a API entrar, esta ação pode virar delete real.");
+    setNotice("Evento removido só desta sessão local. A exclusão real no banco ainda não está ligada.");
+  }
+
+  async function saveSelectedEvent() {
+    if (!selectedEvent || isSaving) {
+      return;
+    }
+
+    setIsSaving(true);
+    setNotice("Salvando estrutura do evento no banco...");
+
+    try {
+      const response = await fetch("/api/admin/fantasy/events", {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          event: selectedEvent
+        })
+      });
+      const payload = (await response.json().catch(() => null)) as FantasyAdminSaveResponse | null;
+
+      if (!response.ok || !payload?.ok || !payload.event) {
+        setNotice(payload?.message ?? "Não foi possível salvar o evento agora.");
+        return;
+      }
+
+      setEvents((current) =>
+        current.map((event) => (event.id === selectedEvent.id ? payload.event : event))
+      );
+      startTransition(() => {
+        setSelectedEventId(payload.event.id);
+      });
+      setNotice(payload.message);
+    } catch {
+      setNotice("Não foi possível salvar o evento agora.");
+    } finally {
+      setIsSaving(false);
+    }
   }
 
   function addFight() {
@@ -358,15 +410,14 @@ export function FantasyAdminDashboard({
                   className={styles.secondaryButton}
                   type="button"
                   onClick={() => {
-                    setNotice(
-                      "Esta tela já ajuda a revisar o estado atual do fantasy. O save persistido do editor admin ainda é o próximo passo."
-                    );
+                    void saveSelectedEvent();
                   }}
+                  disabled={isSaving}
                 >
-                  Salvar estrutura
+                  {isSaving ? "Salvando..." : "Salvar estrutura"}
                 </button>
                 <button className={styles.ghostButton} type="button" onClick={deleteSelectedEvent}>
-                  Deletar evento
+                  Remover da sessão
                 </button>
               </div>
             </section>
@@ -882,8 +933,8 @@ export function FantasyAdminDashboard({
               <span className={styles.kicker}>Sem evento selecionado</span>
               <h3>Nenhum evento real foi carregado ainda.</h3>
               <p>
-                Você pode criar um rascunho local para desenhar a estrutura, mas ele não será salvo no
-                banco até a etapa de persistência ser implementada.
+                Você pode criar um rascunho local para desenhar a estrutura e salvar quando quiser
+                persistir esse evento no banco.
               </p>
               <div className={styles.commandActions}>
                 <button className={styles.primaryButton} type="button" onClick={addEvent}>

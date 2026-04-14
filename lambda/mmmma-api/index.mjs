@@ -25,6 +25,7 @@ const CONTACT_MESSAGES_PATH = "/v1/contact-messages";
 const FIGHTER_APPLICATIONS_PATH = "/v1/fighter-applications";
 const PARTNER_INQUIRIES_PATH = "/v1/partner-inquiries";
 const FANTASY_EVENTS_PATH = "/v1/fantasy/events";
+const ADMIN_FANTASY_EVENTS_PATH = "/v1/admin/fantasy/events";
 const FANTASY_ENTRIES_PATH = "/v1/fantasy/entries";
 const HEALTHCHECK_PATH = "/health";
 const ADMIN_TABLE_PREVIEW_LIMIT = 6;
@@ -118,6 +119,11 @@ const ADMIN_SOURCE_LABELS = {
   partner_inquiry: "Parceria",
   press_newsletter: "Newsletter imprensa"
 };
+const FANTASY_ADMIN_STATUS_VALUES = new Set(["draft", "published", "locked", "finished"]);
+const FANTASY_ADMIN_VICTORY_METHODS = new Set(["decisao", "finalizacao", "nocaute"]);
+const FANTASY_ADMIN_ROUNDS = new Set([1, 2, 3, 4, 5]);
+const UUID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 let pool;
 
@@ -249,6 +255,26 @@ function normalizeText(value) {
 function normalizeNullableText(value) {
   const normalized = normalizeText(value);
   return normalized || null;
+}
+
+function normalizeFantasyAdminText(value) {
+  return typeof value === "string" ? value.trim().replace(/\s+/g, " ") : "";
+}
+
+function normalizeFantasyAdminSlug(value, fallback) {
+  const base = normalizeFantasyAdminText(value) || fallback;
+
+  return base
+    .normalize("NFD")
+    .replace(/\p{M}/gu, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .replace(/-{2,}/g, "-");
+}
+
+function isUuid(value) {
+  return typeof value === "string" && UUID_PATTERN.test(value);
 }
 
 function toDatabaseEventPhotoFieldName(fieldName) {
@@ -1135,31 +1161,671 @@ function buildFantasyEventSkeleton(row) {
   };
 }
 
-async function loadFantasyEventsPayload() {
-  const eventResult = await getDatabasePool().query(`
-    select
-      e.id,
-      e.slug,
-      e.name,
-      e.status,
-      e.starts_at as "startsAt",
-      e.lock_at as "lockAt",
-      e.venue_name as venue,
-      e.city_name as "cityName",
-      e.state_code as "stateCode",
-      e.hero_label as "heroLabel",
-      e.broadcast_label as "broadcastLabel",
-      e.status_text as "statusText",
-      sp.winner_points as "winnerPoints",
-      sp.method_points as "methodPoints",
-      sp.round_points as "roundPoints",
-      sp.perfect_pick_bonus as "perfectPickBonus"
-    from app.events e
-    join app.fantasy_scoring_profiles sp
-      on sp.id = e.scoring_profile_id
-    where e.status <> 'archived'
-    order by e.starts_at desc, e.created_at desc
-  `);
+class FantasyAdminEventSaveValidationError extends Error {
+  constructor(message) {
+    super(message);
+    this.name = "FantasyAdminEventSaveValidationError";
+  }
+}
+
+function ensureFantasyAdminText(value, label, minimumLength = 1) {
+  if (value.length < minimumLength) {
+    throw new FantasyAdminEventSaveValidationError(`${label} precisa ser preenchido.`);
+  }
+
+  return value;
+}
+
+function parseFantasyAdminDate(value, label) {
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    throw new FantasyAdminEventSaveValidationError(`${label} está com uma data inválida.`);
+  }
+
+  return date.toISOString();
+}
+
+function parseFantasyAdminCityLabel(value) {
+  const normalized = ensureFantasyAdminText(
+    normalizeFantasyAdminText(value),
+    "Cidade / Estado",
+    2
+  );
+  const [cityPart, statePart] = normalized.split(",").map((part) => part.trim());
+
+  return {
+    cityName: ensureFantasyAdminText(cityPart || normalized, "Cidade / Estado", 2),
+    stateCode: statePart ? getBrazilianStateCode(statePart) || null : null
+  };
+}
+
+function normalizeFantasyAdminScoringRules(input) {
+  const winner = Number(input?.winner);
+  const method = Number(input?.method);
+  const round = Number(input?.round);
+  const perfectPickBonus = Number(input?.perfectPickBonus);
+
+  return {
+    winner: Number.isFinite(winner) && winner >= 0 ? Math.trunc(winner) : 10,
+    method: Number.isFinite(method) && method >= 0 ? Math.trunc(method) : 6,
+    round: Number.isFinite(round) && round >= 0 ? Math.trunc(round) : 4,
+    perfectPickBonus:
+      Number.isFinite(perfectPickBonus) && perfectPickBonus >= 0
+        ? Math.trunc(perfectPickBonus)
+        : 3
+  };
+}
+
+function normalizeFantasyAdminCorner(corner, fallbackPrefix) {
+  const originalId =
+    normalizeFantasyAdminText(corner?.id) || `${fallbackPrefix}-${randomUUID()}`;
+
+  return {
+    id: isUuid(corner?.id) ? corner.id : null,
+    originalId,
+    name: ensureFantasyAdminText(
+      normalizeFantasyAdminText(corner?.name),
+      "Nome do atleta",
+      2
+    ),
+    country: ensureFantasyAdminText(
+      normalizeFantasyAdminText(corner?.country) || "Brasil",
+      "País",
+      2
+    )
+  };
+}
+
+function normalizeFantasyAdminFightResult(fight, redCornerOriginalId, blueCornerOriginalId) {
+  const winnerId = normalizeFantasyAdminText(fight?.result?.winnerId);
+  const victoryMethod = normalizeFantasyAdminText(fight?.result?.victoryMethod);
+  const round = Number(fight?.result?.round);
+
+  if (!winnerId && !victoryMethod && !fight?.result?.round) {
+    return null;
+  }
+
+  if (
+    !winnerId ||
+    !FANTASY_ADMIN_VICTORY_METHODS.has(victoryMethod) ||
+    !FANTASY_ADMIN_ROUNDS.has(round)
+  ) {
+    throw new FantasyAdminEventSaveValidationError(
+      "O resultado oficial precisa ter vencedor, método e round válidos."
+    );
+  }
+
+  const winnerSide =
+    winnerId === redCornerOriginalId ? "red" : winnerId === blueCornerOriginalId ? "blue" : null;
+
+  if (!winnerSide) {
+    throw new FantasyAdminEventSaveValidationError(
+      "O vencedor oficial precisa ser um dos atletas da luta."
+    );
+  }
+
+  if (round > (fight?.maxRound === 5 ? 5 : 3)) {
+    throw new FantasyAdminEventSaveValidationError(
+      "O round oficial não pode ser maior que o total de rounds da luta."
+    );
+  }
+
+  return {
+    winnerSide,
+    victoryMethod,
+    round
+  };
+}
+
+function normalizeFantasyAdminEventPayload(payload) {
+  if (!payload || typeof payload !== "object") {
+    throw new FantasyAdminEventSaveValidationError("Evento inválido para salvar.");
+  }
+
+  const name = ensureFantasyAdminText(
+    normalizeFantasyAdminText(payload.name),
+    "Nome do evento",
+    3
+  );
+  const slug = normalizeFantasyAdminSlug(payload.slug, name);
+
+  if (!slug) {
+    throw new FantasyAdminEventSaveValidationError("Slug do evento inválido.");
+  }
+
+  const startsAt = parseFantasyAdminDate(payload.startsAt, "Início do evento");
+  const lockAt = parseFantasyAdminDate(payload.lockAt, "Lock das picks");
+
+  if (new Date(lockAt).getTime() > new Date(startsAt).getTime()) {
+    throw new FantasyAdminEventSaveValidationError(
+      "O lock das picks precisa acontecer antes do início do evento."
+    );
+  }
+
+  if (!FANTASY_ADMIN_STATUS_VALUES.has(payload.status)) {
+    throw new FantasyAdminEventSaveValidationError("Status do evento inválido.");
+  }
+
+  const city = parseFantasyAdminCityLabel(payload.cityLabel);
+  const fights = (Array.isArray(payload.fights) ? payload.fights : []).map((fight, index) => {
+    const maxRound = fight?.maxRound === 5 ? 5 : 3;
+    const redCorner = normalizeFantasyAdminCorner(fight?.redCorner, `red-${index + 1}`);
+    const blueCorner = normalizeFantasyAdminCorner(fight?.blueCorner, `blue-${index + 1}`);
+
+    if (redCorner.originalId === blueCorner.originalId) {
+      throw new FantasyAdminEventSaveValidationError(
+        "Cada luta precisa ter dois atletas diferentes."
+      );
+    }
+
+    return {
+      id: isUuid(fight?.id) ? fight.id : null,
+      order: index + 1,
+      label: ensureFantasyAdminText(
+        normalizeFantasyAdminText(fight?.label),
+        "Categoria da luta",
+        2
+      ),
+      maxRound,
+      redCorner,
+      blueCorner,
+      result: normalizeFantasyAdminFightResult(
+        { ...fight, maxRound },
+        redCorner.originalId,
+        blueCorner.originalId
+      )
+    };
+  });
+
+  return {
+    id: isUuid(payload.id) ? payload.id : null,
+    slug,
+    name,
+    status: payload.status,
+    startsAt,
+    lockAt,
+    venue: ensureFantasyAdminText(
+      normalizeFantasyAdminText(payload.venue),
+      "Venue",
+      2
+    ),
+    cityName: city.cityName,
+    stateCode: city.stateCode,
+    heroLabel:
+      normalizeFantasyAdminText(payload.heroLabel) || "Fantasy oficial do card",
+    broadcastLabel:
+      normalizeFantasyAdminText(payload.broadcastLabel) || "Canal Money Moicano",
+    statusText: normalizeFantasyAdminText(payload.statusText),
+    scoringRules: normalizeFantasyAdminScoringRules(payload.scoringRules),
+    fights
+  };
+}
+
+async function ensureFantasyAdminScoringProfile(client, scoringRules, actorAccountId) {
+  const existingProfileResult = await client.query(
+    `
+      select id
+      from app.fantasy_scoring_profiles
+      where winner_points = $1
+        and method_points = $2
+        and round_points = $3
+        and perfect_pick_bonus = $4
+      order by is_default desc, created_at asc
+      limit 1
+    `,
+    [
+      scoringRules.winner,
+      scoringRules.method,
+      scoringRules.round,
+      scoringRules.perfectPickBonus
+    ]
+  );
+
+  const existingProfileId = existingProfileResult.rows[0]?.id;
+
+  if (existingProfileId) {
+    return existingProfileId;
+  }
+
+  const profileName = `Fantasy ${scoringRules.winner}-${scoringRules.method}-${scoringRules.round}-${scoringRules.perfectPickBonus}`;
+  const insertResult = await client.query(
+    `
+      insert into app.fantasy_scoring_profiles (
+        name,
+        description,
+        winner_points,
+        method_points,
+        round_points,
+        perfect_pick_bonus,
+        is_default,
+        created_by_account_id
+      )
+      values ($1, $2, $3, $4, $5, $6, false, $7::uuid)
+      on conflict (name) do update
+      set
+        description = excluded.description,
+        winner_points = excluded.winner_points,
+        method_points = excluded.method_points,
+        round_points = excluded.round_points,
+        perfect_pick_bonus = excluded.perfect_pick_bonus,
+        updated_at = now()
+      returning id
+    `,
+    [
+      profileName,
+      "Perfil criado pelo editor administrativo do fantasy.",
+      scoringRules.winner,
+      scoringRules.method,
+      scoringRules.round,
+      scoringRules.perfectPickBonus,
+      actorAccountId
+    ]
+  );
+
+  return insertResult.rows[0].id;
+}
+
+async function upsertFantasyAdminCorner(client, eventId, corner) {
+  if (corner.id) {
+    const existingCornerResult = await client.query(
+      `
+        select
+          ef.id,
+          ef.fighter_id as "fighterId"
+        from app.event_fighters ef
+        where ef.id = $1::uuid
+          and ef.event_id = $2::uuid
+        limit 1
+      `,
+      [corner.id, eventId]
+    );
+    const existingCorner = existingCornerResult.rows[0];
+
+    if (existingCorner) {
+      await client.query(
+        `
+          update app.event_fighters
+          set
+            card_name = $2,
+            updated_at = now()
+          where id = $1::uuid
+        `,
+        [existingCorner.id, corner.name]
+      );
+
+      await client.query(
+        `
+          update app.fighters
+          set
+            country_name = $2,
+            updated_at = now()
+          where id = $1::uuid
+        `,
+        [existingCorner.fighterId, corner.country]
+      );
+
+      return existingCorner.id;
+    }
+  }
+
+  const fighterId = randomUUID();
+  const fighterSlug = `${normalizeFantasyAdminSlug(corner.name, "fighter") || "fighter"}-${fighterId.slice(0, 8)}`;
+  const eventFighterId = randomUUID();
+
+  await client.query(
+    `
+      insert into app.fighters (
+        id,
+        slug,
+        display_name,
+        country_name,
+        image_url,
+        is_active
+      )
+      values ($1::uuid, $2, $3, $4, null, true)
+    `,
+    [fighterId, fighterSlug, corner.name, corner.country]
+  );
+
+  await client.query(
+    `
+      insert into app.event_fighters (
+        id,
+        event_id,
+        fighter_id,
+        card_name
+      )
+      values ($1::uuid, $2::uuid, $3::uuid, $4)
+    `,
+    [eventFighterId, eventId, fighterId, corner.name]
+  );
+
+  return eventFighterId;
+}
+
+async function saveFantasyAdminEventPayload(payload, actor, requestContext) {
+  const normalizedEvent = normalizeFantasyAdminEventPayload(payload);
+  const actorAccountId = isUuid(actor?.accountId) ? actor.accountId : null;
+  const eventId = await withDatabaseTransaction(
+    {
+      actorId: actorAccountId,
+      actorRole:
+        actor?.role === "operator" || actor?.role === "admin" ? actor.role : "admin",
+      actorEmail: normalizeEmail(actor?.email) || null,
+      requestId: normalizeFantasyAdminText(requestContext?.requestId) || randomUUID(),
+      clientIp: normalizeNullableText(requestContext?.clientIp),
+      origin: normalizeNullableText(requestContext?.requestOrigin),
+      userAgent: normalizeNullableText(requestContext?.userAgent),
+      requestIpHash: normalizeNullableText(requestContext?.requestIpHash)
+    },
+    async (client) => {
+      const scoringProfileId = await ensureFantasyAdminScoringProfile(
+        client,
+        normalizedEvent.scoringRules,
+        actorAccountId
+      );
+      const existingEventResult = normalizedEvent.id
+        ? await client.query(
+            `
+              select
+                id,
+                published_at as "publishedAt",
+                finished_at as "finishedAt"
+              from app.events
+              where id = $1::uuid
+              limit 1
+            `,
+            [normalizedEvent.id]
+          )
+        : { rows: [] };
+      const existingEvent = existingEventResult.rows[0] ?? null;
+      const persistedEventId = existingEvent?.id ?? normalizedEvent.id ?? randomUUID();
+      const publishedAt =
+        normalizedEvent.status === "draft"
+          ? null
+          : existingEvent?.publishedAt ?? new Date().toISOString();
+      const finishedAt =
+        normalizedEvent.status === "finished"
+          ? existingEvent?.finishedAt ?? new Date().toISOString()
+          : null;
+
+      await client.query(
+        `
+          insert into app.events (
+            id,
+            slug,
+            name,
+            status,
+            starts_at,
+            lock_at,
+            venue_name,
+            city_name,
+            state_code,
+            hero_label,
+            broadcast_label,
+            status_text,
+            published_at,
+            finished_at,
+            scoring_profile_id,
+            created_by_account_id,
+            updated_by_account_id
+          )
+          values (
+            $1::uuid,
+            $2,
+            $3,
+            $4::app.event_status_enum,
+            $5,
+            $6,
+            $7,
+            $8,
+            $9::char(2),
+            $10,
+            $11,
+            $12,
+            $13,
+            $14,
+            $15::uuid,
+            $16::uuid,
+            $17::uuid
+          )
+          on conflict (id) do update
+          set
+            slug = excluded.slug,
+            name = excluded.name,
+            status = excluded.status,
+            starts_at = excluded.starts_at,
+            lock_at = excluded.lock_at,
+            venue_name = excluded.venue_name,
+            city_name = excluded.city_name,
+            state_code = excluded.state_code,
+            hero_label = excluded.hero_label,
+            broadcast_label = excluded.broadcast_label,
+            status_text = excluded.status_text,
+            published_at = excluded.published_at,
+            finished_at = excluded.finished_at,
+            scoring_profile_id = excluded.scoring_profile_id,
+            updated_by_account_id = excluded.updated_by_account_id,
+            updated_at = now()
+        `,
+        [
+          persistedEventId,
+          normalizedEvent.slug,
+          normalizedEvent.name,
+          normalizedEvent.status,
+          normalizedEvent.startsAt,
+          normalizedEvent.lockAt,
+          normalizedEvent.venue,
+          normalizedEvent.cityName,
+          normalizedEvent.stateCode,
+          normalizedEvent.heroLabel,
+          normalizedEvent.broadcastLabel,
+          normalizedEvent.statusText,
+          publishedAt,
+          finishedAt,
+          scoringProfileId,
+          actorAccountId,
+          actorAccountId
+        ]
+      );
+
+      const persistedFightIds = [];
+
+      for (const fight of normalizedEvent.fights) {
+        const redCornerEventFighterId = await upsertFantasyAdminCorner(
+          client,
+          persistedEventId,
+          fight.redCorner
+        );
+        const blueCornerEventFighterId = await upsertFantasyAdminCorner(
+          client,
+          persistedEventId,
+          fight.blueCorner
+        );
+
+        if (redCornerEventFighterId === blueCornerEventFighterId) {
+          throw new FantasyAdminEventSaveValidationError(
+            "Uma luta não pode usar o mesmo atleta nos dois corners."
+          );
+        }
+
+        const existingFightResult = fight.id
+          ? await client.query(
+              `
+                select id
+                from app.fights
+                where id = $1::uuid
+                  and event_id = $2::uuid
+                limit 1
+              `,
+              [fight.id, persistedEventId]
+            )
+          : { rows: [] };
+        const fightId = existingFightResult.rows[0]?.id ?? fight.id ?? randomUUID();
+        const winnerEventFighterId =
+          fight.result?.winnerSide === "red"
+            ? redCornerEventFighterId
+            : fight.result?.winnerSide === "blue"
+              ? blueCornerEventFighterId
+              : null;
+
+        await client.query(
+          `
+            insert into app.fights (
+              id,
+              event_id,
+              display_order,
+              label,
+              max_rounds,
+              red_corner_event_fighter_id,
+              blue_corner_event_fighter_id
+            )
+            values (
+              $1::uuid,
+              $2::uuid,
+              $3,
+              $4,
+              $5,
+              $6::uuid,
+              $7::uuid
+            )
+            on conflict (id) do update
+            set
+              event_id = excluded.event_id,
+              display_order = excluded.display_order,
+              label = excluded.label,
+              max_rounds = excluded.max_rounds,
+              red_corner_event_fighter_id = excluded.red_corner_event_fighter_id,
+              blue_corner_event_fighter_id = excluded.blue_corner_event_fighter_id,
+              updated_at = now()
+          `,
+          [
+            fightId,
+            persistedEventId,
+            fight.order,
+            fight.label,
+            fight.maxRound,
+            redCornerEventFighterId,
+            blueCornerEventFighterId
+          ]
+        );
+
+        if (fight.result && winnerEventFighterId) {
+          await client.query(
+            `
+              insert into app.fight_results (
+                fight_id,
+                winner_event_fighter_id,
+                victory_method,
+                official_round,
+                decided_by_account_id
+              )
+              values (
+                $1::uuid,
+                $2::uuid,
+                $3::app.victory_method_enum,
+                $4,
+                $5::uuid
+              )
+              on conflict (fight_id) do update
+              set
+                winner_event_fighter_id = excluded.winner_event_fighter_id,
+                victory_method = excluded.victory_method,
+                official_round = excluded.official_round,
+                decided_by_account_id = excluded.decided_by_account_id,
+                decided_at = now(),
+                updated_at = now()
+            `,
+            [
+              fightId,
+              winnerEventFighterId,
+              fight.result.victoryMethod,
+              fight.result.round,
+              actorAccountId
+            ]
+          );
+        } else {
+          await client.query("delete from app.fight_results where fight_id = $1::uuid", [fightId]);
+        }
+
+        persistedFightIds.push(fightId);
+      }
+
+      if (persistedFightIds.length) {
+        await client.query(
+          `
+            delete from app.fights
+            where event_id = $1::uuid
+              and not (id = any($2::uuid[]))
+          `,
+          [persistedEventId, persistedFightIds]
+        );
+      } else {
+        await client.query("delete from app.fights where event_id = $1::uuid", [persistedEventId]);
+      }
+
+      await client.query(
+        `
+          delete from app.event_fighters ef
+          where ef.event_id = $1::uuid
+            and not exists (
+              select 1
+              from app.fights fight
+              where fight.red_corner_event_fighter_id = ef.id
+                 or fight.blue_corner_event_fighter_id = ef.id
+            )
+        `,
+        [persistedEventId]
+      );
+
+      return persistedEventId;
+    }
+  );
+
+  const payloadAfterSave = await loadFantasyEventsPayload(eventId);
+  const eventAfterSave = payloadAfterSave.events.find((event) => event.id === eventId) ?? null;
+
+  if (!eventAfterSave) {
+    return null;
+  }
+
+  return {
+    ok: true,
+    message: "Evento salvo no banco com sucesso.",
+    event: eventAfterSave
+  };
+}
+
+async function loadFantasyEventsPayload(targetEventId = null) {
+  const eventResult = await getDatabasePool().query(
+    `
+      select
+        e.id,
+        e.slug,
+        e.name,
+        e.status,
+        e.starts_at as "startsAt",
+        e.lock_at as "lockAt",
+        e.venue_name as venue,
+        e.city_name as "cityName",
+        e.state_code as "stateCode",
+        e.hero_label as "heroLabel",
+        e.broadcast_label as "broadcastLabel",
+        e.status_text as "statusText",
+        sp.winner_points as "winnerPoints",
+        sp.method_points as "methodPoints",
+        sp.round_points as "roundPoints",
+        sp.perfect_pick_bonus as "perfectPickBonus"
+      from app.events e
+      join app.fantasy_scoring_profiles sp
+        on sp.id = e.scoring_profile_id
+      where e.status <> 'archived'
+        and ($1::uuid is null or e.id = $1::uuid)
+      order by e.starts_at desc, e.created_at desc
+    `,
+    [targetEventId]
+  );
 
   if (!eventResult.rowCount) {
     return {
@@ -1183,11 +1849,11 @@ async function loadFantasyEventsPayload() {
         f.label,
         f.max_rounds as "maxRound",
         red_ef.id as "redCornerId",
-        red_f.display_name as "redCornerName",
+        coalesce(red_ef.card_name, red_f.display_name) as "redCornerName",
         red_f.country_name as "redCornerCountry",
         red_f.image_url as "redCornerImageUrl",
         blue_ef.id as "blueCornerId",
-        blue_f.display_name as "blueCornerName",
+        coalesce(blue_ef.card_name, blue_f.display_name) as "blueCornerName",
         blue_f.country_name as "blueCornerCountry",
         blue_f.image_url as "blueCornerImageUrl",
         fr.winner_event_fighter_id as "winnerId",
@@ -1322,6 +1988,57 @@ async function handleFantasyEvents(event) {
     return buildJsonResponse(200, await loadFantasyEventsPayload());
   } catch (error) {
     console.error("fantasy events failed", { error });
+
+    return buildJsonResponse(503, {
+      ok: false,
+      message: "Serviço temporariamente indisponível."
+    });
+  }
+}
+
+async function handleAdminFantasyEvents(event) {
+  if (!assertInternalBearer(event)) {
+    return buildJsonResponse(401, {
+      ok: false,
+      message: "Unauthorized."
+    });
+  }
+
+  let body;
+
+  try {
+    body = parseJsonBody(event);
+  } catch {
+    return buildJsonResponse(400, {
+      ok: false,
+      message: "Invalid JSON body."
+    });
+  }
+
+  const payload = getPayloadBody(body);
+  const actor = body?.actor ?? {};
+  const requestContext = body?.requestContext ?? {};
+
+  try {
+    const responsePayload = await saveFantasyAdminEventPayload(payload, actor, requestContext);
+
+    if (!responsePayload) {
+      return buildJsonResponse(503, {
+        ok: false,
+        message: "Serviço temporariamente indisponível."
+      });
+    }
+
+    return buildJsonResponse(200, responsePayload);
+  } catch (error) {
+    if (error instanceof FantasyAdminEventSaveValidationError) {
+      return buildJsonResponse(400, {
+        ok: false,
+        message: error.message
+      });
+    }
+
+    console.error("admin fantasy save failed", { error });
 
     return buildJsonResponse(503, {
       ok: false,
@@ -3750,6 +4467,10 @@ export const handler = async (event) => {
 
     if (method === "POST" && rawPath === PARTNER_INQUIRIES_PATH) {
       return await handlePartnerInquiries(event);
+    }
+
+    if (method === "POST" && rawPath === ADMIN_FANTASY_EVENTS_PATH) {
+      return await handleAdminFantasyEvents(event);
     }
 
     if (method === "POST" && rawPath === FANTASY_ENTRIES_PATH) {

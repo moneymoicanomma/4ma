@@ -119,6 +119,17 @@
   border-color: rgba(232, 24, 26, 0.3);
 }
 
+.primaryButton:disabled,
+.secondaryButton:disabled,
+.ghostButton:disabled,
+.inlineButton:disabled,
+.toggleButton:disabled,
+.roundButton:disabled {
+  cursor: wait;
+  opacity: 0.68;
+  transform: none;
+}
+
 .toggleButtonSelected {
   border-color: rgba(232, 24, 26, 0.82);
   background: rgba(232, 24, 26, 0.92);
