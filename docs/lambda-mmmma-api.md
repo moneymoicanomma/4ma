@@ -30,8 +30,19 @@ Obrigatorias:
 ```bash
 DATABASE_URL=postgresql://usuario:senha@host:5432/mmmma
 DATABASE_SSL_MODE=require
-INTERNAL_API_BEARER_TOKEN=gere-um-token-longo-e-aleatorio
+DATABASE_SSL_ALLOW_INVALID_CERTIFICATES=false
+PUBLIC_API_BEARER_TOKEN=gere-um-token-longo-so-para-formularios-publicos
+PORTAL_API_BEARER_TOKEN=gere-um-token-longo-so-para-o-portal
+ADMIN_READ_API_BEARER_TOKEN=gere-um-token-longo-so-para-leituras-admin
+ADMIN_WRITE_API_BEARER_TOKEN=gere-um-token-longo-so-para-escritas-admin
 APP_ENCRYPTION_KEY=gere-um-segredo-longo-e-aleatorio
+```
+
+Compatibilidade temporaria:
+
+```bash
+# legado: se estiver definido, ainda funciona como fallback para todas as superficies
+INTERNAL_API_BEARER_TOKEN=token-legado
 ```
 
 Opcional para Google Sheets com token dedicado:
@@ -120,12 +131,17 @@ Configurar:
 
 ```bash
 UPSTREAM_API_BASE_URL=https://rufyyaot4xzcbx4tapzd72hgoa0icnnk.lambda-url.us-east-2.on.aws
-UPSTREAM_API_BEARER_TOKEN=mesmo-token-da-lambda
+UPSTREAM_PUBLIC_WRITE_BEARER_TOKEN=<mesmo-valor-de-PUBLIC_API_BEARER_TOKEN>
+UPSTREAM_PORTAL_BEARER_TOKEN=<mesmo-valor-de-PORTAL_API_BEARER_TOKEN>
+UPSTREAM_ADMIN_READ_BEARER_TOKEN=<mesmo-valor-de-ADMIN_READ_API_BEARER_TOKEN>
+UPSTREAM_ADMIN_WRITE_BEARER_TOKEN=<mesmo-valor-de-ADMIN_WRITE_API_BEARER_TOKEN>
 UPSTREAM_ADMIN_DATABASE_OVERVIEW_PATH=/v1/admin/database-overview
 EVENT_FIGHTER_PORTAL_ENABLED=true
 EVENT_FIGHTER_ACCESS_AUTH_MODE=shared_password
 ATHLETE_FORM_PASSWORD=<senha-compartilhada>
 ATHLETE_FORM_SESSION_SECRET=<segredo-do-cookie>
+UPSTREAM_FANTASY_EVENTS_PATH=/v1/fantasy/events
+UPSTREAM_ADMIN_FANTASY_EVENTS_PATH=/v1/admin/fantasy/events
 UPSTREAM_EVENT_FIGHTER_INTAKE_PATH=/v1/event-fighter-intakes
 UPSTREAM_FANTASY_ENTRY_PATH=/v1/fantasy/entries
 ```

@@ -5,11 +5,16 @@ import { randomUUID } from "node:crypto";
 import { getBrazilianStateCode } from "@/lib/contracts/brazilian-states";
 import { type EventFighterIntakeSubmission } from "@/lib/contracts/event-fighter-intake";
 import { queryDatabase, withDatabaseTransaction } from "@/lib/server/database";
-import { deleteFighterPhotos } from "@/lib/server/fighter-photo-storage";
 import {
+  deleteFighterPhotos,
+  validateStagedFighterPhotoUpload
+} from "@/lib/server/fighter-photo-storage";
+import {
+  getPortalUpstreamBearerToken,
   getServerEnv,
   isDatabaseConfigured,
-  isUpstreamConfigured,
+  isFighterPhotoStorageConfigured,
+  isPortalUpstreamConfigured,
   type ServerEnv
 } from "@/lib/server/env";
 import type { RequestAuditContext } from "@/lib/server/request-context";
@@ -18,7 +23,7 @@ type EventFighterIntakeSubmitResult =
   | { ok: true }
   | {
       ok: false;
-      reason: "not_configured" | "upstream_error";
+      reason: "not_configured" | "upstream_error" | "invalid_uploads";
       status?: number;
       message?: string;
     };
@@ -790,6 +795,30 @@ export async function submitEventFighterIntake(
 ): Promise<EventFighterIntakeSubmitResult> {
   const uploadedPhotoTargets = getUploadedPhotoTargets(submission);
 
+  if (submission.photos.length > 0 && isFighterPhotoStorageConfigured(env)) {
+    const validations = await Promise.all(
+      submission.photos.map((photo) =>
+        validateStagedFighterPhotoUpload({
+          bucket: photo.bucket,
+          objectKey: photo.objectKey,
+          contentType: photo.contentType,
+          byteSize: photo.byteSize,
+          storageProvider: photo.storageProvider,
+          env
+        })
+      )
+    );
+
+    if (validations.some((isValid) => !isValid)) {
+      return {
+        ok: false,
+        reason: "invalid_uploads",
+        status: 400,
+        message: "Uma ou mais fotos não puderam ser validadas com segurança."
+      };
+    }
+  }
+
   if (isDatabaseConfigured(env) && env.appEncryptionKey) {
     try {
       if (options.authenticatedAccountId) {
@@ -821,7 +850,7 @@ export async function submitEventFighterIntake(
 
       return { ok: true };
     } catch {
-      if (!isUpstreamConfigured(env)) {
+      if (!isPortalUpstreamConfigured(env)) {
         await deleteFighterPhotos(uploadedPhotoTargets, env);
 
         return {
@@ -832,7 +861,7 @@ export async function submitEventFighterIntake(
     }
   }
 
-  if (isUpstreamConfigured(env)) {
+  if (isPortalUpstreamConfigured(env)) {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), env.upstreamRequestTimeoutMs);
 
@@ -841,7 +870,7 @@ export async function submitEventFighterIntake(
         method: "POST",
         headers: {
           Accept: "application/json",
-          Authorization: `Bearer ${env.upstreamApiBearerToken!}`,
+          Authorization: `Bearer ${getPortalUpstreamBearerToken(env)!}`,
           "Content-Type": "application/json"
         },
         body: JSON.stringify({

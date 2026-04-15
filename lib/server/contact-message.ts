@@ -3,9 +3,10 @@ import "server-only";
 import type { ContactMessagePayload } from "@/lib/contracts/contact-message";
 import { withDatabaseTransaction } from "@/lib/server/database";
 import {
+  getPublicWriteUpstreamBearerToken,
   getServerEnv,
   isDatabaseConfigured,
-  isUpstreamConfigured,
+  isPublicUpstreamConfigured,
   type ServerEnv
 } from "@/lib/server/env";
 import { postJsonToUpstream } from "@/lib/server/http";
@@ -85,7 +86,7 @@ export async function submitContactMessage(
 
       return { ok: true };
     } catch {
-      if (!isUpstreamConfigured(env)) {
+      if (!isPublicUpstreamConfigured(env)) {
         return {
           ok: false,
           reason: "upstream_error"
@@ -94,7 +95,7 @@ export async function submitContactMessage(
     }
   }
 
-  if (!isUpstreamConfigured(env)) {
+  if (!isPublicUpstreamConfigured(env)) {
     return {
       ok: false,
       reason: "not_configured"
@@ -109,7 +110,7 @@ export async function submitContactMessage(
         requestContext
       },
       {
-        bearerToken: env.upstreamApiBearerToken!,
+        bearerToken: getPublicWriteUpstreamBearerToken(env)!,
         timeoutMs: env.upstreamRequestTimeoutMs
       }
     );

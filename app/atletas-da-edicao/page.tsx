@@ -57,6 +57,10 @@ async function resolveAuthenticatedEmail(env: ServerEnv) {
 
   const authConfig = getEventFighterAuthConfig();
 
+  if (!authConfig.sessionSecret) {
+    return null;
+  }
+
   const session = verifyEventFighterSessionToken(sessionToken, authConfig.sessionSecret);
 
   if (!session) {

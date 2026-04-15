@@ -3,9 +3,10 @@ import "server-only";
 import type { PartnerInquiryPayload } from "@/lib/contracts/partner-inquiry";
 import { withDatabaseTransaction } from "@/lib/server/database";
 import {
+  getPublicWriteUpstreamBearerToken,
   getServerEnv,
   isDatabaseConfigured,
-  isUpstreamConfigured,
+  isPublicUpstreamConfigured,
   type ServerEnv
 } from "@/lib/server/env";
 import { postJsonToUpstream } from "@/lib/server/http";
@@ -91,7 +92,7 @@ export async function submitPartnerInquiry(
 
       return { ok: true };
     } catch {
-      if (!isUpstreamConfigured(env)) {
+      if (!isPublicUpstreamConfigured(env)) {
         return {
           ok: false,
           reason: "upstream_error"
@@ -100,7 +101,7 @@ export async function submitPartnerInquiry(
     }
   }
 
-  if (!isUpstreamConfigured(env)) {
+  if (!isPublicUpstreamConfigured(env)) {
     return {
       ok: false,
       reason: "not_configured"
@@ -115,7 +116,7 @@ export async function submitPartnerInquiry(
         requestContext
       },
       {
-        bearerToken: env.upstreamApiBearerToken!,
+        bearerToken: getPublicWriteUpstreamBearerToken(env)!,
         timeoutMs: env.upstreamRequestTimeoutMs
       }
     );

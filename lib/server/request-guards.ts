@@ -72,6 +72,13 @@ export function isAllowedRequestOrigin(
   return getAllowedOriginFromHeaders(request, allowedOrigins) !== null;
 }
 
+const sameOriginOnly = new Set<string>();
+
+export function isSameOriginRequest(request: NextRequest) {
+  const requestOrigin = request.nextUrl.origin;
+  return getAllowedOriginFromHeaders(request, sameOriginOnly) === requestOrigin;
+}
+
 export function getPublicMutationCorsHeaders(
   request: NextRequest,
   allowedOrigins: ReadonlySet<string>

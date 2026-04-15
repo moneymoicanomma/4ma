@@ -4,6 +4,7 @@ import { createHash, randomUUID } from "node:crypto";
 import path from "node:path";
 
 import {
+  HeadObjectCommand,
   DeleteObjectCommand,
   PutObjectCommand,
   S3Client
@@ -33,6 +34,45 @@ export type StagedFighterPhotoUploadTarget = {
   byteSize: number;
   storageProvider: string;
 };
+
+export async function validateStagedFighterPhotoUpload(options: {
+  bucket: string;
+  objectKey: string;
+  contentType: string;
+  byteSize: number;
+  storageProvider: string;
+  env?: ServerEnv;
+}) {
+  const env = options.env ?? getServerEnv();
+
+  if (!isFighterPhotoStorageConfigured(env)) {
+    throw new Error("Fighter photo storage is not configured.");
+  }
+
+  if (
+    options.bucket !== env.fighterPhotosStorageBucket ||
+    options.storageProvider !== env.fighterPhotosStorageProvider ||
+    !options.objectKey.startsWith("event-fighter-intakes/staging/")
+  ) {
+    return false;
+  }
+
+  try {
+    const result = await getS3Client(env).send(
+      new HeadObjectCommand({
+        Bucket: options.bucket,
+        Key: options.objectKey
+      })
+    );
+
+    const contentLength = result.ContentLength ?? null;
+    const contentType = result.ContentType?.split(";")[0]?.trim().toLowerCase() ?? "";
+
+    return contentLength === options.byteSize && contentType === options.contentType.toLowerCase();
+  } catch {
+    return false;
+  }
+}
 
 declare global {
   // eslint-disable-next-line no-var

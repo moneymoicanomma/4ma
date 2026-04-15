@@ -54,7 +54,7 @@ function createPool() {
     ssl:
       env.databaseSslMode === "require"
         ? {
-            rejectUnauthorized: false
+            rejectUnauthorized: !env.databaseSslAllowInvalidCertificates
           }
         : undefined
   });

@@ -21,10 +21,11 @@ import { FormConfirmationPopup } from "./form-confirmation-popup";
 import styles from "./fantasy-experience.module.css";
 
 type FantasyExperienceProps = {
-  currentEvent: FantasyMockEvent;
-  leaderboardEvent: FantasyMockEvent;
+  currentEvent: Omit<FantasyMockEvent, "entries">;
+  leaderboardEvent: Omit<FantasyMockEvent, "entries">;
   leaderboardRows: FantasyLeaderboardRow[];
   scoringRules: FantasyScoringRules;
+  initialEntrantCount: number;
 };
 
 type SubmissionState = {
@@ -161,10 +162,11 @@ export function FantasyExperience({
   currentEvent,
   leaderboardEvent,
   leaderboardRows,
-  scoringRules
+  scoringRules,
+  initialEntrantCount
 }: Readonly<FantasyExperienceProps>) {
   const [leadDraft, setLeadDraft] = useState(initialLeadDraft);
-  const [entrantCount, setEntrantCount] = useState(currentEvent.entries.length);
+  const [entrantCount, setEntrantCount] = useState(initialEntrantCount);
   const [submissionState, setSubmissionState] = useState(initialSubmissionState);
   const [submittedEntry, setSubmittedEntry] = useState<SubmittedEntry | null>(null);
   const [pickMap, setPickMap] = useState<Record<string, Partial<FantasyPickPayload>>>({});
@@ -277,9 +279,7 @@ export function FantasyExperience({
       return;
     }
 
-    const knownEntrant =
-      currentEvent.entries.some((entry) => entry.email === parsed.data.email) ||
-      submittedEntry?.email === parsed.data.email;
+    const knownEntrant = submittedEntry?.email === parsed.data.email;
     const entrantDelta = knownEntrant ? 0 : 1;
 
     if (looksLikeUuid(currentEvent.id)) {

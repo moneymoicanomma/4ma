@@ -4,9 +4,10 @@ import { getBrazilianStateCode } from "@/lib/contracts/brazilian-states";
 import type { FighterApplicationPayload } from "@/lib/contracts/fighter-application";
 import { withDatabaseTransaction } from "@/lib/server/database";
 import {
+  getPublicWriteUpstreamBearerToken,
   getServerEnv,
   isDatabaseConfigured,
-  isUpstreamConfigured,
+  isPublicUpstreamConfigured,
   type ServerEnv
 } from "@/lib/server/env";
 import { UpstreamApiError, postJsonToUpstream } from "@/lib/server/http";
@@ -178,7 +179,7 @@ export async function submitFighterApplication(
 
       return { ok: true };
     } catch {
-      if (!isUpstreamConfigured(env)) {
+      if (!isPublicUpstreamConfigured(env)) {
         return {
           ok: false,
           reason: "upstream_error"
@@ -187,7 +188,7 @@ export async function submitFighterApplication(
     }
   }
 
-  if (!isUpstreamConfigured(env)) {
+  if (!isPublicUpstreamConfigured(env)) {
     return {
       ok: false,
       reason: "not_configured"
@@ -202,7 +203,7 @@ export async function submitFighterApplication(
         requestContext
       },
       {
-        bearerToken: env.upstreamApiBearerToken!,
+        bearerToken: getPublicWriteUpstreamBearerToken(env)!,
         timeoutMs: env.upstreamRequestTimeoutMs
       }
     );

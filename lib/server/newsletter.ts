@@ -9,9 +9,10 @@ import {
   withDatabaseTransaction
 } from "@/lib/server/database";
 import {
+  getPublicWriteUpstreamBearerToken,
   getServerEnv,
   isDatabaseConfigured,
-  isUpstreamConfigured,
+  isPublicUpstreamConfigured,
   type ServerEnv
 } from "@/lib/server/env";
 import { postJsonToUpstream } from "@/lib/server/http";
@@ -91,7 +92,7 @@ export async function subscribeToNewsletter(
         requestId: requestContext.requestId
       });
 
-      if (!isUpstreamConfigured(env)) {
+      if (!isPublicUpstreamConfigured(env)) {
         return {
           ok: false,
           reason: "upstream_error"
@@ -100,7 +101,7 @@ export async function subscribeToNewsletter(
     }
   }
 
-  if (!isUpstreamConfigured(env)) {
+  if (!isPublicUpstreamConfigured(env)) {
     return {
       ok: false,
       reason: "not_configured"
@@ -119,7 +120,7 @@ export async function subscribeToNewsletter(
         requestContext
       },
       {
-        bearerToken: env.upstreamApiBearerToken!,
+        bearerToken: getPublicWriteUpstreamBearerToken(env)!,
         timeoutMs: env.upstreamRequestTimeoutMs
       }
     );

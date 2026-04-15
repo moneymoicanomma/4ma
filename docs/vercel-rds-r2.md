@@ -14,6 +14,7 @@ Obrigatórias agora para o site público:
 ```bash
 DATABASE_URL=postgresql://usuario:senha@host:5432/mmmma
 DATABASE_SSL_MODE=require
+DATABASE_SSL_ALLOW_INVALID_CERTIFICATES=false
 DATABASE_POOL_MAX_CONNECTIONS=5
 NEXT_PUBLIC_SITE_ASSET_BASE_URL=https://pub-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.r2.dev
 ALLOWED_FORM_ORIGINS=http://localhost:3000,https://moneymoicanomma.com.br
@@ -30,7 +31,13 @@ ATHLETE_FORM_PASSWORD=<senha-compartilhada-com-os-atletas>
 ATHLETE_FORM_SESSION_SECRET=<segredo-do-cookie-do-portal>
 APP_ENCRYPTION_KEY=<segredo-longo>
 UPSTREAM_API_BASE_URL=https://sua-function-url.lambda-url.us-east-2.on.aws
-UPSTREAM_API_BEARER_TOKEN=<token-interno-da-lambda>
+UPSTREAM_PUBLIC_WRITE_BEARER_TOKEN=<token-public-write-da-lambda>
+UPSTREAM_PORTAL_BEARER_TOKEN=<token-portal-da-lambda>
+UPSTREAM_ADMIN_READ_BEARER_TOKEN=<token-admin-read-da-lambda>
+UPSTREAM_ADMIN_WRITE_BEARER_TOKEN=<token-admin-write-da-lambda>
+UPSTREAM_ADMIN_DATABASE_OVERVIEW_PATH=/v1/admin/database-overview
+UPSTREAM_FANTASY_EVENTS_PATH=/v1/fantasy/events
+UPSTREAM_ADMIN_FANTASY_EVENTS_PATH=/v1/admin/fantasy/events
 UPSTREAM_EVENT_FIGHTER_INTAKE_PATH=/v1/event-fighter-intakes
 UPSTREAM_FANTASY_ENTRY_PATH=/v1/fantasy/entries
 FIGHTER_PHOTOS_STORAGE_PROVIDER=r2
@@ -45,11 +52,13 @@ FIGHTER_PHOTOS_S3_FORCE_PATH_STYLE=false
 ## Notas práticas
 
 - `NEXT_PUBLIC_SITE_ASSET_BASE_URL` pode usar o `r2.dev` agora para destravar o deploy. Quando o domínio customizado do bucket estiver livre, basta trocar a env.
+- `DATABASE_SSL_ALLOW_INVALID_CERTIFICATES=false` deve ficar assim em produção. Só mude para `true` temporariamente em ambiente controlado se você estiver preso a um certificado fora da cadeia confiável.
 - Com `EVENT_FIGHTER_ACCESS_AUTH_MODE=shared_password`, o login do portal aceita qualquer email válido junto da senha compartilhada enviada pela equipe. Não exige pré-cadastro do atleta.
+- `ATHLETE_FORM_PASSWORD` precisa ser definido explicitamente. O app não usa mais senha padrão embutida para o portal.
 - `FIGHTER_PHOTOS_S3_ENDPOINT` usa o endpoint S3 compatível do R2.
 - `DATABASE_POOL_MAX_CONNECTIONS=5` é um ponto de partida mais seguro para ambiente serverless do que deixar o pool alto por instância.
 - O app continua salvando no banco só os metadados das fotos. Os binários seguem no bucket S3 compatível.
-- `UPSTREAM_*` continua sendo usado para enviar os formulários públicos, fantasy e a ficha do atleta para a Lambda/RDS privada. O modo de autenticação do portal pode ser separado disso.
+- `UPSTREAM_*` continua sendo usado para enviar formularios publicos, portal do atleta e leituras/escritas administrativas para a Lambda/RDS privada, agora com bearer separado por superficie.
 - No modo com RDS privada, o Vercel ainda precisa das credenciais do R2 para subir as fotos primeiro no bucket. A Lambda recebe só payload e metadados, sem os binários.
 
 ## Checklist

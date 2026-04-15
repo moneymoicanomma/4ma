@@ -19,14 +19,16 @@ import {
   normalizeEventFighterEmail
 } from "@/lib/event-fighter/auth";
 import {
+  getPortalUpstreamBearerToken,
   getServerEnv,
   isDatabaseConfigured,
-  isUpstreamConfigured
+  isPortalUpstreamConfigured
 } from "@/lib/server/env";
 import { UpstreamApiError, postJsonToUpstream } from "@/lib/server/http";
 import { buildRequestAuditContext } from "@/lib/server/request-context";
 import {
   getClientIdentifier,
+  isSameOriginRequest,
   readJsonRequestBody
 } from "@/lib/server/request-guards";
 import { takeRateLimitToken } from "@/lib/server/rate-limit";
@@ -70,6 +72,16 @@ function buildJsonResponse(payload: EventFighterSessionResponse, status = 200) {
 }
 
 export async function POST(request: NextRequest) {
+  if (!isSameOriginRequest(request)) {
+    return buildJsonResponse(
+      {
+        ok: false,
+        message: "Origem não permitida."
+      },
+      403
+    );
+  }
+
   const env = getServerEnv();
   const databaseConfigured = isDatabaseConfigured(env);
 
@@ -151,6 +163,17 @@ export async function POST(request: NextRequest) {
   }
 
   if (env.eventFighterAccessAuthMode === "shared_password") {
+    if (!config.password || !config.sessionSecret) {
+      return buildJsonResponse(
+        {
+          ok: false,
+          message:
+            "O portal privado está temporariamente fora do ar enquanto a configuração segura é finalizada."
+        },
+        503
+      );
+    }
+
     if (!safeCompare(password, config.password)) {
       return buildJsonResponse(
         {
@@ -245,7 +268,18 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  if (isUpstreamConfigured(env)) {
+  if (isPortalUpstreamConfigured(env)) {
+    if (!config.sessionSecret) {
+      return buildJsonResponse(
+        {
+          ok: false,
+          message:
+            "O portal privado está temporariamente fora do ar enquanto a configuração segura é finalizada."
+        },
+        503
+      );
+    }
+
     try {
       const upstreamResponse = await postJsonToUpstream(
         `${env.upstreamApiBaseUrl}${env.eventFighterAccessPath}`,
@@ -255,7 +289,7 @@ export async function POST(request: NextRequest) {
           next: redirectTo
         },
         {
-          bearerToken: env.upstreamApiBearerToken!,
+          bearerToken: getPortalUpstreamBearerToken(env)!,
           timeoutMs: env.upstreamRequestTimeoutMs
         }
       );
@@ -326,6 +360,16 @@ export async function POST(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
+  if (!isSameOriginRequest(request)) {
+    return buildJsonResponse(
+      {
+        ok: false,
+        message: "Origem não permitida."
+      },
+      403
+    );
+  }
+
   const env = getServerEnv();
   const sessionToken = request.cookies.get(EVENT_FIGHTER_SESSION_COOKIE_NAME)?.value;
 

@@ -5,7 +5,7 @@ import { getCurrentAdminSessionIdentity } from "@/lib/server/admin-session";
 import { getServerEnv } from "@/lib/server/env";
 import { saveFantasyEvent } from "@/lib/server/fantasy";
 import { buildRequestAuditContext } from "@/lib/server/request-context";
-import { readJsonRequestBody } from "@/lib/server/request-guards";
+import { isSameOriginRequest, readJsonRequestBody } from "@/lib/server/request-guards";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -32,6 +32,16 @@ function buildJsonResponse(payload: object, status = 200) {
 }
 
 export async function POST(request: NextRequest) {
+  if (!isSameOriginRequest(request)) {
+    return buildJsonResponse(
+      {
+        ok: false,
+        message: "Origem não permitida."
+      },
+      403
+    );
+  }
+
   const env = getServerEnv();
   const identity = await getCurrentAdminSessionIdentity(env);
 

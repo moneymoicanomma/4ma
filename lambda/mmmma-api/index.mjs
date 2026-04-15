@@ -141,6 +141,8 @@ function getDatabasePool() {
   if (!pool) {
     const databaseUrl = getRequiredEnv("DATABASE_URL");
     const sslMode = process.env.DATABASE_SSL_MODE?.trim().toLowerCase() ?? "require";
+    const allowInvalidCertificates =
+      process.env.DATABASE_SSL_ALLOW_INVALID_CERTIFICATES?.trim().toLowerCase() === "true";
 
     pool = new Pool({
       connectionString: databaseUrl,
@@ -152,7 +154,7 @@ function getDatabasePool() {
         sslMode === "disable"
           ? undefined
           : {
-              rejectUnauthorized: false
+              rejectUnauthorized: !allowInvalidCertificates
             }
     });
   }
@@ -188,16 +190,72 @@ function getHeader(headers, headerName) {
   return null;
 }
 
-function assertInternalBearer(event) {
-  const expectedToken = getRequiredEnv("INTERNAL_API_BEARER_TOKEN");
-  const authorization = getHeader(event.headers, "authorization") ?? "";
-  const [scheme, token] = authorization.split(/\s+/, 2);
+function sha256Buffer(value) {
+  return createHash("sha256").update(value).digest();
+}
 
-  if (scheme !== "Bearer" || token !== expectedToken) {
+function safeCompareText(left, right) {
+  if (!left || !right) {
     return false;
   }
 
-  return true;
+  return timingSafeEqual(sha256Buffer(left), sha256Buffer(right));
+}
+
+function getScopeBearerCandidates(scope) {
+  const candidates = [];
+
+  if (scope === "public_write") {
+    const specificToken = process.env.PUBLIC_API_BEARER_TOKEN?.trim();
+
+    if (specificToken) {
+      candidates.push(specificToken);
+    }
+  }
+
+  if (scope === "portal") {
+    const specificToken = process.env.PORTAL_API_BEARER_TOKEN?.trim();
+
+    if (specificToken) {
+      candidates.push(specificToken);
+    }
+  }
+
+  if (scope === "admin_read") {
+    const specificToken = process.env.ADMIN_READ_API_BEARER_TOKEN?.trim();
+
+    if (specificToken) {
+      candidates.push(specificToken);
+    }
+  }
+
+  if (scope === "admin_write") {
+    const specificToken = process.env.ADMIN_WRITE_API_BEARER_TOKEN?.trim();
+
+    if (specificToken) {
+      candidates.push(specificToken);
+    }
+  }
+
+  const legacyToken = process.env.INTERNAL_API_BEARER_TOKEN?.trim();
+
+  if (legacyToken) {
+    candidates.push(legacyToken);
+  }
+
+  return Array.from(new Set(candidates.filter(Boolean)));
+}
+
+function assertBearerForScope(event, scope) {
+  const expectedTokens = getScopeBearerCandidates(scope);
+  const authorization = getHeader(event.headers, "authorization") ?? "";
+  const [scheme, token] = authorization.split(/\s+/, 2);
+
+  if (scheme !== "Bearer" || !token || expectedTokens.length === 0) {
+    return false;
+  }
+
+  return expectedTokens.some((expectedToken) => safeCompareText(token, expectedToken));
 }
 
 function getGoogleSheetsExportExpectedToken(exportConfig) {
@@ -383,10 +441,6 @@ async function loadGoogleSheetsExportPage(exportConfig, options) {
     columns: exportConfig.columns,
     rows: result.rows
   };
-}
-
-function sha256Buffer(value) {
-  return createHash("sha256").update(value).digest();
 }
 
 function safeCompare(left, right) {
@@ -1114,7 +1168,7 @@ async function loadAdminDatabaseOverviewFromDatabase() {
 }
 
 async function handleAdminDatabaseOverview(event) {
-  if (!assertInternalBearer(event)) {
+  if (!assertBearerForScope(event, "admin_read")) {
     return buildJsonResponse(401, {
       ok: false,
       message: "Unauthorized."
@@ -1977,7 +2031,7 @@ async function loadFantasyEventsPayload(targetEventId = null) {
 }
 
 async function handleFantasyEvents(event) {
-  if (!assertInternalBearer(event)) {
+  if (!assertBearerForScope(event, "admin_read")) {
     return buildJsonResponse(401, {
       ok: false,
       message: "Unauthorized."
@@ -1997,7 +2051,7 @@ async function handleFantasyEvents(event) {
 }
 
 async function handleAdminFantasyEvents(event) {
-  if (!assertInternalBearer(event)) {
+  if (!assertBearerForScope(event, "admin_write")) {
     return buildJsonResponse(401, {
       ok: false,
       message: "Unauthorized."
@@ -3114,7 +3168,7 @@ async function loadAdminDatabaseRecordData(tableId, rowId) {
 }
 
 async function handleAdminDatabaseTable(event, tableId) {
-  if (!assertInternalBearer(event)) {
+  if (!assertBearerForScope(event, "admin_read")) {
     return buildJsonResponse(401, {
       ok: false,
       message: "Unauthorized."
@@ -3144,7 +3198,7 @@ async function handleAdminDatabaseTable(event, tableId) {
 }
 
 async function handleAdminDatabaseRecord(event, tableId, rowId) {
-  if (!assertInternalBearer(event)) {
+  if (!assertBearerForScope(event, "admin_read")) {
     return buildJsonResponse(401, {
       ok: false,
       message: "Unauthorized."
@@ -3211,7 +3265,7 @@ async function handleGoogleSheetsExportTable(event, exportKey) {
 }
 
 async function handleEventFighterAccess(event) {
-  if (!assertInternalBearer(event)) {
+  if (!assertBearerForScope(event, "portal")) {
     return buildJsonResponse(401, {
       ok: false,
       message: "Unauthorized."
@@ -3285,7 +3339,7 @@ async function handleEventFighterAccess(event) {
 }
 
 async function handleNewsletterSubscribe(event) {
-  if (!assertInternalBearer(event)) {
+  if (!assertBearerForScope(event, "public_write")) {
     return buildJsonResponse(401, { ok: false, message: "Unauthorized." });
   }
 
@@ -3364,7 +3418,7 @@ async function handleNewsletterSubscribe(event) {
 }
 
 async function handleContactMessages(event) {
-  if (!assertInternalBearer(event)) {
+  if (!assertBearerForScope(event, "public_write")) {
     return buildJsonResponse(401, { ok: false, message: "Unauthorized." });
   }
 
@@ -3443,7 +3497,7 @@ async function handleContactMessages(event) {
 }
 
 async function handleFighterApplications(event) {
-  if (!assertInternalBearer(event)) {
+  if (!assertBearerForScope(event, "public_write")) {
     return buildJsonResponse(401, { ok: false, message: "Unauthorized." });
   }
 
@@ -3608,7 +3662,7 @@ async function handleFighterApplications(event) {
 }
 
 async function handlePartnerInquiries(event) {
-  if (!assertInternalBearer(event)) {
+  if (!assertBearerForScope(event, "public_write")) {
     return buildJsonResponse(401, { ok: false, message: "Unauthorized." });
   }
 
@@ -3693,7 +3747,7 @@ async function handlePartnerInquiries(event) {
 }
 
 async function handleFantasyEntries(event) {
-  if (!assertInternalBearer(event)) {
+  if (!assertBearerForScope(event, "public_write")) {
     return buildJsonResponse(401, { ok: false, message: "Unauthorized." });
   }
 
@@ -3943,7 +3997,7 @@ function buildEventFighterIntakeMetadata(payload, accessEmail, extras = {}) {
 }
 
 async function handleEventFighterIntake(event) {
-  if (!assertInternalBearer(event)) {
+  if (!assertBearerForScope(event, "portal")) {
     return buildJsonResponse(401, {
       ok: false,
       message: "Unauthorized."

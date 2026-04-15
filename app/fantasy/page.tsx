@@ -30,6 +30,11 @@ export const metadata: Metadata = createPageMetadata({
 
 export const dynamic = "force-dynamic";
 
+function stripFantasyEventEntries(event: ReturnType<typeof getFantasyCurrentEvent>) {
+  const { entries: _entries, ...safeEvent } = event;
+  return safeEvent;
+}
+
 export default async function FantasyPage() {
   const databaseFantasy = await loadFantasyEventsFromDatabase();
   const events = databaseFantasy?.events.length ? databaseFantasy.events : cloneFantasyMockEvents();
@@ -37,6 +42,8 @@ export default async function FantasyPage() {
   const latestFinishedEvent = getLatestFinishedFantasyEvent(events);
   const publishedLeaderboard = calculateFantasyLeaderboard(latestFinishedEvent);
   const resolvedFightCount = countFantasyOfficialResults(latestFinishedEvent);
+  const publicCurrentEvent = stripFantasyEventEntries(currentEvent);
+  const publicLeaderboardEvent = stripFantasyEventEntries(latestFinishedEvent);
 
   return (
     <main className={styles.page}>
@@ -125,10 +132,11 @@ export default async function FantasyPage() {
       <section className={styles.interfaceSection}>
         <div className={styles.interfaceShell} data-reveal>
           <FantasyExperience
-            currentEvent={currentEvent}
-            leaderboardEvent={latestFinishedEvent}
+            currentEvent={publicCurrentEvent}
+            leaderboardEvent={publicLeaderboardEvent}
             leaderboardRows={publishedLeaderboard}
             scoringRules={currentEvent.scoringRules}
+            initialEntrantCount={currentEvent.entries.length}
           />
         </div>
       </section>

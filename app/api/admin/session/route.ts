@@ -20,6 +20,7 @@ import { getServerEnv, isDatabaseConfigured } from "@/lib/server/env";
 import { buildRequestAuditContext } from "@/lib/server/request-context";
 import {
   getClientIdentifier,
+  isSameOriginRequest,
   readJsonRequestBody
 } from "@/lib/server/request-guards";
 import { takeRateLimitToken } from "@/lib/server/rate-limit";
@@ -67,6 +68,16 @@ function buildJsonResponse(payload: AdminSessionResponse, status = 200) {
 }
 
 export async function POST(request: NextRequest) {
+  if (!isSameOriginRequest(request)) {
+    return buildJsonResponse(
+      {
+        ok: false,
+        message: "Origem não permitida."
+      },
+      403
+    );
+  }
+
   const env = getServerEnv();
   const config = getAdminAuthConfig();
   const databaseConfigured = isDatabaseConfigured(env);
@@ -228,6 +239,16 @@ export async function POST(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
+  if (!isSameOriginRequest(request)) {
+    return buildJsonResponse(
+      {
+        ok: false,
+        message: "Origem não permitida."
+      },
+      403
+    );
+  }
+
   const env = getServerEnv();
   const sessionToken = request.cookies.get(ADMIN_SESSION_COOKIE_NAME)?.value;
 

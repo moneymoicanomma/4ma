@@ -10,7 +10,6 @@ import {
 export const EVENT_FIGHTER_ACCESS_PATH = "/atletas-da-edicao";
 export const EVENT_FIGHTER_SESSION_COOKIE_NAME = "mmmma_event_fighter_session";
 export const EVENT_FIGHTER_SESSION_MAX_AGE_SECONDS = 60 * 60 * 12;
-export const DEFAULT_EVENT_FIGHTER_PASSWORD = "MONEYMOICANOMMA1";
 
 type EventFighterSessionPayload = {
   v: 1;
@@ -21,8 +20,8 @@ type EventFighterSessionPayload = {
 };
 
 export type EventFighterAuthConfig = {
-  password: string;
-  sessionSecret: string;
+  password: string | null;
+  sessionSecret: string | null;
 };
 
 function normalizeEnvValue(value: string | undefined) {
@@ -52,10 +51,6 @@ function constantTimeEquals(left: Uint8Array, right: Uint8Array) {
   return timingSafeEqual(Buffer.from(left), Buffer.from(right));
 }
 
-function normalizeFallbackSecret(password: string) {
-  return `event-fighter-session:${password}`;
-}
-
 function signValue(value: string, secret: string) {
   return createHmac("sha256", secret).update(value).digest("base64url");
 }
@@ -67,12 +62,11 @@ function sha256Base64Url(value: string) {
 export { isValidEventFighterEmail, normalizeEventFighterEmail };
 
 export function getEventFighterAuthConfig(): EventFighterAuthConfig {
-  const password =
-    normalizeEnvValue(process.env.ATHLETE_FORM_PASSWORD) || DEFAULT_EVENT_FIGHTER_PASSWORD;
+  const password = normalizeEnvValue(process.env.ATHLETE_FORM_PASSWORD) || null;
   const sessionSecret =
     normalizeEnvValue(process.env.ATHLETE_FORM_SESSION_SECRET) ||
     normalizeEnvValue(process.env.ADMIN_SESSION_SECRET) ||
-    normalizeFallbackSecret(password);
+    null;
 
   return {
     password,

@@ -82,6 +82,14 @@ export async function requireAuthenticatedEventFighterPortalSession(
     authenticatedEmail = databaseSession?.email ?? null;
   } else {
     const authConfig = getEventFighterAuthConfig();
+
+    if (!authConfig.sessionSecret) {
+      return {
+        ok: false,
+        response: buildExpiredSessionResponse(corsHeaders)
+      };
+    }
+
     const session = verifyEventFighterSessionToken(sessionToken, authConfig.sessionSecret);
 
     if (!session) {

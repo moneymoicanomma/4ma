@@ -3,9 +3,10 @@ import "server-only";
 import { queryDatabase, withDatabaseTransaction } from "@/lib/server/database";
 import { getJsonFromUpstream, UpstreamApiError } from "@/lib/server/http";
 import {
+  getAdminReadUpstreamBearerToken,
   getServerEnv,
+  isAdminReadUpstreamConfigured,
   isDatabaseConfigured,
-  isUpstreamConfigured,
   type ServerEnv,
 } from "@/lib/server/env";
 
@@ -924,12 +925,12 @@ async function loadFantasyEntriesTable() {
 export async function loadAdminDatabaseOverview(
   env: ServerEnv = getServerEnv(),
 ): Promise<AdminDatabaseOverview> {
-  if (!isDatabaseConfigured(env) && isUpstreamConfigured(env)) {
+  if (!isDatabaseConfigured(env) && isAdminReadUpstreamConfigured(env)) {
     try {
       return await getJsonFromUpstream<AdminDatabaseOverview>(
         `${env.upstreamApiBaseUrl}${env.adminDatabaseOverviewPath}`,
         {
-          bearerToken: env.upstreamApiBearerToken!,
+          bearerToken: getAdminReadUpstreamBearerToken(env)!,
           timeoutMs: env.upstreamRequestTimeoutMs,
         },
       );
@@ -1012,7 +1013,7 @@ async function loadAdminDatabaseTableFromUpstream(
   tableId: AdminDatabaseTableId,
   env: ServerEnv,
 ) {
-  if (!isUpstreamConfigured(env)) {
+  if (!isAdminReadUpstreamConfigured(env)) {
     return null;
   }
 
@@ -1020,7 +1021,7 @@ async function loadAdminDatabaseTableFromUpstream(
     return await getJsonFromUpstream<AdminDatabaseTableData>(
       `${env.upstreamApiBaseUrl}${ADMIN_DATABASE_ROUTE_BASE}/${tableId}`,
       {
-        bearerToken: env.upstreamApiBearerToken!,
+        bearerToken: getAdminReadUpstreamBearerToken(env)!,
         timeoutMs: env.upstreamRequestTimeoutMs,
       },
     );
@@ -1043,7 +1044,7 @@ async function loadAdminDatabaseRecordFromUpstream(
   rowId: string,
   env: ServerEnv,
 ) {
-  if (!isUpstreamConfigured(env)) {
+  if (!isAdminReadUpstreamConfigured(env)) {
     return null;
   }
 
@@ -1051,7 +1052,7 @@ async function loadAdminDatabaseRecordFromUpstream(
     return await getJsonFromUpstream<AdminDatabaseRecordData>(
       `${env.upstreamApiBaseUrl}${ADMIN_DATABASE_ROUTE_BASE}/${tableId}/${encodeURIComponent(rowId)}`,
       {
-        bearerToken: env.upstreamApiBearerToken!,
+        bearerToken: getAdminReadUpstreamBearerToken(env)!,
         timeoutMs: env.upstreamRequestTimeoutMs,
       },
     );
@@ -2290,7 +2291,7 @@ export async function loadAdminDatabaseTableData(
 ): Promise<AdminDatabaseTableData> {
   const table = adminDatabaseTables[tableId];
 
-  if (!isDatabaseConfigured(env) && isUpstreamConfigured(env)) {
+  if (!isDatabaseConfigured(env) && isAdminReadUpstreamConfigured(env)) {
     const upstreamTable = await loadAdminDatabaseTableFromUpstream(tableId, env);
 
     if (upstreamTable) {
@@ -2325,7 +2326,7 @@ export async function loadAdminDatabaseRecordData(
 ): Promise<AdminDatabaseRecordData | null> {
   const table = adminDatabaseTables[tableId];
 
-  if (!isDatabaseConfigured(env) && isUpstreamConfigured(env)) {
+  if (!isDatabaseConfigured(env) && isAdminReadUpstreamConfigured(env)) {
     const upstreamRecord = await loadAdminDatabaseRecordFromUpstream(
       tableId,
       rowId,

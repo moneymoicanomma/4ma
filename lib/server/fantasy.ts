@@ -21,9 +21,14 @@ import {
   type DatabaseTransaction
 } from "@/lib/server/database";
 import {
+  getAdminReadUpstreamBearerToken,
+  getAdminWriteUpstreamBearerToken,
+  getPublicWriteUpstreamBearerToken,
   getServerEnv,
+  isAdminReadUpstreamConfigured,
+  isAdminWriteUpstreamConfigured,
   isDatabaseConfigured,
-  isUpstreamConfigured,
+  isPublicUpstreamConfigured,
   type ServerEnv
 } from "@/lib/server/env";
 import { getJsonFromUpstream, postJsonToUpstream } from "@/lib/server/http";
@@ -525,7 +530,7 @@ async function persistFantasyEvent(
   const actorAccountId = identity.kind === "account" ? identity.accountId : null;
 
   if (!isDatabaseConfigured(env)) {
-    if (!isUpstreamConfigured(env)) {
+    if (!isAdminWriteUpstreamConfigured(env)) {
       return null;
     }
 
@@ -542,7 +547,7 @@ async function persistFantasyEvent(
           requestContext
         },
         {
-          bearerToken: env.upstreamApiBearerToken!,
+          bearerToken: getAdminWriteUpstreamBearerToken(env)!,
           timeoutMs: env.upstreamRequestTimeoutMs
         }
       );
@@ -880,7 +885,7 @@ function buildEventSkeleton(row: EventRow): FantasyMockEvent {
 }
 
 async function loadFantasyEventsFromUpstream(env: ServerEnv) {
-  if (!isUpstreamConfigured(env)) {
+  if (!isAdminReadUpstreamConfigured(env)) {
     return null;
   }
 
@@ -888,7 +893,7 @@ async function loadFantasyEventsFromUpstream(env: ServerEnv) {
     return await getJsonFromUpstream<{ events: FantasyMockEvent[] }>(
       `${env.upstreamApiBaseUrl}${env.fantasyEventsPath}`,
       {
-        bearerToken: env.upstreamApiBearerToken!,
+        bearerToken: getAdminReadUpstreamBearerToken(env)!,
         timeoutMs: env.upstreamRequestTimeoutMs
       }
     );
@@ -1103,7 +1108,7 @@ export async function submitFantasyEntry(
   env: ServerEnv = getServerEnv()
 ): Promise<FantasyEntryPublicResponse | null> {
   if (!isDatabaseConfigured(env)) {
-    if (!isUpstreamConfigured(env)) {
+    if (!isPublicUpstreamConfigured(env)) {
       return null;
     }
 
@@ -1115,7 +1120,7 @@ export async function submitFantasyEntry(
           requestContext
         },
         {
-          bearerToken: env.upstreamApiBearerToken!,
+          bearerToken: getPublicWriteUpstreamBearerToken(env)!,
           timeoutMs: env.upstreamRequestTimeoutMs
         }
       );
