@@ -15,6 +15,7 @@ type LandingTopbarProps = {
   // Opcional: reativar quando o link oficial de ingressos estiver disponível.
   ctaHref?: string;
   ctaLabel?: string;
+  ctaLogoSrc?: string;
   navItems: readonly NavItem[];
 };
 
@@ -22,14 +23,35 @@ export function LandingTopbar({
   brandLogo,
   ctaHref,
   ctaLabel,
+  ctaLogoSrc,
   navItems
 }: Readonly<LandingTopbarProps>) {
   const [activeSection, setActiveSection] = useState(navItems[0]?.sectionId ?? "");
   const [menuOpen, setMenuOpen] = useState(false);
   const activeItem = navItems.find((item) => item.sectionId === activeSection) ?? navItems[0];
   const hasCta = Boolean(ctaHref && ctaLabel);
+  const hasCtaLogo = Boolean(ctaLogoSrc);
   const ctaIsExternal = Boolean(ctaHref?.startsWith("http"));
   const brandLogoDimensions = getSiteAssetIntrinsicDimensions(brandLogo);
+  const ctaButtonClassName = [
+    "landing-button",
+    hasCtaLogo ? "landing-button--rinha" : null
+  ]
+    .filter(Boolean)
+    .join(" ");
+  const ctaButtonContent = hasCtaLogo ? (
+    <span className="landing-button__logo-mark" aria-hidden="true">
+      <img
+        className="landing-button__logo"
+        src={ctaLogoSrc}
+        alt=""
+        width={1241}
+        height={423}
+      />
+    </span>
+  ) : (
+    ctaLabel
+  );
 
   useEffect(() => {
     const sections = Array.from(document.querySelectorAll<HTMLElement>("[data-nav-section]"));
@@ -168,12 +190,13 @@ export function LandingTopbar({
       <div className="topbar__actions">
         {hasCta ? (
           <a
-            className="landing-button landing-button--nav"
+            aria-label={hasCtaLogo ? ctaLabel : undefined}
+            className={`${ctaButtonClassName} landing-button--nav`}
             href={ctaHref}
             rel={ctaIsExternal ? "noreferrer" : undefined}
             target={ctaIsExternal ? "_blank" : undefined}
           >
-            {ctaLabel}
+            {ctaButtonContent}
           </a>
         ) : null}
 
@@ -244,12 +267,13 @@ export function LandingTopbar({
             <p className="topbar__sheet-copy">23 MAIO 2026 · SÃO PAULO · CANAL MONEY MOICANO</p>
             {hasCta ? (
               <a
-                className="landing-button landing-button--primary landing-button--sheet"
+                aria-label={hasCtaLogo ? ctaLabel : undefined}
+                className={`${ctaButtonClassName} landing-button--primary landing-button--sheet`}
                 href={ctaHref}
                 rel={ctaIsExternal ? "noreferrer" : undefined}
                 target={ctaIsExternal ? "_blank" : undefined}
               >
-                {ctaLabel}
+                {ctaButtonContent}
               </a>
             ) : null}
           </div>

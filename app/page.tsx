@@ -34,6 +34,7 @@ const cabmmaUrl = "https://www.instagram.com/cab_mma/";
 const transmissionUrl = "https://www.youtube.com/@RenatoMoneyMoicano";
 const joyaGearUrl = "https://joyagear.com/";
 const fighterSignupUrl = "https://mma.moicano.tv/";
+const fighterSignupLogo = "https://assets.moneymoicanomma.com.br/rinha-de-inscritos.svg";
 
 const navItems = [
   { label: "O Evento", href: "#evento", sectionId: "evento" },
@@ -299,6 +300,7 @@ export default function Home() {
         navItems={navItems}
         ctaHref={fighterSignupUrl}
         ctaLabel="Lute na Rinha de Inscritos"
+        ctaLogoSrc={fighterSignupLogo}
       />
 
       <section className="hero" data-nav-section="evento" id="evento">
