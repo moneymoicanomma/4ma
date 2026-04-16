@@ -164,6 +164,13 @@ export type AdminDatabaseRecordSection = {
   fields: AdminDatabaseRecordField[];
 };
 
+export type AdminDatabaseRecordCopyExport = {
+  id: string;
+  label: string;
+  description: string;
+  content: string;
+};
+
 export type AdminDatabaseTableData = {
   databaseConfigured: boolean;
   table: AdminDatabaseTableMeta;
@@ -182,10 +189,139 @@ export type AdminDatabaseRecordData = {
   title: string;
   subtitle?: string | null;
   sections: AdminDatabaseRecordSection[];
+  copyExports?: AdminDatabaseRecordCopyExport[];
   errorMessage?: string;
 };
 
 type DateValue = string | Date | null | undefined;
+
+type ClipboardColumn<Row> = {
+  key: string;
+  pick: (row: Row) => unknown;
+};
+
+type EventFighterIntakeClipboardRow = {
+  id: string;
+  eventName: string | null;
+  fighterName: string | null;
+  eventFighterId: string | null;
+  submittedByAccountId: string | null;
+  fullName: string;
+  nickname: string;
+  email: string;
+  phoneWhatsapp: string;
+  birthDate: string;
+  cpf: string | null;
+  cpfLast4: string;
+  pixKeyType: string;
+  pixKey: string | null;
+  pixKeyLast4: string;
+  hasHealthInsurance: boolean;
+  healthInsuranceProvider: string | null;
+  recordSummary: string;
+  category: string | null;
+  height: string | null;
+  reach: string | null;
+  city: string | null;
+  stateCode: string | null;
+  educationLevel: string | null;
+  team: string | null;
+  coachName: string | null;
+  fightGraduations: string | null;
+  tapologyProfile: string | null;
+  instagramProfile: string | null;
+  coachContact: string | null;
+  managerName: string | null;
+  managerContact: string | null;
+  cornerOneName: string | null;
+  cornerTwoName: string | null;
+  primarySpecialty: string;
+  additionalSpecialties: string;
+  competitionHistory: string;
+  titlesWon: string;
+  lifeStory: string;
+  funnyStory: string;
+  curiosities: string;
+  hobbies: string;
+  source: string;
+  intakeStatus: string;
+  reviewedByAccountId: string | null;
+  reviewedAt: DateValue;
+  staffNotes: string | null;
+  requestId: string | null;
+  requestOrigin: string | null;
+  userAgent: string | null;
+  metadata: unknown;
+  submittedAt: DateValue;
+  createdAt: DateValue;
+  updatedAt: DateValue;
+};
+
+const EVENT_FIGHTER_FINANCE_CLIPBOARD_COLUMNS: ClipboardColumn<EventFighterIntakeClipboardRow>[] = [
+  { key: "id", pick: (row) => row.id },
+  { key: "event_name", pick: (row) => row.eventName },
+  { key: "fighter_name", pick: (row) => row.fighterName },
+  { key: "event_fighter_id", pick: (row) => row.eventFighterId },
+  { key: "submitted_by_account_id", pick: (row) => row.submittedByAccountId },
+  { key: "full_name", pick: (row) => row.fullName },
+  { key: "nickname", pick: (row) => row.nickname },
+  { key: "email", pick: (row) => row.email },
+  { key: "phone_whatsapp", pick: (row) => row.phoneWhatsapp },
+  { key: "birth_date", pick: (row) => row.birthDate },
+  { key: "cpf", pick: (row) => row.cpf },
+  { key: "cpf_last4", pick: (row) => row.cpfLast4 },
+  { key: "pix_key_type", pick: (row) => row.pixKeyType },
+  { key: "pix_key", pick: (row) => row.pixKey },
+  { key: "pix_key_last4", pick: (row) => row.pixKeyLast4 },
+  { key: "has_health_insurance", pick: (row) => row.hasHealthInsurance },
+  { key: "health_insurance_provider", pick: (row) => row.healthInsuranceProvider },
+  { key: "record_summary", pick: (row) => row.recordSummary },
+  { key: "category", pick: (row) => row.category },
+  { key: "height", pick: (row) => row.height },
+  { key: "reach", pick: (row) => row.reach },
+  { key: "city", pick: (row) => row.city },
+  { key: "state_code", pick: (row) => row.stateCode },
+  { key: "education_level", pick: (row) => row.educationLevel },
+  { key: "team", pick: (row) => row.team },
+  { key: "coach_name", pick: (row) => row.coachName },
+  { key: "fight_graduations", pick: (row) => row.fightGraduations },
+  { key: "coach_contact", pick: (row) => row.coachContact },
+  { key: "manager_name", pick: (row) => row.managerName },
+  { key: "manager_contact", pick: (row) => row.managerContact },
+  { key: "corner_one_name", pick: (row) => row.cornerOneName },
+  { key: "corner_two_name", pick: (row) => row.cornerTwoName },
+  { key: "primary_specialty", pick: (row) => row.primarySpecialty },
+  { key: "additional_specialties", pick: (row) => row.additionalSpecialties },
+  { key: "competition_history", pick: (row) => row.competitionHistory },
+  { key: "titles_won", pick: (row) => row.titlesWon },
+  { key: "life_story", pick: (row) => row.lifeStory },
+  { key: "funny_story", pick: (row) => row.funnyStory },
+  { key: "curiosities", pick: (row) => row.curiosities },
+  { key: "hobbies", pick: (row) => row.hobbies },
+  { key: "tapology_profile", pick: (row) => row.tapologyProfile },
+  { key: "instagram_profile", pick: (row) => row.instagramProfile },
+  { key: "source", pick: (row) => row.source },
+  { key: "intake_status", pick: (row) => row.intakeStatus },
+  { key: "reviewed_by_account_id", pick: (row) => row.reviewedByAccountId },
+  { key: "reviewed_at", pick: (row) => row.reviewedAt },
+  { key: "staff_notes", pick: (row) => row.staffNotes },
+  { key: "request_id", pick: (row) => row.requestId },
+  { key: "request_origin", pick: (row) => row.requestOrigin },
+  { key: "user_agent", pick: (row) => row.userAgent },
+  { key: "metadata", pick: (row) => row.metadata },
+  { key: "submitted_at", pick: (row) => row.submittedAt },
+  { key: "created_at", pick: (row) => row.createdAt },
+  { key: "updated_at", pick: (row) => row.updatedAt },
+];
+
+const EVENT_FIGHTER_NARRATIVES_CLIPBOARD_COLUMNS: ClipboardColumn<EventFighterIntakeClipboardRow>[] = [
+  { key: "competition_history", pick: (row) => row.competitionHistory },
+  { key: "titles_won", pick: (row) => row.titlesWon },
+  { key: "life_story", pick: (row) => row.lifeStory },
+  { key: "funny_story", pick: (row) => row.funnyStory },
+  { key: "curiosities", pick: (row) => row.curiosities },
+  { key: "hobbies", pick: (row) => row.hobbies },
+];
 
 type TableSummaryRow = {
   totalRows: number | string;
@@ -334,6 +470,92 @@ function formatDateTime(value: DateValue) {
   const date = toDate(value);
 
   return date ? dateTimeFormatter.format(date) : "—";
+}
+
+function formatClipboardScalar(value: unknown) {
+  if (value === null || value === undefined) {
+    return "";
+  }
+
+  if (typeof value === "boolean") {
+    return value ? "true" : "false";
+  }
+
+  if (value instanceof Date) {
+    return value.toISOString();
+  }
+
+  if (typeof value === "object") {
+    return JSON.stringify(value);
+  }
+
+  return String(value)
+    .replace(/\r\n/g, "\n")
+    .replace(/[\t\r\n]+/g, " ")
+    .trim();
+}
+
+function escapeCsvCell(value: string) {
+  if (!/[",\n]/.test(value)) {
+    return value;
+  }
+
+  return `"${value.replace(/"/g, '""')}"`;
+}
+
+function buildDelimitedClipboardLine<Row>(
+  row: Row,
+  columns: ClipboardColumn<Row>[],
+  delimiter: string,
+) {
+  return columns
+    .map((column) => formatClipboardScalar(column.pick(row)))
+    .join(delimiter);
+}
+
+function buildCsvClipboard<Row>(row: Row, columns: ClipboardColumn<Row>[]) {
+  const header = columns.map((column) => column.key).join(",");
+  const values = columns
+    .map((column) => escapeCsvCell(formatClipboardScalar(column.pick(row))))
+    .join(",");
+
+  return `${header}\n${values}`;
+}
+
+function buildEventFighterIntakeCopyExports(
+  row: EventFighterIntakeClipboardRow,
+): AdminDatabaseRecordCopyExport[] {
+  return [
+    {
+      id: "google-sheets-finance-row",
+      label: "Copiar linha para planilha",
+      description:
+        "Linha em TSV, na ordem do export financeiro. Cole no Google Sheets a partir da primeira coluna.",
+      content: buildDelimitedClipboardLine(
+        row,
+        EVENT_FIGHTER_FINANCE_CLIPBOARD_COLUMNS,
+        "\t",
+      ),
+    },
+    {
+      id: "google-sheets-narratives-row",
+      label: "Copiar narrativas",
+      description:
+        "Somente as 6 colunas de narrativas. Ideal para colar nas colunas que ficaram vazias.",
+      content: buildDelimitedClipboardLine(
+        row,
+        EVENT_FIGHTER_NARRATIVES_CLIPBOARD_COLUMNS,
+        "\t",
+      ),
+    },
+    {
+      id: "google-sheets-finance-csv",
+      label: "Copiar CSV completo",
+      description:
+        "CSV com cabeçalho e linha do intake financeiro, útil para conferência ou import manual.",
+      content: buildCsvClipboard(row, EVENT_FIGHTER_FINANCE_CLIPBOARD_COLUMNS),
+    },
+  ];
 }
 
 function formatStatus(value: string | null | undefined) {
@@ -2019,67 +2241,23 @@ async function loadEventFighterIntakeRecordDirect(
       requestId: `admin-database-record-${rowId}`,
     },
     async (transaction) =>
-      transaction.query<{
-        id: string;
-        eventName: string | null;
-        fighterName: string | null;
-        fullName: string;
-        nickname: string;
-        email: string;
-        phoneWhatsapp: string;
-        birthDate: string;
-        cpf: string | null;
-        cpfLast4: string;
-        pixKeyType: string;
-        pixKey: string | null;
-        pixKeyLast4: string;
-        hasHealthInsurance: boolean;
-        healthInsuranceProvider: string | null;
-        recordSummary: string;
-        category: string | null;
-        height: string | null;
-        reach: string | null;
-        city: string | null;
-        educationLevel: string | null;
-        team: string | null;
-        fightGraduations: string | null;
-        tapologyProfile: string | null;
-        instagramProfile: string | null;
-        coachContact: string | null;
-        managerContact: string | null;
-        cornerOneName: string | null;
-        cornerTwoName: string | null;
-        primarySpecialty: string;
-        additionalSpecialties: string;
-        competitionHistory: string;
-        titlesWon: string;
-        lifeStory: string;
-        funnyStory: string;
-        curiosities: string;
-        hobbies: string;
-        source: string;
-        intakeStatus: string;
-        reviewedAt: DateValue;
-        staffNotes: string | null;
-        requestId: string | null;
-        requestOrigin: string | null;
-        requestIpHash: string | null;
-        userAgent: string | null;
-        metadata: unknown;
-        submittedAt: DateValue;
-        createdAt: DateValue;
-        updatedAt: DateValue;
-        submittedByDisplayName: string | null;
-        submittedByEmail: string | null;
-        reviewedByDisplayName: string | null;
-        reviewedByEmail: string | null;
-        photos: Array<Record<string, unknown>> | null;
-      }>(
+      transaction.query<
+        EventFighterIntakeClipboardRow & {
+          requestIpHash: string | null;
+          submittedByDisplayName: string | null;
+          submittedByEmail: string | null;
+          reviewedByDisplayName: string | null;
+          reviewedByEmail: string | null;
+          photos: Array<Record<string, unknown>> | null;
+        }
+      >(
         `
           select
             intake.id,
             event.name as "eventName",
             fighter.display_name as "fighterName",
+            intake.event_fighter_id as "eventFighterId",
+            intake.submitted_by_account_id as "submittedByAccountId",
             intake.full_name as "fullName",
             intake.nickname,
             intake.email,
@@ -2097,12 +2275,15 @@ async function loadEventFighterIntakeRecordDirect(
             intake.height,
             intake.reach,
             intake.city,
+            intake.state_code as "stateCode",
             intake.education_level as "educationLevel",
             intake.team,
+            intake.coach_name as "coachName",
             intake.fight_graduations as "fightGraduations",
             intake.tapology_profile as "tapologyProfile",
             intake.instagram_profile as "instagramProfile",
             intake.coach_contact as "coachContact",
+            intake.manager_name as "managerName",
             intake.manager_contact as "managerContact",
             intake.corner_one_name as "cornerOneName",
             intake.corner_two_name as "cornerTwoName",
@@ -2116,6 +2297,7 @@ async function loadEventFighterIntakeRecordDirect(
             intake.hobbies,
             intake.source,
             intake.intake_status as "intakeStatus",
+            intake.reviewed_by_account_id as "reviewedByAccountId",
             intake.reviewed_at as "reviewedAt",
             intake.staff_notes as "staffNotes",
             intake.request_id as "requestId",
@@ -2188,6 +2370,7 @@ async function loadEventFighterIntakeRecordDirect(
         .filter((value) => value !== "—")
         .join(" / ") || "Intake de evento",
     subtitle: formatText(row.eventName ?? row.fighterName),
+    copyExports: buildEventFighterIntakeCopyExports(row),
     sections: [
       createSection("Emitente", [
         { label: "Evento", value: formatText(row.eventName) },
