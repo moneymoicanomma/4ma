@@ -4,6 +4,46 @@ import { getSiteAssetRemotePatterns } from "./lib/site-assets";
 
 const repoRoot = process.cwd();
 const siteAssetRemotePatterns = getSiteAssetRemotePatterns();
+const defaultConnectSrcOrigins = [
+  "'self'",
+  "https://assets.moneymoicanomma.com.br",
+  "https://va.vercel-scripts.com",
+  "https://*.vercel-insights.com",
+  "https://challenges.cloudflare.com",
+  "https://use.typekit.net",
+  "https://p.typekit.net",
+  "https://*.r2.cloudflarestorage.com"
+] as const;
+
+function resolveOrigin(value: string) {
+  try {
+    return new URL(value).origin;
+  } catch {
+    try {
+      return new URL(`https://${value}`).origin;
+    } catch {
+      return null;
+    }
+  }
+}
+
+function getConnectSrcOrigins() {
+  const origins = new Set<string>(defaultConnectSrcOrigins);
+
+  for (const candidate of [
+    process.env.NEXT_PUBLIC_SITE_ASSET_BASE_URL,
+    process.env.FIGHTER_PHOTOS_S3_ENDPOINT
+  ]) {
+    const origin = candidate ? resolveOrigin(candidate) : null;
+
+    if (origin) {
+      origins.add(origin);
+    }
+  }
+
+  return Array.from(origins);
+}
+
 const contentSecurityPolicy = [
   "default-src 'self'",
   "base-uri 'self'",
@@ -15,7 +55,7 @@ const contentSecurityPolicy = [
   "style-src-elem 'self' 'unsafe-inline' https://use.typekit.net https://p.typekit.net",
   "font-src 'self' data: https://use.typekit.net https://p.typekit.net",
   "img-src 'self' data: blob: https:",
-  "connect-src 'self' https://assets.moneymoicanomma.com.br https://va.vercel-scripts.com https://*.vercel-insights.com https://challenges.cloudflare.com https://use.typekit.net https://p.typekit.net",
+  `connect-src ${getConnectSrcOrigins().join(" ")}`,
   "frame-src 'self' https://challenges.cloudflare.com",
   "worker-src 'self' blob:",
   "manifest-src 'self'",

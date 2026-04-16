@@ -2,21 +2,99 @@
 
 import { useState } from "react";
 
-import type { AdminDatabaseRecordCopyExport } from "@/lib/server/admin-database";
+import type {
+  AdminDatabaseRecordCopyExport,
+  AdminDatabaseRecordSection,
+} from "@/lib/server/admin-database";
 
 import styles from "./admin-database-record-copy-actions.module.css";
 
 type AdminDatabaseRecordCopyActionsProps = {
   exports: AdminDatabaseRecordCopyExport[];
+  sections: AdminDatabaseRecordSection[];
 };
+
+type CopyAction = {
+  id: string;
+  label: string;
+  description: string;
+  content: string;
+};
+
+function normalizeCopyValue(value: unknown): string {
+  if (value === null || value === undefined) {
+    return "";
+  }
+
+  if (typeof value === "boolean") {
+    return value ? "Sim" : "Nao";
+  }
+
+  if (typeof value === "string" || typeof value === "number") {
+    return String(value).replace(/\r\n/g, "\n").trim();
+  }
+
+  return JSON.stringify(value);
+}
+
+function escapeCsvValue(value: string): string {
+  if (!/[",\n]/.test(value)) {
+    return value;
+  }
+
+  return `"${value.replace(/"/g, '""')}"`;
+}
+
+function buildSectionCsv(section: AdminDatabaseRecordSection): string {
+  const rows = section.fields.map((field) =>
+    [field.label, normalizeCopyValue(field.value)].map(escapeCsvValue).join(","),
+  );
+
+  return [["campo", "valor"].join(","), ...rows].join("\n");
+}
+
+function buildAllCsv(sections: AdminDatabaseRecordSection[]): string {
+  const rows = sections.flatMap((section) =>
+    section.fields.map((field) =>
+      [section.title, field.label, normalizeCopyValue(field.value)].map(escapeCsvValue).join(","),
+    ),
+  );
+
+  return [["secao", "campo", "valor"].join(","), ...rows].join("\n");
+}
+
+function buildSectionActionId(sectionTitle: string): string {
+  return sectionTitle
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
 
 export function AdminDatabaseRecordCopyActions({
   exports,
+  sections,
 }: Readonly<AdminDatabaseRecordCopyActionsProps>) {
   const [feedback, setFeedback] = useState<string | null>(null);
   const [activeId, setActiveId] = useState<string | null>(null);
+  const actions: CopyAction[] = [
+    {
+      id: "copy-all-csv",
+      label: "Copiar tudo (CSV)",
+      description: "Exporta todas as secoes desta ficha em CSV com colunas secao, campo e valor.",
+      content: buildAllCsv(sections),
+    },
+    ...sections.map((section) => ({
+      id: `copy-section-${buildSectionActionId(section.title)}`,
+      label: `Copiar ${section.title}`,
+      description: `CSV com os campos do setor ${section.title}.`,
+      content: buildSectionCsv(section),
+    })),
+    ...exports,
+  ];
 
-  async function handleCopy(copyExport: AdminDatabaseRecordCopyExport) {
+  async function handleCopy(copyExport: CopyAction) {
     setActiveId(copyExport.id);
 
     try {
@@ -38,15 +116,15 @@ export function AdminDatabaseRecordCopyActions({
     <section className={styles.panel}>
       <header className={styles.header}>
         <span className={styles.eyebrow}>Acoes rapidas</span>
-        <h2>Copiar para a planilha</h2>
+        <h2>Copiar dados</h2>
         <p>
-          O admin usa leitura direta do banco. Esses atalhos contornam o export da planilha e
-          copiam os dados desta ficha no formato mais prático para colar.
+          Copie a ficha inteira em CSV, copie cada setor separadamente ou use os atalhos
+          específicos para planilha.
         </p>
       </header>
 
       <div className={styles.actionList}>
-        {exports.map((copyExport) => (
+        {actions.map((copyExport) => (
           <article className={styles.actionCard} key={copyExport.id}>
             <div className={styles.copy}>
               <strong>{copyExport.label}</strong>

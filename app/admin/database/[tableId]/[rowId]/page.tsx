@@ -138,8 +138,8 @@ export default async function AdminDatabaseRecordPage({
             </div>
           </header>
 
-          {copyExports.length ? (
-            <AdminDatabaseRecordCopyActions exports={copyExports} />
+          {data.sections.length ? (
+            <AdminDatabaseRecordCopyActions exports={copyExports} sections={data.sections} />
           ) : null}
 
           <AdminDatabaseRecordView data={data} />

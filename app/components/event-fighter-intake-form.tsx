@@ -75,6 +75,18 @@ async function computeSha256Hex(file: File) {
   return arrayBufferToHex(digest);
 }
 
+function resolveSubmissionErrorMessage(error: unknown) {
+  if (error instanceof TypeError && /failed to fetch/i.test(error.message)) {
+    return "A conexão caiu antes de concluir o envio. Tenta novamente em alguns segundos.";
+  }
+
+  if (error instanceof Error && error.message.trim()) {
+    return error.message;
+  }
+
+  return "Não foi possível enviar agora. Tenta novamente.";
+}
+
 async function createUploadTargets(submission: EventFighterIntakeDraftSubmission) {
   if (!submission.photos.length) {
     return [];
@@ -252,10 +264,7 @@ export function EventFighterIntakeForm({
     } catch (error) {
       setState({
         status: "error",
-        message:
-          error instanceof Error
-            ? error.message
-            : "Não foi possível enviar agora. Tenta novamente."
+        message: resolveSubmissionErrorMessage(error)
       });
     }
   }
