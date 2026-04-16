@@ -156,6 +156,27 @@ export function LandingTopbar({
     };
   }, []);
 
+  useEffect(() => {
+    if (!menuOpen) {
+      return;
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") {
+        return;
+      }
+
+      event.preventDefault();
+      setMenuOpen(false);
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [menuOpen]);
+
   return (
     <header className={menuOpen ? "topbar is-menu-open" : "topbar"}>
       <div className="topbar__brand-rail">
@@ -216,69 +237,71 @@ export function LandingTopbar({
         </button>
       </div>
 
-      <div className="topbar__sheet" id="mobile-nav-sheet">
-        <button
-          aria-label="Fechar menu"
-          className="topbar__sheet-backdrop"
-          type="button"
-          onClick={() => {
-            setMenuOpen(false);
-          }}
-        />
+      {menuOpen ? (
+        <div className="topbar__sheet" id="mobile-nav-sheet">
+          <button
+            aria-label="Fechar menu"
+            className="topbar__sheet-backdrop"
+            type="button"
+            onClick={() => {
+              setMenuOpen(false);
+            }}
+          />
 
-        <div className="topbar__sheet-panel" role="dialog" aria-modal="true" aria-label="Navegação">
-          <div className="topbar__sheet-header">
-            <span className="topbar__sheet-kicker">Money Moicano MMA</span>
-            <button
-              aria-label="Fechar menu"
-              className="topbar__sheet-close"
-              type="button"
-              onClick={() => {
-                setMenuOpen(false);
-              }}
-            >
-              Fechar
-            </button>
-          </div>
-
-          <nav className="topbar__sheet-nav" aria-label="Primary Mobile">
-            {navItems.map((item) => (
-              <a
-                aria-current={activeSection === item.sectionId ? "page" : undefined}
-                className={
-                  activeSection === item.sectionId
-                    ? "topbar__sheet-link is-active"
-                    : "topbar__sheet-link"
-                }
-                href={item.href}
-                key={item.label}
+          <div className="topbar__sheet-panel" role="dialog" aria-modal="true" aria-label="Navegação">
+            <div className="topbar__sheet-header">
+              <span className="topbar__sheet-kicker">Money Moicano MMA</span>
+              <button
+                aria-label="Fechar menu"
+                className="topbar__sheet-close"
+                type="button"
                 onClick={() => {
-                  setActiveSection(item.sectionId);
                   setMenuOpen(false);
                 }}
               >
-                {item.label}
-              </a>
-            ))}
-          </nav>
+                Fechar
+              </button>
+            </div>
 
-          <div className="topbar__sheet-footer">
-            <span className="topbar__sheet-label">Próxima porrada</span>
-            <p className="topbar__sheet-copy">23 MAIO 2026 · SÃO PAULO · CANAL MONEY MOICANO</p>
-            {hasCta ? (
-              <a
-                aria-label={hasCtaLogo ? ctaLabel : undefined}
-                className={`${ctaButtonClassName} landing-button--primary landing-button--sheet`}
-                href={ctaHref}
-                rel={ctaIsExternal ? "noreferrer" : undefined}
-                target={ctaIsExternal ? "_blank" : undefined}
-              >
-                {ctaButtonContent}
-              </a>
-            ) : null}
+            <nav className="topbar__sheet-nav" aria-label="Primary Mobile">
+              {navItems.map((item) => (
+                <a
+                  aria-current={activeSection === item.sectionId ? "page" : undefined}
+                  className={
+                    activeSection === item.sectionId
+                      ? "topbar__sheet-link is-active"
+                      : "topbar__sheet-link"
+                  }
+                  href={item.href}
+                  key={item.label}
+                  onClick={() => {
+                    setActiveSection(item.sectionId);
+                    setMenuOpen(false);
+                  }}
+                >
+                  {item.label}
+                </a>
+              ))}
+            </nav>
+
+            <div className="topbar__sheet-footer">
+              <span className="topbar__sheet-label">Próxima porrada</span>
+              <p className="topbar__sheet-copy">23 MAIO 2026 · SÃO PAULO · CANAL MONEY MOICANO</p>
+              {hasCta ? (
+                <a
+                  aria-label={hasCtaLogo ? ctaLabel : undefined}
+                  className={`${ctaButtonClassName} landing-button--primary landing-button--sheet`}
+                  href={ctaHref}
+                  rel={ctaIsExternal ? "noreferrer" : undefined}
+                  target={ctaIsExternal ? "_blank" : undefined}
+                >
+                  {ctaButtonContent}
+                </a>
+              ) : null}
+            </div>
           </div>
         </div>
-      </div>
+      ) : null}
     </header>
   );
 }
