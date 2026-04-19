@@ -117,6 +117,15 @@ const adminDatabaseTables: Record<AdminDatabaseTableId, AdminDatabaseTableMeta> 
   }
 };
 
+export const ALL_ADMIN_DATABASE_TABLE_IDS = Object.freeze(
+  Object.keys(adminDatabaseTables) as AdminDatabaseTableId[],
+);
+
+export type AdminDatabaseLoadOptions = {
+  visibleTableIds?: readonly AdminDatabaseTableId[];
+  limitEventFighterIntakesToCurrentEvent?: boolean;
+};
+
 export type AdminDatabaseColumn = {
   key: string;
   label: string;
@@ -399,6 +408,117 @@ type TableFallbackConfig = Omit<
   AdminDatabaseTablePreview,
   "rows" | "statusCounts" | "totalRows" | "lastActivityAt" | "errorMessage"
 >;
+
+type EventFighterIntakeScope = {
+  limitToCurrentEvent: boolean;
+  currentEventId: string | null;
+};
+
+const CURRENT_EVENT_FILTER_REQUIRES_LOCAL_DB_MESSAGE =
+  "Filtro por evento atual indisponível neste ambiente. Conecte o banco local para aplicar a restrição.";
+
+function getNormalizedVisibleTableIds(options?: AdminDatabaseLoadOptions) {
+  if (!options?.visibleTableIds?.length) {
+    return [...ALL_ADMIN_DATABASE_TABLE_IDS];
+  }
+
+  const allowedTableIds = new Set<AdminDatabaseTableId>();
+
+  for (const tableId of options.visibleTableIds) {
+    if (isAdminDatabaseTableId(tableId)) {
+      allowedTableIds.add(tableId);
+    }
+  }
+
+  return [...allowedTableIds];
+}
+
+function isTableAllowedByLoadOptions(
+  tableId: AdminDatabaseTableId,
+  options?: AdminDatabaseLoadOptions,
+) {
+  if (!options?.visibleTableIds?.length) {
+    return true;
+  }
+
+  return options.visibleTableIds.includes(tableId);
+}
+
+function applyOverviewLoadOptions(
+  overview: AdminDatabaseOverview,
+  options?: AdminDatabaseLoadOptions,
+): AdminDatabaseOverview {
+  const visibleTableIds = new Set(getNormalizedVisibleTableIds(options));
+  const limitEventIntakesToCurrent =
+    options?.limitEventFighterIntakesToCurrentEvent === true;
+
+  const tables = overview.tables
+    .filter((table) => isAdminDatabaseTableId(table.id) && visibleTableIds.has(table.id))
+    .map((table) => {
+      if (limitEventIntakesToCurrent && table.id === "event-fighter-intakes") {
+        return {
+          ...table,
+          rows: [],
+          statusCounts: [],
+          totalRows: 0,
+          lastActivityAt: null,
+          errorMessage: CURRENT_EVENT_FILTER_REQUIRES_LOCAL_DB_MESSAGE,
+        };
+      }
+
+      return table;
+    });
+
+  const availableTables = tables.filter((table) => !table.errorMessage).length;
+  const unavailableTables = tables.length - availableTables;
+  const totalRows = tables.reduce((sum, table) => sum + (table.totalRows ?? 0), 0);
+
+  return {
+    ...overview,
+    totalRows,
+    tables,
+    availableTables,
+    unavailableTables,
+  };
+}
+
+async function resolveCurrentOperationalEventId() {
+  const result = await queryDatabase<{ id: string }>(
+    `
+      select id
+      from app.events
+      order by
+        case
+          when status in ('published', 'locked') then 0
+          when status = 'draft' then 1
+          when status = 'finished' then 2
+          else 3
+        end asc,
+        coalesce(starts_at, lock_at, published_at, created_at) desc
+      limit 1
+    `,
+  );
+
+  return result.rows[0]?.id ?? null;
+}
+
+async function resolveEventFighterIntakeScope(
+  options?: AdminDatabaseLoadOptions,
+): Promise<EventFighterIntakeScope> {
+  const limitToCurrentEvent = options?.limitEventFighterIntakesToCurrentEvent === true;
+
+  if (!limitToCurrentEvent) {
+    return {
+      limitToCurrentEvent: false,
+      currentEventId: null,
+    };
+  }
+
+  return {
+    limitToCurrentEvent: true,
+    currentEventId: await resolveCurrentOperationalEventId(),
+  };
+}
 
 function normalizeText(value: string | null | undefined) {
   const trimmed = value?.trim();
@@ -986,7 +1106,7 @@ async function loadFighterApplicationsTable() {
   });
 }
 
-async function loadEventFighterIntakesTable() {
+async function loadEventFighterIntakesTable(intakeScope: EventFighterIntakeScope) {
   const config: TableFallbackConfig = {
     id: "event-fighter-intakes",
     label: "Intake de Evento",
@@ -1004,25 +1124,56 @@ async function loadEventFighterIntakesTable() {
     ],
   };
 
+  if (intakeScope.limitToCurrentEvent && !intakeScope.currentEventId) {
+    return {
+      ...config,
+      rows: [],
+      statusCounts: [],
+      totalRows: 0,
+      lastActivityAt: null,
+    };
+  }
+
+  const eventScopeValues = intakeScope.currentEventId
+    ? [intakeScope.currentEventId]
+    : undefined;
+  const eventScopeJoin = intakeScope.currentEventId
+    ? `
+          join app.event_fighters event_fighter
+            on event_fighter.id = intake.event_fighter_id
+        `
+    : "";
+  const eventScopeWhere = intakeScope.currentEventId
+    ? `
+          where event_fighter.event_id = $1::uuid
+        `
+    : "";
+
   return withTableFallback(config, async () => {
     const [summary, statusCounts, result] = await Promise.all([
       loadTableSummary(
         `
           select
             count(*)::int as "totalRows",
-            max(updated_at) as "lastActivityAt"
-          from app.event_fighter_intakes
+            max(intake.updated_at) as "lastActivityAt"
+          from app.event_fighter_intakes intake
+          ${eventScopeJoin}
+          ${eventScopeWhere}
         `,
+        eventScopeValues,
       ),
       loadStatusCounts(
         `
           select
             intake_status as status,
             count(*)::int as total
-          from app.event_fighter_intakes
+          from app.event_fighter_intakes intake
+          ${eventScopeJoin}
+          ${eventScopeWhere}
           group by intake_status
           order by count(*) desc, intake_status asc
         `,
+        eventScopeValues,
       ),
       queryDatabase<EventFighterIntakePreviewRow>(
         `
@@ -1036,14 +1187,17 @@ async function loadEventFighterIntakesTable() {
             intake.intake_status as "intakeStatus",
             coalesce(photo_counts.total, 0)::int as "photoCount"
           from app.event_fighter_intakes intake
+          ${eventScopeJoin}
           left join lateral (
             select count(*)::int as total
             from app.event_fighter_intake_photos photo
             where photo.intake_id = intake.id
           ) photo_counts on true
+          ${eventScopeWhere}
           order by intake.submitted_at desc
           limit ${TABLE_PREVIEW_LIMIT}
         `,
+        eventScopeValues,
       ),
     ]);
 
@@ -1145,17 +1299,25 @@ async function loadFantasyEntriesTable() {
 }
 
 export async function loadAdminDatabaseOverview(
+  options: AdminDatabaseLoadOptions = {},
   env: ServerEnv = getServerEnv(),
 ): Promise<AdminDatabaseOverview> {
+  const normalizedOptions: AdminDatabaseLoadOptions = {
+    ...options,
+    visibleTableIds: getNormalizedVisibleTableIds(options),
+  };
+
   if (!isDatabaseConfigured(env) && isAdminReadUpstreamConfigured(env)) {
     try {
-      return await getJsonFromUpstream<AdminDatabaseOverview>(
+      const overview = await getJsonFromUpstream<AdminDatabaseOverview>(
         `${env.upstreamApiBaseUrl}${env.adminDatabaseOverviewPath}`,
         {
           bearerToken: getAdminReadUpstreamBearerToken(env)!,
           timeoutMs: env.upstreamRequestTimeoutMs,
         },
       );
+
+      return applyOverviewLoadOptions(overview, normalizedOptions);
     } catch (error) {
       console.error(
         "[admin/database] failed to load overview from upstream",
@@ -1168,20 +1330,42 @@ export async function loadAdminDatabaseOverview(
     return {
       databaseConfigured: false,
       totalRows: 0,
-      tables: [],
+      tables: normalizedOptions.visibleTableIds!.map((tableId) => ({
+        ...adminDatabaseTables[tableId],
+        columns: [],
+        rows: [],
+        statusCounts: [],
+        totalRows: null,
+        lastActivityAt: null,
+      })),
       availableTables: 0,
-      unavailableTables: 0,
+      unavailableTables: normalizedOptions.visibleTableIds!.length,
     };
   }
 
-  const tables = await Promise.all([
-    loadContactMessagesTable(),
-    loadNewsletterSubscriptionsTable(),
-    loadPartnerInquiriesTable(),
-    loadFighterApplicationsTable(),
-    loadEventFighterIntakesTable(),
-    loadFantasyEntriesTable(),
-  ]);
+  const intakeScope = await resolveEventFighterIntakeScope(normalizedOptions);
+  const tables = await Promise.all(
+    normalizedOptions.visibleTableIds!.map((tableId) => {
+      switch (tableId) {
+        case "contact-messages":
+          return loadContactMessagesTable();
+        case "newsletter-subscriptions":
+          return loadNewsletterSubscriptionsTable();
+        case "partner-inquiries":
+          return loadPartnerInquiriesTable();
+        case "fighter-applications":
+          return loadFighterApplicationsTable();
+        case "event-fighter-intakes":
+          return loadEventFighterIntakesTable(intakeScope);
+        case "fantasy-entries":
+          return loadFantasyEntriesTable();
+        default: {
+          const unexpectedTableId: never = tableId;
+          throw new Error(`Unexpected admin database table id: ${unexpectedTableId}`);
+        }
+      }
+    }),
+  );
 
   const availableTables = tables.filter((table) => !table.errorMessage).length;
   const unavailableTables = tables.length - availableTables;
@@ -1212,6 +1396,21 @@ function buildAdminDatabaseTableUnavailable(
     lastActivityAt: null,
     errorMessage:
       "Nem o banco local nem o upstream administrativo estão disponíveis neste ambiente.",
+  };
+}
+
+function buildAdminDatabaseTableForbidden(
+  table: AdminDatabaseTableMeta,
+): AdminDatabaseTableData {
+  return {
+    databaseConfigured: true,
+    table,
+    columns: [],
+    rows: [],
+    statusCounts: [],
+    totalRows: 0,
+    lastActivityAt: null,
+    errorMessage: "Seu perfil não tem acesso a esta tabela.",
   };
 }
 
@@ -1524,24 +1723,72 @@ async function loadFighterApplicationsTableDataDirect(): Promise<AdminDatabaseTa
   };
 }
 
-async function loadEventFighterIntakesTableDataDirect(): Promise<AdminDatabaseTableData> {
+async function loadEventFighterIntakesTableDataDirect(
+  intakeScope: EventFighterIntakeScope,
+): Promise<AdminDatabaseTableData> {
   const table = adminDatabaseTables["event-fighter-intakes"];
+
+  if (intakeScope.limitToCurrentEvent && !intakeScope.currentEventId) {
+    return {
+      databaseConfigured: true,
+      table,
+      columns: [
+        { key: "submittedAt", label: "Enviado em" },
+        { key: "fighter", label: "Atleta" },
+        { key: "email", label: "Email" },
+        { key: "phoneWhatsapp", label: "WhatsApp" },
+        { key: "photoCount", label: "Fotos" },
+        { key: "intakeStatus", label: "Status" },
+      ],
+      rows: [],
+      statusCounts: [],
+      totalRows: 0,
+      lastActivityAt: null,
+    };
+  }
+
+  const eventScopeValues = intakeScope.currentEventId
+    ? [intakeScope.currentEventId]
+    : undefined;
+  const eventScopeJoin = intakeScope.currentEventId
+    ? `
+      join app.event_fighters event_fighter
+        on event_fighter.id = intake.event_fighter_id
+    `
+    : "";
+  const eventScopeWhere = intakeScope.currentEventId
+    ? `
+      where event_fighter.event_id = $1::uuid
+    `
+    : "";
+
   const [summary, statusCounts, result] = await Promise.all([
-    loadTableSummary(`
+    loadTableSummary(
+      `
       select
         count(*)::int as "totalRows",
-        max(updated_at) as "lastActivityAt"
-      from app.event_fighter_intakes
-    `),
-    loadStatusCounts(`
+        max(intake.updated_at) as "lastActivityAt"
+      from app.event_fighter_intakes intake
+      ${eventScopeJoin}
+      ${eventScopeWhere}
+    `,
+      eventScopeValues,
+    ),
+    loadStatusCounts(
+      `
       select
         intake_status as status,
         count(*)::int as total
-      from app.event_fighter_intakes
+      from app.event_fighter_intakes intake
+      ${eventScopeJoin}
+      ${eventScopeWhere}
       group by intake_status
       order by count(*) desc, intake_status asc
-    `),
-    queryDatabase<EventFighterIntakePreviewRow>(`
+    `,
+      eventScopeValues,
+    ),
+    queryDatabase<EventFighterIntakePreviewRow>(
+      `
       select
         intake.id,
         intake.submitted_at as "submittedAt",
@@ -1552,13 +1799,17 @@ async function loadEventFighterIntakesTableDataDirect(): Promise<AdminDatabaseTa
         intake.intake_status as "intakeStatus",
         coalesce(photo_counts.total, 0)::int as "photoCount"
       from app.event_fighter_intakes intake
+      ${eventScopeJoin}
       left join lateral (
         select count(*)::int as total
         from app.event_fighter_intake_photos photo
         where photo.intake_id = intake.id
       ) photo_counts on true
+      ${eventScopeWhere}
       order by intake.submitted_at desc
-    `),
+    `,
+      eventScopeValues,
+    ),
   ]);
 
   return {
@@ -2232,8 +2483,20 @@ async function loadFantasyEntryRecordDirect(
 
 async function loadEventFighterIntakeRecordDirect(
   rowId: string,
+  intakeScope: EventFighterIntakeScope,
 ): Promise<AdminDatabaseRecordData | null> {
   const table = adminDatabaseTables["event-fighter-intakes"];
+
+  if (intakeScope.limitToCurrentEvent && !intakeScope.currentEventId) {
+    return null;
+  }
+
+  const recordValues = intakeScope.currentEventId
+    ? [rowId, intakeScope.currentEventId]
+    : [rowId];
+  const eventScopeClause = intakeScope.currentEventId
+    ? "and event.id = $2::uuid"
+    : "";
 
   const result = await withDatabaseTransaction(
     {
@@ -2346,9 +2609,10 @@ async function loadEventFighterIntakeRecordDirect(
             where photo.intake_id = intake.id
           ) photo_rows on true
           where intake.id = $1::uuid
+          ${eventScopeClause}
           limit 1
         `,
-        [rowId],
+        recordValues,
       ),
     {
       requiresEncryptionKey: true,
@@ -2470,14 +2734,36 @@ async function loadEventFighterIntakeRecordDirect(
 
 export async function loadAdminDatabaseTableData(
   tableId: AdminDatabaseTableId,
+  options: AdminDatabaseLoadOptions = {},
   env: ServerEnv = getServerEnv(),
 ): Promise<AdminDatabaseTableData> {
   const table = adminDatabaseTables[tableId];
+  const normalizedOptions: AdminDatabaseLoadOptions = {
+    ...options,
+    visibleTableIds: getNormalizedVisibleTableIds(options),
+  };
+
+  if (!isTableAllowedByLoadOptions(tableId, normalizedOptions)) {
+    return buildAdminDatabaseTableForbidden(table);
+  }
+
+  const intakeScope = await resolveEventFighterIntakeScope(normalizedOptions);
 
   if (!isDatabaseConfigured(env) && isAdminReadUpstreamConfigured(env)) {
     const upstreamTable = await loadAdminDatabaseTableFromUpstream(tableId, env);
 
     if (upstreamTable) {
+      if (tableId === "event-fighter-intakes" && intakeScope.limitToCurrentEvent) {
+        return {
+          ...upstreamTable,
+          rows: [],
+          statusCounts: [],
+          totalRows: 0,
+          lastActivityAt: null,
+          errorMessage: CURRENT_EVENT_FILTER_REQUIRES_LOCAL_DB_MESSAGE,
+        };
+      }
+
       return upstreamTable;
     }
   }
@@ -2496,7 +2782,7 @@ export async function loadAdminDatabaseTableData(
     case "fighter-applications":
       return loadFighterApplicationsTableDataDirect();
     case "event-fighter-intakes":
-      return loadEventFighterIntakesTableDataDirect();
+      return loadEventFighterIntakesTableDataDirect(intakeScope);
     case "fantasy-entries":
       return loadFantasyEntriesTableDataDirect();
   }
@@ -2505,11 +2791,26 @@ export async function loadAdminDatabaseTableData(
 export async function loadAdminDatabaseRecordData(
   tableId: AdminDatabaseTableId,
   rowId: string,
+  options: AdminDatabaseLoadOptions = {},
   env: ServerEnv = getServerEnv(),
 ): Promise<AdminDatabaseRecordData | null> {
   const table = adminDatabaseTables[tableId];
+  const normalizedOptions: AdminDatabaseLoadOptions = {
+    ...options,
+    visibleTableIds: getNormalizedVisibleTableIds(options),
+  };
+
+  if (!isTableAllowedByLoadOptions(tableId, normalizedOptions)) {
+    return null;
+  }
+
+  const intakeScope = await resolveEventFighterIntakeScope(normalizedOptions);
 
   if (!isDatabaseConfigured(env) && isAdminReadUpstreamConfigured(env)) {
+    if (tableId === "event-fighter-intakes" && intakeScope.limitToCurrentEvent) {
+      return null;
+    }
+
     const upstreamRecord = await loadAdminDatabaseRecordFromUpstream(
       tableId,
       rowId,
@@ -2535,7 +2836,7 @@ export async function loadAdminDatabaseRecordData(
     case "fighter-applications":
       return loadFighterApplicationRecordDirect(rowId);
     case "event-fighter-intakes":
-      return loadEventFighterIntakeRecordDirect(rowId);
+      return loadEventFighterIntakeRecordDirect(rowId, intakeScope);
     case "fantasy-entries":
       return loadFantasyEntryRecordDirect(rowId);
   }

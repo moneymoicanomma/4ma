@@ -8,6 +8,7 @@ import {
   ADMIN_SESSION_COOKIE_NAME,
   resolveAdminSessionIdentity
 } from "@/lib/admin/auth";
+import type { AdminBackofficeRole } from "@/lib/server/admin-access";
 import { getSessionAccountFromToken } from "@/lib/server/auth-store";
 import { getServerEnv, isDatabaseConfigured, type ServerEnv } from "@/lib/server/env";
 
@@ -17,7 +18,7 @@ export type AdminSessionIdentity =
       accountId: string;
       username: string;
       displayName: string;
-      role: "admin" | "operator";
+      role: AdminBackofficeRole;
     }
   | {
       kind: "fallback";
@@ -42,7 +43,7 @@ export async function getCurrentAdminSessionIdentity(
 
   if (isDatabaseConfigured(env)) {
     const session = await getSessionAccountFromToken({
-      acceptedRoles: ["admin", "operator"],
+      acceptedRoles: ["admin", "operator", "auditor"],
       sessionKind: "backoffice",
       sessionToken
     }).catch(() => null);
@@ -53,7 +54,7 @@ export async function getCurrentAdminSessionIdentity(
         accountId: session.accountId,
         username: session.email,
         displayName: session.displayName,
-        role: session.role as "admin" | "operator"
+        role: session.role as AdminBackofficeRole
       };
     }
   }

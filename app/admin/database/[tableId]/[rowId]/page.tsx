@@ -12,6 +12,10 @@ import {
   isAdminDatabaseTableId,
   loadAdminDatabaseRecordData,
 } from "@/lib/server/admin-database";
+import {
+  canAccessAdminDatabaseTable,
+  shouldLimitEventFighterIntakesToCurrentEvent,
+} from "@/lib/server/admin-access";
 import { requireAdminSessionIdentity } from "@/lib/server/admin-session";
 
 import styles from "./page.module.css";
@@ -98,9 +102,17 @@ export default async function AdminDatabaseRecordPage({
     notFound();
   }
 
-  await requireAdminSessionIdentity(`/admin/database/${tableId}/${rowId}`);
+  const identity = await requireAdminSessionIdentity(`/admin/database/${tableId}/${rowId}`);
 
-  const data = await loadAdminDatabaseRecordData(tableId, rowId);
+  if (!canAccessAdminDatabaseTable(identity.role, tableId)) {
+    notFound();
+  }
+
+  const data = await loadAdminDatabaseRecordData(tableId, rowId, {
+    limitEventFighterIntakesToCurrentEvent: shouldLimitEventFighterIntakesToCurrentEvent(
+      identity.role,
+    ),
+  });
 
   if (!data) {
     notFound();
@@ -112,7 +124,7 @@ export default async function AdminDatabaseRecordPage({
   return (
     <main className={styles.page}>
       <LandingMotionController />
-      <AdminTopbar active="database" />
+      <AdminTopbar active="database" role={identity.role} />
 
       <section className={styles.content}>
         <div className={styles.shell}>

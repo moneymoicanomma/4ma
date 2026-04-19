@@ -4,6 +4,10 @@ import { AdminDatabaseDashboard } from "@/app/components/admin-database-dashboar
 import { AdminTopbar } from "@/app/components/admin-topbar";
 import { LandingMotionController } from "@/app/components/landing-motion-controller";
 import { loadAdminDatabaseOverview } from "@/lib/server/admin-database";
+import {
+  getVisibleAdminDatabaseTableIds,
+  shouldLimitEventFighterIntakesToCurrentEvent
+} from "@/lib/server/admin-access";
 import { requireAdminSessionIdentity } from "@/lib/server/admin-session";
 
 import styles from "./page.module.css";
@@ -23,14 +27,20 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function AdminDatabasePage() {
-  await requireAdminSessionIdentity("/admin/database");
+  const identity = await requireAdminSessionIdentity("/admin/database");
+  const visibleTableIds = getVisibleAdminDatabaseTableIds(identity.role);
 
-  const overview = await loadAdminDatabaseOverview();
+  const overview = await loadAdminDatabaseOverview({
+    visibleTableIds,
+    limitEventFighterIntakesToCurrentEvent: shouldLimitEventFighterIntakesToCurrentEvent(
+      identity.role
+    )
+  });
 
   return (
     <main className={styles.page}>
       <LandingMotionController />
-      <AdminTopbar active="database" />
+      <AdminTopbar active="database" role={identity.role} />
 
       <section className={styles.hero}>
         <div className={styles.heroGrid}>

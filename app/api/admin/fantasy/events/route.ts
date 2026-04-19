@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import type { FantasyMockEvent } from "@/lib/fantasy/mock-data";
+import { canAccessFantasyAdmin } from "@/lib/server/admin-access";
 import { getCurrentAdminSessionIdentity } from "@/lib/server/admin-session";
 import { getServerEnv } from "@/lib/server/env";
 import { saveFantasyEvent } from "@/lib/server/fantasy";
@@ -52,6 +53,16 @@ export async function POST(request: NextRequest) {
         message: "Sessão administrativa inválida."
       },
       401
+    );
+  }
+
+  if (!canAccessFantasyAdmin(identity.role)) {
+    return buildJsonResponse(
+      {
+        ok: false,
+        message: "Seu perfil não tem permissão para editar o fantasy."
+      },
+      403
     );
   }
 

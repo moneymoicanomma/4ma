@@ -10,6 +10,10 @@ import {
   isAdminDatabaseTableId,
   loadAdminDatabaseTableData,
 } from "@/lib/server/admin-database";
+import {
+  canAccessAdminDatabaseTable,
+  shouldLimitEventFighterIntakesToCurrentEvent,
+} from "@/lib/server/admin-access";
 import { requireAdminSessionIdentity } from "@/lib/server/admin-session";
 
 import styles from "./page.module.css";
@@ -46,14 +50,22 @@ export default async function AdminDatabaseTablePage({
     notFound();
   }
 
-  await requireAdminSessionIdentity(`/admin/database/${tableId}`);
+  const identity = await requireAdminSessionIdentity(`/admin/database/${tableId}`);
 
-  const data = await loadAdminDatabaseTableData(tableId);
+  if (!canAccessAdminDatabaseTable(identity.role, tableId)) {
+    notFound();
+  }
+
+  const data = await loadAdminDatabaseTableData(tableId, {
+    limitEventFighterIntakesToCurrentEvent: shouldLimitEventFighterIntakesToCurrentEvent(
+      identity.role,
+    ),
+  });
 
   return (
     <main className={styles.page}>
       <LandingMotionController />
-      <AdminTopbar active="database" />
+      <AdminTopbar active="database" role={identity.role} />
 
       <section className={styles.content}>
         <div className={styles.shell}>

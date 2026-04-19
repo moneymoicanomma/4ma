@@ -1,9 +1,14 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 
 import { AdminTopbar } from "@/app/components/admin-topbar";
 import { FantasyAdminDashboard } from "@/app/components/fantasy-admin-dashboard";
 import { LandingMotionController } from "@/app/components/landing-motion-controller";
 import { requireAdminSessionIdentity } from "@/lib/server/admin-session";
+import {
+  canAccessFantasyAdmin,
+  getAdminDefaultRedirectPathForRole
+} from "@/lib/server/admin-access";
 import {
   getServerEnv,
   isAdminReadUpstreamConfigured,
@@ -27,7 +32,11 @@ export const dynamic = "force-dynamic";
 
 export default async function FantasyAdminPage() {
   const env = getServerEnv();
-  await requireAdminSessionIdentity("/admin/fantasy", env);
+  const identity = await requireAdminSessionIdentity("/admin/fantasy", env);
+
+  if (!canAccessFantasyAdmin(identity.role)) {
+    redirect(getAdminDefaultRedirectPathForRole(identity.role));
+  }
 
   const fantasyReadable = isDatabaseConfigured(env) || isAdminReadUpstreamConfigured(env);
   const databaseFantasy = fantasyReadable ? await loadFantasyEventsFromDatabase(env) : null;
@@ -37,7 +46,7 @@ export default async function FantasyAdminPage() {
   return (
     <main className={styles.page}>
       <LandingMotionController />
-      <AdminTopbar active="fantasy" />
+      <AdminTopbar active="fantasy" role={identity.role} />
 
       <section className={styles.hero}>
         <div className={styles.heroGrid}>

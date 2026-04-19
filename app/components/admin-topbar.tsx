@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { AdminLogoutButton } from "@/app/components/admin-logout-button";
 import { siteAsset } from "@/lib/site-assets";
+import type { AdminBackofficeRole } from "@/lib/server/admin-access";
 
 import styles from "./admin-topbar.module.css";
 
@@ -22,9 +23,15 @@ const adminNavigationItems = [
 
 type AdminTopbarProps = {
   active: (typeof adminNavigationItems)[number]["id"];
+  role?: AdminBackofficeRole;
 };
 
-export function AdminTopbar({ active }: Readonly<AdminTopbarProps>) {
+export function AdminTopbar({ active, role = "admin" }: Readonly<AdminTopbarProps>) {
+  const navigationItems =
+    role === "auditor"
+      ? adminNavigationItems.filter((item) => item.id === "database")
+      : adminNavigationItems;
+
   return (
     <header className={styles.topbar}>
       <div className={styles.leftCluster}>
@@ -37,7 +44,7 @@ export function AdminTopbar({ active }: Readonly<AdminTopbarProps>) {
         </Link>
 
         <nav aria-label="Seções do admin" className={styles.nav}>
-          {adminNavigationItems.map((item) => {
+          {navigationItems.map((item) => {
             const isActive = item.id === active;
 
             return (

@@ -10,6 +10,8 @@ import {
   resolveAdminSessionIdentity
 } from "@/lib/admin/auth";
 import { siteAsset } from "@/lib/site-assets";
+import type { AdminBackofficeRole } from "@/lib/server/admin-access";
+import { getAdminDefaultRedirectPathForRole } from "@/lib/server/admin-access";
 import { getSessionAccountFromToken } from "@/lib/server/auth-store";
 import { getServerEnv, isDatabaseConfigured } from "@/lib/server/env";
 
@@ -37,13 +39,13 @@ export default async function AdminLoginPage() {
   if (sessionToken) {
     if (isDatabaseConfigured(env)) {
       const session = await getSessionAccountFromToken({
-        acceptedRoles: ["admin", "operator"],
+        acceptedRoles: ["admin", "operator", "auditor"],
         sessionKind: "backoffice",
         sessionToken
       }).catch(() => null);
 
       if (session) {
-        redirect("/admin/fantasy");
+        redirect(getAdminDefaultRedirectPathForRole(session.role as AdminBackofficeRole));
       }
     }
 

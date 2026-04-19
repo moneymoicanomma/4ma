@@ -3,6 +3,7 @@ import { createHash, timingSafeEqual } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 
 import type { AdminSessionResponse } from "@/lib/contracts/admin-session";
+import type { AdminBackofficeRole } from "@/lib/server/admin-access";
 import {
   authenticateAccountWithPassword,
   revokeSessionToken
@@ -16,6 +17,7 @@ import {
   getAdminAuthConfig,
   getSafeAdminRedirectPath
 } from "@/lib/admin/auth";
+import { getAdminDefaultRedirectPathForRole } from "@/lib/server/admin-access";
 import { getServerEnv, isDatabaseConfigured } from "@/lib/server/env";
 import { buildRequestAuditContext } from "@/lib/server/request-context";
 import {
@@ -132,7 +134,8 @@ export async function POST(request: NextRequest) {
 
   const identifier = normalizeIdentifier(requestBody.data.username);
   const password = normalizePassword(requestBody.data.password);
-  const redirectTo = getSafeAdminRedirectPath(requestBody.data.next, ADMIN_DEFAULT_REDIRECT_PATH);
+  const requestedRedirectTo = getSafeAdminRedirectPath(requestBody.data.next, "");
+  const fallbackRedirectTo = requestedRedirectTo || ADMIN_DEFAULT_REDIRECT_PATH;
 
   if (!identifier || !password) {
     return buildJsonResponse(
@@ -147,7 +150,7 @@ export async function POST(request: NextRequest) {
   if (databaseConfigured) {
     const auditContext = buildRequestAuditContext(request);
     const authenticatedSession = await authenticateAccountWithPassword({
-      acceptedRoles: ["admin", "operator"],
+      acceptedRoles: ["admin", "operator", "auditor"],
       email: identifier.toLowerCase(),
       password,
       requestContext: auditContext,
@@ -169,6 +172,11 @@ export async function POST(request: NextRequest) {
         );
       }
     } else {
+      const redirectTo =
+        requestedRedirectTo ||
+        getAdminDefaultRedirectPathForRole(
+          authenticatedSession.account.role as AdminBackofficeRole
+        );
       const response = buildJsonResponse({
         ok: true,
         message: "Login realizado com sucesso.",
@@ -222,7 +230,7 @@ export async function POST(request: NextRequest) {
   const response = buildJsonResponse({
     ok: true,
     message: "Login realizado com sucesso.",
-    redirectTo
+    redirectTo: fallbackRedirectTo
   });
 
   response.cookies.set({

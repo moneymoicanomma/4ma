@@ -39,7 +39,7 @@ export function AdminLoginForm({ authConfigured }: Readonly<AdminLoginFormProps>
       return "Sua sessão expirou ou ainda não existe. Faça login para voltar ao painel.";
     }
 
-    return "Entre com as credenciais do admin para acessar o painel do fantasy.";
+    return "Entre com as credenciais para acessar o painel administrativo.";
   }, [authConfigured, searchParams]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
