@@ -1107,15 +1107,8 @@ async function loadEventFighterIntakesTable(intakeScope: EventFighterIntakeScope
     ],
   };
 
-  if (intakeScope.limitToCurrentEvent && !intakeScope.currentEventId) {
-    return {
-      ...config,
-      rows: [],
-      statusCounts: [],
-      totalRows: 0,
-      lastActivityAt: null,
-    };
-  }
+  const limitToCurrentEventWithoutEventId =
+    intakeScope.limitToCurrentEvent && !intakeScope.currentEventId;
 
   const eventScopeValues = intakeScope.currentEventId
     ? [intakeScope.currentEventId]
@@ -1137,6 +1130,11 @@ async function loadEventFighterIntakesTable(intakeScope: EventFighterIntakeScope
               and intake.source = '${EVENT_FIGHTER_INTAKE_SOURCE}'
             )
           )
+        `
+    : limitToCurrentEventWithoutEventId
+      ? `
+          where intake.event_fighter_id is null
+            and intake.source = '${EVENT_FIGHTER_INTAKE_SOURCE}'
         `
     : "";
 
@@ -1751,25 +1749,8 @@ async function loadEventFighterIntakesTableDataDirect(
   intakeScope: EventFighterIntakeScope,
 ): Promise<AdminDatabaseTableData> {
   const table = adminDatabaseTables["event-fighter-intakes"];
-
-  if (intakeScope.limitToCurrentEvent && !intakeScope.currentEventId) {
-    return {
-      databaseConfigured: true,
-      table,
-      columns: [
-        { key: "submittedAt", label: "Enviado em" },
-        { key: "fighter", label: "Atleta" },
-        { key: "email", label: "Email" },
-        { key: "phoneWhatsapp", label: "WhatsApp" },
-        { key: "photoCount", label: "Fotos" },
-        { key: "intakeStatus", label: "Status" },
-      ],
-      rows: [],
-      statusCounts: [],
-      totalRows: 0,
-      lastActivityAt: null,
-    };
-  }
+  const limitToCurrentEventWithoutEventId =
+    intakeScope.limitToCurrentEvent && !intakeScope.currentEventId;
 
   const eventScopeValues = intakeScope.currentEventId
     ? [intakeScope.currentEventId]
@@ -1791,6 +1772,11 @@ async function loadEventFighterIntakesTableDataDirect(
           and intake.source = '${EVENT_FIGHTER_INTAKE_SOURCE}'
         )
       )
+    `
+    : limitToCurrentEventWithoutEventId
+      ? `
+      where intake.event_fighter_id is null
+        and intake.source = '${EVENT_FIGHTER_INTAKE_SOURCE}'
     `
     : "";
 
@@ -2518,10 +2504,8 @@ async function loadEventFighterIntakeRecordDirect(
   intakeScope: EventFighterIntakeScope,
 ): Promise<AdminDatabaseRecordData | null> {
   const table = adminDatabaseTables["event-fighter-intakes"];
-
-  if (intakeScope.limitToCurrentEvent && !intakeScope.currentEventId) {
-    return null;
-  }
+  const limitToCurrentEventWithoutEventId =
+    intakeScope.limitToCurrentEvent && !intakeScope.currentEventId;
 
   const recordValues = intakeScope.currentEventId
     ? [rowId, intakeScope.currentEventId]
@@ -2535,6 +2519,11 @@ async function loadEventFighterIntakeRecordDirect(
               and intake.source = '${EVENT_FIGHTER_INTAKE_SOURCE}'
             )
           )
+      `
+    : limitToCurrentEventWithoutEventId
+      ? `
+          and intake.event_fighter_id is null
+          and intake.source = '${EVENT_FIGHTER_INTAKE_SOURCE}'
       `
     : "";
 
