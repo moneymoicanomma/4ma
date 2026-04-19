@@ -139,12 +139,21 @@ function appendAdminCredential(
   }
 
   const normalizedIdentifier = normalizeIdentifierForMatch(credential.username);
+  const normalizedPassword = normalizeEnvValue(credential.password);
 
-  if (!normalizedIdentifier || seenNormalizedIdentifiers.has(normalizedIdentifier)) {
+  if (
+    !normalizedIdentifier ||
+    !normalizedPassword ||
+    seenNormalizedIdentifiers.has(normalizedIdentifier)
+  ) {
     return;
   }
 
-  credentials.push(credential);
+  credentials.push({
+    ...credential,
+    username: normalizeEnvValue(credential.username),
+    password: normalizedPassword,
+  });
   seenNormalizedIdentifiers.add(normalizedIdentifier);
 }
 
@@ -173,7 +182,9 @@ function parseAdminCredentialsJson(): AdminAuthCredential[] {
       const username = normalizeEnvValue(
         typeof entry.username === "string" ? entry.username : undefined,
       );
-      const password = typeof entry.password === "string" ? entry.password : "";
+      const password = normalizeEnvValue(
+        typeof entry.password === "string" ? entry.password : undefined,
+      );
 
       if (!username || !password) {
         continue;
@@ -199,17 +210,17 @@ export function getAdminAuthConfig(): AdminAuthConfig | null {
 
   appendAdminCredential(credentials, seenNormalizedIdentifiers, {
     username: normalizeEnvValue(process.env.ADMIN_USERNAME),
-    password: process.env.ADMIN_PASSWORD ?? "",
+    password: normalizeEnvValue(process.env.ADMIN_PASSWORD),
     role: "admin",
   });
   appendAdminCredential(credentials, seenNormalizedIdentifiers, {
     username: normalizeEnvValue(process.env.ADMIN_OPERATOR_USERNAME),
-    password: process.env.ADMIN_OPERATOR_PASSWORD ?? "",
+    password: normalizeEnvValue(process.env.ADMIN_OPERATOR_PASSWORD),
     role: "operator",
   });
   appendAdminCredential(credentials, seenNormalizedIdentifiers, {
     username: normalizeEnvValue(process.env.ADMIN_AUDITOR_USERNAME),
-    password: process.env.ADMIN_AUDITOR_PASSWORD ?? "",
+    password: normalizeEnvValue(process.env.ADMIN_AUDITOR_PASSWORD),
     role: "auditor",
   });
 
