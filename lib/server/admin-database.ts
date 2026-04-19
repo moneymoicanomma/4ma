@@ -12,6 +12,7 @@ import {
 
 const TABLE_PREVIEW_LIMIT = 6;
 const ADMIN_DATABASE_ROUTE_BASE = "/v1/admin/database";
+const EVENT_FIGHTER_INTAKE_SOURCE = "money-moicano-atletas-da-edicao";
 
 const numberFormatter = new Intl.NumberFormat("pt-BR");
 const dateTimeFormatter = new Intl.DateTimeFormat("pt-BR", {
@@ -1121,13 +1122,21 @@ async function loadEventFighterIntakesTable(intakeScope: EventFighterIntakeScope
     : undefined;
   const eventScopeJoin = intakeScope.currentEventId
     ? `
-          join app.event_fighters event_fighter
+          left join app.event_fighters event_fighter
             on event_fighter.id = intake.event_fighter_id
+          left join app.events event
+            on event.id = event_fighter.event_id
         `
     : "";
   const eventScopeWhere = intakeScope.currentEventId
     ? `
-          where event_fighter.event_id = $1::uuid
+          where (
+            event.id = $1::uuid
+            or (
+              intake.event_fighter_id is null
+              and intake.source = '${EVENT_FIGHTER_INTAKE_SOURCE}'
+            )
+          )
         `
     : "";
 
@@ -1767,13 +1776,21 @@ async function loadEventFighterIntakesTableDataDirect(
     : undefined;
   const eventScopeJoin = intakeScope.currentEventId
     ? `
-      join app.event_fighters event_fighter
+      left join app.event_fighters event_fighter
         on event_fighter.id = intake.event_fighter_id
+      left join app.events event
+        on event.id = event_fighter.event_id
     `
     : "";
   const eventScopeWhere = intakeScope.currentEventId
     ? `
-      where event_fighter.event_id = $1::uuid
+      where (
+        event.id = $1::uuid
+        or (
+          intake.event_fighter_id is null
+          and intake.source = '${EVENT_FIGHTER_INTAKE_SOURCE}'
+        )
+      )
     `
     : "";
 
@@ -2510,7 +2527,15 @@ async function loadEventFighterIntakeRecordDirect(
     ? [rowId, intakeScope.currentEventId]
     : [rowId];
   const eventScopeClause = intakeScope.currentEventId
-    ? "and event.id = $2::uuid"
+    ? `
+          and (
+            event.id = $2::uuid
+            or (
+              intake.event_fighter_id is null
+              and intake.source = '${EVENT_FIGHTER_INTAKE_SOURCE}'
+            )
+          )
+      `
     : "";
 
   const result = await withDatabaseTransaction(

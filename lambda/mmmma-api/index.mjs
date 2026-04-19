@@ -1066,13 +1066,21 @@ async function loadAdminEventFighterIntakesTable(intakeScope) {
   const eventScopeValues = intakeScope.currentEventId ? [intakeScope.currentEventId] : undefined;
   const eventScopeJoin = intakeScope.currentEventId
     ? `
-        join app.event_fighters event_fighter
+        left join app.event_fighters event_fighter
           on event_fighter.id = intake.event_fighter_id
+        left join app.events event
+          on event.id = event_fighter.event_id
       `
     : "";
   const eventScopeWhere = intakeScope.currentEventId
     ? `
-        where event_fighter.event_id = $1::uuid
+        where (
+          event.id = $1::uuid
+          or (
+            intake.event_fighter_id is null
+            and intake.source = '${EVENT_FIGHTER_INTAKE_SOURCE}'
+          )
+        )
       `
     : "";
 
@@ -2442,13 +2450,21 @@ async function loadAdminEventFighterIntakesTableData(intakeScope) {
   const eventScopeValues = intakeScope.currentEventId ? [intakeScope.currentEventId] : undefined;
   const eventScopeJoin = intakeScope.currentEventId
     ? `
-      join app.event_fighters event_fighter
+      left join app.event_fighters event_fighter
         on event_fighter.id = intake.event_fighter_id
+      left join app.events event
+        on event.id = event_fighter.event_id
     `
     : "";
   const eventScopeWhere = intakeScope.currentEventId
     ? `
-      where event_fighter.event_id = $1::uuid
+      where (
+        event.id = $1::uuid
+        or (
+          intake.event_fighter_id is null
+          and intake.source = '${EVENT_FIGHTER_INTAKE_SOURCE}'
+        )
+      )
     `
     : "";
 
@@ -3064,7 +3080,15 @@ async function loadAdminEventFighterIntakeRecord(rowId, intakeScope) {
     ? [rowId, intakeScope.currentEventId]
     : [rowId];
   const eventScopeClause = intakeScope.currentEventId
-    ? "and event.id = $2::uuid"
+    ? `
+          and (
+            event.id = $2::uuid
+            or (
+              intake.event_fighter_id is null
+              and intake.source = '${EVENT_FIGHTER_INTAKE_SOURCE}'
+            )
+          )
+      `
     : "";
   const result = await withDatabaseTransaction(
     {
