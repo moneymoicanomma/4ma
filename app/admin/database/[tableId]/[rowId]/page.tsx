@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 
 import { AdminDatabaseRecordView } from "@/app/components/admin-database-record-view";
 import { AdminDatabaseRecordCopyActions } from "@/app/components/admin-database-record-copy-actions";
+import { FighterApplicationInterestEditor } from "@/app/components/fighter-application-interest-editor";
 import { AdminTopbar } from "@/app/components/admin-topbar";
 import { LandingMotionController } from "@/app/components/landing-motion-controller";
 import {
@@ -120,6 +121,10 @@ export default async function AdminDatabaseRecordPage({
 
   const copyExports =
     data.copyExports && data.copyExports.length ? data.copyExports : buildFallbackCopyExports(data);
+  const canEditFighterApplicationInterest =
+    tableId === "fighter-applications" &&
+    data.databaseConfigured &&
+    identity.role !== "auditor";
 
   return (
     <main className={styles.page}>
@@ -152,6 +157,13 @@ export default async function AdminDatabaseRecordPage({
 
           {data.sections.length ? (
             <AdminDatabaseRecordCopyActions exports={copyExports} sections={data.sections} />
+          ) : null}
+
+          {canEditFighterApplicationInterest ? (
+            <FighterApplicationInterestEditor
+              applicationId={data.rowId}
+              initialEditorialInterest={data.fighterApplicationEditorialInterest}
+            />
           ) : null}
 
           <AdminDatabaseRecordView data={data} />

@@ -119,6 +119,12 @@ const ADMIN_SOURCE_LABELS = {
   partner_inquiry: "Parceria",
   press_newsletter: "Newsletter imprensa"
 };
+const ADMIN_FIGHTER_APPLICATION_EDITORIAL_INTEREST_LABELS = {
+  interessante: "Interessante",
+  talvez_no_futuro: "Talvez no futuro",
+  nao_interessante: "Não interessante",
+  bizarro: "Bizarro"
+};
 const FANTASY_ADMIN_STATUS_VALUES = new Set(["draft", "published", "locked", "finished"]);
 const FANTASY_ADMIN_VICTORY_METHODS = new Set(["decisao", "finalizacao", "nocaute"]);
 const FANTASY_ADMIN_ROUNDS = new Set([1, 2, 3, 4, 5]);
@@ -643,6 +649,19 @@ function adminFormatWeightClass(value) {
   return adminHumanizeToken(value);
 }
 
+function adminFormatFighterApplicationEditorialInterest(value) {
+  const normalized = normalizeText(value);
+
+  if (!normalized) {
+    return "—";
+  }
+
+  return (
+    ADMIN_FIGHTER_APPLICATION_EDITORIAL_INTEREST_LABELS[normalized] ??
+    adminHumanizeToken(normalized)
+  );
+}
+
 function adminFormatScore(value) {
   return `${ADMIN_NUMBER_FORMATTER.format(adminParseCount(value))} pts`;
 }
@@ -973,6 +992,7 @@ async function loadAdminFighterApplicationsTable() {
       { key: "createdAt", label: "Data" },
       { key: "fighter", label: "Lutador" },
       { key: "weightClass", label: "Categoria" },
+      { key: "editorialInterest", label: "Interesse MMMMA" },
       { key: "location", label: "Cidade" },
       { key: "athleteWhatsapp", label: "WhatsApp" },
       { key: "status", label: "Status" }
@@ -1002,6 +1022,7 @@ async function loadAdminFighterApplicationsTable() {
           fa.full_name as "fullName",
           fa.nickname,
           fa.weight_class as "weightClass",
+          fa.editorial_interest::text as "editorialInterest",
           fa.city,
           fa.state_code as "stateCode",
           contact.phone_whatsapp as "athleteWhatsapp",
@@ -1027,6 +1048,9 @@ async function loadAdminFighterApplicationsTable() {
               .filter(Boolean)
               .join(" / ") || "—",
           weightClass: adminFormatWeightClass(row.weightClass),
+          editorialInterest: adminFormatFighterApplicationEditorialInterest(
+            row.editorialInterest
+          ),
           location: adminBuildLocation(row.city, row.stateCode),
           athleteWhatsapp: adminFormatText(row.athleteWhatsapp),
           status: adminFormatStatus(row.status)
@@ -2381,6 +2405,7 @@ async function loadAdminFighterApplicationsTableData() {
         fa.full_name as "fullName",
         fa.nickname,
         fa.weight_class as "weightClass",
+        fa.editorial_interest::text as "editorialInterest",
         fa.city,
         fa.state_code as "stateCode",
         contact.phone_whatsapp as "athleteWhatsapp",
@@ -2400,6 +2425,7 @@ async function loadAdminFighterApplicationsTableData() {
       { key: "createdAt", label: "Data" },
       { key: "fighter", label: "Lutador" },
       { key: "weightClass", label: "Categoria" },
+      { key: "editorialInterest", label: "Interesse MMMMA" },
       { key: "location", label: "Cidade" },
       { key: "athleteWhatsapp", label: "WhatsApp" },
       { key: "status", label: "Status" }
@@ -2412,6 +2438,9 @@ async function loadAdminFighterApplicationsTableData() {
             .filter(Boolean)
             .join(" / ") || "—",
         weightClass: adminFormatWeightClass(row.weightClass),
+        editorialInterest: adminFormatFighterApplicationEditorialInterest(
+          row.editorialInterest
+        ),
         location: adminBuildLocation(row.city, row.stateCode),
         athleteWhatsapp: adminFormatText(row.athleteWhatsapp),
         status: adminFormatStatus(row.status)
@@ -2832,6 +2861,7 @@ async function loadAdminFighterApplicationRecord(rowId) {
         application.state_code as "stateCode",
         application.team,
         application.weight_class as "weightClass",
+        application.editorial_interest::text as "editorialInterest",
         application.tapology_profile as "tapologyProfile",
         application.instagram_profile as "instagramProfile",
         application.specialty::text as specialty,
@@ -2893,6 +2923,7 @@ async function loadAdminFighterApplicationRecord(rowId) {
         .filter((value) => value !== "—")
         .join(" / ") || "Cadastro de lutador",
     subtitle: adminFormatStatus(row.status),
+    fighterApplicationEditorialInterest: row.editorialInterest ?? null,
     sections: [
       adminCreateSection("Emitente", [
         { label: "Nome", value: adminFormatText(row.fullName) },
@@ -2918,6 +2949,10 @@ async function loadAdminFighterApplicationRecord(rowId) {
       adminCreateSection("Operação", [
         { label: "Origem", value: adminFormatSource(row.source) },
         { label: "Status", value: adminFormatStatus(row.status) },
+        {
+          label: "Interesse MMMMA",
+          value: adminFormatFighterApplicationEditorialInterest(row.editorialInterest)
+        },
         {
           label: "Responsável",
           value: adminFormatAccountLabel(row.assignedDisplayName, row.assignedEmail)

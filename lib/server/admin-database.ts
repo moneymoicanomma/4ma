@@ -57,6 +57,13 @@ const sourceLabels: Record<string, string> = {
   press_newsletter: "Newsletter imprensa",
 };
 
+const fighterApplicationEditorialInterestLabels: Record<string, string> = {
+  interessante: "Interessante",
+  talvez_no_futuro: "Talvez no futuro",
+  nao_interessante: "Não interessante",
+  bizarro: "Bizarro",
+};
+
 export type AdminDatabaseTableId =
   | "contact-messages"
   | "newsletter-subscriptions"
@@ -200,6 +207,7 @@ export type AdminDatabaseRecordData = {
   subtitle?: string | null;
   sections: AdminDatabaseRecordSection[];
   copyExports?: AdminDatabaseRecordCopyExport[];
+  fighterApplicationEditorialInterest?: string | null;
   errorMessage?: string;
 };
 
@@ -376,6 +384,7 @@ type FighterApplicationPreviewRow = {
   fullName: string | null;
   nickname: string | null;
   weightClass: string | null;
+  editorialInterest: string | null;
   city: string | null;
   stateCode: string | null;
   athleteWhatsapp: string | null;
@@ -685,6 +694,18 @@ function formatSource(value: string | null | undefined) {
 
 function formatWeightClass(value: string | null | undefined) {
   return humanizeToken(value);
+}
+
+function formatFighterApplicationEditorialInterest(value: string | null | undefined) {
+  const normalized = normalizeText(value);
+
+  if (!normalized) {
+    return "—";
+  }
+
+  return (
+    fighterApplicationEditorialInterestLabels[normalized] ?? humanizeToken(normalized)
+  );
 }
 
 function formatScore(value: number | string | null | undefined) {
@@ -1020,6 +1041,7 @@ async function loadFighterApplicationsTable() {
       { key: "createdAt", label: "Data" },
       { key: "fighter", label: "Lutador" },
       { key: "weightClass", label: "Categoria" },
+      { key: "editorialInterest", label: "Interesse MMMMA" },
       { key: "location", label: "Cidade" },
       { key: "athleteWhatsapp", label: "WhatsApp" },
       { key: "status", label: "Status" },
@@ -1054,6 +1076,7 @@ async function loadFighterApplicationsTable() {
             fa.full_name as "fullName",
             fa.nickname,
             fa.weight_class as "weightClass",
+            fa.editorial_interest::text as "editorialInterest",
             fa.city,
             fa.state_code as "stateCode",
             contact.phone_whatsapp as "athleteWhatsapp",
@@ -1080,6 +1103,9 @@ async function loadFighterApplicationsTable() {
               .filter(Boolean)
               .join(" / ") || "—",
           weightClass: formatWeightClass(row.weightClass),
+          editorialInterest: formatFighterApplicationEditorialInterest(
+            row.editorialInterest,
+          ),
           location: buildLocation(row.city, row.stateCode),
           athleteWhatsapp: formatText(row.athleteWhatsapp),
           status: formatStatus(row.status),
@@ -1703,6 +1729,7 @@ async function loadFighterApplicationsTableDataDirect(): Promise<AdminDatabaseTa
         fa.full_name as "fullName",
         fa.nickname,
         fa.weight_class as "weightClass",
+        fa.editorial_interest::text as "editorialInterest",
         fa.city,
         fa.state_code as "stateCode",
         contact.phone_whatsapp as "athleteWhatsapp",
@@ -1722,6 +1749,7 @@ async function loadFighterApplicationsTableDataDirect(): Promise<AdminDatabaseTa
       { key: "createdAt", label: "Data" },
       { key: "fighter", label: "Lutador" },
       { key: "weightClass", label: "Categoria" },
+      { key: "editorialInterest", label: "Interesse MMMMA" },
       { key: "location", label: "Cidade" },
       { key: "athleteWhatsapp", label: "WhatsApp" },
       { key: "status", label: "Status" },
@@ -1734,6 +1762,9 @@ async function loadFighterApplicationsTableDataDirect(): Promise<AdminDatabaseTa
             .filter(Boolean)
             .join(" / ") || "—",
         weightClass: formatWeightClass(row.weightClass),
+        editorialInterest: formatFighterApplicationEditorialInterest(
+          row.editorialInterest,
+        ),
         location: buildLocation(row.city, row.stateCode),
         athleteWhatsapp: formatText(row.athleteWhatsapp),
         status: formatStatus(row.status),
@@ -2218,6 +2249,7 @@ async function loadFighterApplicationRecordDirect(
     stateCode: string | null;
     team: string | null;
     weightClass: string | null;
+    editorialInterest: string | null;
     tapologyProfile: string | null;
     instagramProfile: string | null;
     specialty: string | null;
@@ -2250,6 +2282,7 @@ async function loadFighterApplicationRecordDirect(
         application.state_code as "stateCode",
         application.team,
         application.weight_class as "weightClass",
+        application.editorial_interest::text as "editorialInterest",
         application.tapology_profile as "tapologyProfile",
         application.instagram_profile as "instagramProfile",
         application.specialty::text as specialty,
@@ -2311,6 +2344,7 @@ async function loadFighterApplicationRecordDirect(
         .filter((value) => value !== "—")
         .join(" / ") || "Cadastro de lutador",
     subtitle: formatStatus(row.status),
+    fighterApplicationEditorialInterest: row.editorialInterest,
     sections: [
       createSection("Emitente", [
         { label: "Nome", value: formatText(row.fullName) },
@@ -2336,6 +2370,10 @@ async function loadFighterApplicationRecordDirect(
       createSection("Operação", [
         { label: "Origem", value: formatSource(row.source) },
         { label: "Status", value: formatStatus(row.status) },
+        {
+          label: "Interesse MMMMA",
+          value: formatFighterApplicationEditorialInterest(row.editorialInterest),
+        },
         {
           label: "Responsável",
           value: formatAccountLabel(row.assignedDisplayName, row.assignedEmail),

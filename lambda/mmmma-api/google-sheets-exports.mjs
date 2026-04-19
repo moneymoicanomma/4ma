@@ -86,6 +86,7 @@ export const GOOGLE_SHEETS_EXPORTS = {
       "curiosities",
       "roast_consent",
       "source",
+      "editorial_interest",
       "status",
       "assigned_account_id",
       "reviewer_notes",

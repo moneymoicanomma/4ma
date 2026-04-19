@@ -1,0 +1,109 @@
+.card {
+  display: grid;
+  gap: 16px;
+  padding: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background:
+    radial-gradient(circle at top left, rgba(232, 24, 26, 0.14), transparent 38%),
+    rgba(10, 10, 10, 0.9);
+}
+
+.header {
+  display: grid;
+  gap: 8px;
+}
+
+.eyebrow {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.56);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+}
+
+.header h2 {
+  margin: 0;
+  color: #fff;
+  font-size: clamp(20px, 3vw, 32px);
+  font-family: var(--font-title);
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+.description {
+  margin: 0;
+  color: rgba(227, 226, 225, 0.76);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: end;
+}
+
+.field {
+  display: grid;
+  gap: 8px;
+  min-width: min(100%, 320px);
+  flex: 1 1 320px;
+}
+
+.field span {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.field select {
+  width: 100%;
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(18, 18, 18, 0.95);
+  color: #fff;
+  font-size: 14px;
+}
+
+.saveButton {
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1px solid rgba(232, 24, 26, 0.6);
+  background: rgba(232, 24, 26, 0.12);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.saveButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.feedback {
+  margin: 0;
+  color: #9cf2a6;
+  font-size: 13px;
+}
+
+.error {
+  color: #ff8f8f;
+}
+
+@media (max-width: 720px) {
+  .card {
+    padding: 16px;
+  }
+
+  .saveButton {
+    width: 100%;
+  }
+}
