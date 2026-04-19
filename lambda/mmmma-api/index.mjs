@@ -407,6 +407,45 @@ function parsePositiveInteger(value, fallback, maxValue = Number.MAX_SAFE_INTEGE
   return Math.min(parsed, maxValue);
 }
 
+function parseAdminEventScope(event) {
+  const rawScope = normalizeText(event?.queryStringParameters?.event_scope).toLowerCase();
+  return rawScope === "current" ? "current" : "all";
+}
+
+async function resolveCurrentOperationalEventId() {
+  const result = await getDatabasePool().query(`
+    select id
+    from app.events
+    order by
+      case
+        when status in ('published', 'locked') then 0
+        when status = 'draft' then 1
+        when status = 'finished' then 2
+        else 3
+      end asc,
+      coalesce(starts_at, lock_at, published_at, created_at) desc
+    limit 1
+  `);
+
+  return result.rows[0]?.id ?? null;
+}
+
+async function resolveEventFighterIntakeScope(options = {}) {
+  const limitToCurrentEvent = options.eventScope === "current";
+
+  if (!limitToCurrentEvent) {
+    return {
+      limitToCurrentEvent: false,
+      currentEventId: null
+    };
+  }
+
+  return {
+    limitToCurrentEvent: true,
+    currentEventId: await resolveCurrentOperationalEventId()
+  };
+}
+
 async function loadGoogleSheetsExportPage(exportConfig, options) {
   const limit = Math.max(1, Math.min(options.limit ?? 1000, 1000));
   const offset = Math.max(0, options.offset ?? 0);
@@ -997,7 +1036,7 @@ async function loadAdminFighterApplicationsTable() {
   });
 }
 
-async function loadAdminEventFighterIntakesTable() {
+async function loadAdminEventFighterIntakesTable(intakeScope) {
   const config = {
     id: "event-fighter-intakes",
     label: "Intake de Evento",
@@ -1014,23 +1053,57 @@ async function loadAdminEventFighterIntakesTable() {
     ]
   };
 
+  if (intakeScope.limitToCurrentEvent && !intakeScope.currentEventId) {
+    return {
+      ...config,
+      rows: [],
+      statusCounts: [],
+      totalRows: 0,
+      lastActivityAt: null
+    };
+  }
+
+  const eventScopeValues = intakeScope.currentEventId ? [intakeScope.currentEventId] : undefined;
+  const eventScopeJoin = intakeScope.currentEventId
+    ? `
+        join app.event_fighters event_fighter
+          on event_fighter.id = intake.event_fighter_id
+      `
+    : "";
+  const eventScopeWhere = intakeScope.currentEventId
+    ? `
+        where event_fighter.event_id = $1::uuid
+      `
+    : "";
+
   return withAdminTableFallback(config, async () => {
     const [summary, statusCounts, result] = await Promise.all([
-      loadAdminTableSummary(`
+      loadAdminTableSummary(
+        `
         select
           count(*)::int as "totalRows",
-          max(updated_at) as "lastActivityAt"
-        from app.event_fighter_intakes
-      `),
-      loadAdminStatusCounts(`
+          max(intake.updated_at) as "lastActivityAt"
+        from app.event_fighter_intakes intake
+        ${eventScopeJoin}
+        ${eventScopeWhere}
+      `,
+        eventScopeValues
+      ),
+      loadAdminStatusCounts(
+        `
         select
           intake_status as status,
           count(*)::int as total
-        from app.event_fighter_intakes
+        from app.event_fighter_intakes intake
+        ${eventScopeJoin}
+        ${eventScopeWhere}
         group by intake_status
         order by count(*) desc, intake_status asc
-      `),
-      getDatabasePool().query(`
+      `,
+        eventScopeValues
+      ),
+      getDatabasePool().query(
+        `
         select
           intake.id,
           intake.submitted_at as "submittedAt",
@@ -1041,14 +1114,18 @@ async function loadAdminEventFighterIntakesTable() {
           intake.intake_status as "intakeStatus",
           coalesce(photo_counts.total, 0)::int as "photoCount"
         from app.event_fighter_intakes intake
+        ${eventScopeJoin}
         left join lateral (
           select count(*)::int as total
           from app.event_fighter_intake_photos photo
           where photo.intake_id = intake.id
         ) photo_counts on true
+        ${eventScopeWhere}
         order by intake.submitted_at desc
         limit ${ADMIN_TABLE_PREVIEW_LIMIT}
-      `)
+      `,
+        eventScopeValues
+      )
     ]);
 
     return {
@@ -1141,13 +1218,14 @@ async function loadAdminFantasyEntriesTable() {
   });
 }
 
-async function loadAdminDatabaseOverviewFromDatabase() {
+async function loadAdminDatabaseOverviewFromDatabase(options = {}) {
+  const intakeScope = await resolveEventFighterIntakeScope(options);
   const tables = await Promise.all([
     loadAdminContactMessagesTable(),
     loadAdminNewsletterSubscriptionsTable(),
     loadAdminPartnerInquiriesTable(),
     loadAdminFighterApplicationsTable(),
-    loadAdminEventFighterIntakesTable(),
+    loadAdminEventFighterIntakesTable(intakeScope),
     loadAdminFantasyEntriesTable()
   ]);
 
@@ -1176,7 +1254,14 @@ async function handleAdminDatabaseOverview(event) {
   }
 
   try {
-    return buildJsonResponse(200, await loadAdminDatabaseOverviewFromDatabase());
+    const eventScope = parseAdminEventScope(event);
+
+    return buildJsonResponse(
+      200,
+      await loadAdminDatabaseOverviewFromDatabase({
+        eventScope
+      })
+    );
   } catch (error) {
     console.error("admin database overview failed", { error });
 
@@ -2332,24 +2417,68 @@ async function loadAdminFighterApplicationsTableData() {
   };
 }
 
-async function loadAdminEventFighterIntakesTableData() {
+async function loadAdminEventFighterIntakesTableData(intakeScope) {
   const table = ADMIN_DATABASE_TABLES["event-fighter-intakes"];
+
+  if (intakeScope.limitToCurrentEvent && !intakeScope.currentEventId) {
+    return {
+      databaseConfigured: true,
+      table,
+      columns: [
+        { key: "submittedAt", label: "Enviado em" },
+        { key: "fighter", label: "Atleta" },
+        { key: "email", label: "Email" },
+        { key: "phoneWhatsapp", label: "WhatsApp" },
+        { key: "photoCount", label: "Fotos" },
+        { key: "intakeStatus", label: "Status" }
+      ],
+      rows: [],
+      statusCounts: [],
+      totalRows: 0,
+      lastActivityAt: null
+    };
+  }
+
+  const eventScopeValues = intakeScope.currentEventId ? [intakeScope.currentEventId] : undefined;
+  const eventScopeJoin = intakeScope.currentEventId
+    ? `
+      join app.event_fighters event_fighter
+        on event_fighter.id = intake.event_fighter_id
+    `
+    : "";
+  const eventScopeWhere = intakeScope.currentEventId
+    ? `
+      where event_fighter.event_id = $1::uuid
+    `
+    : "";
+
   const [summary, statusCounts, result] = await Promise.all([
-    loadAdminTableSummary(`
+    loadAdminTableSummary(
+      `
       select
         count(*)::int as "totalRows",
-        max(updated_at) as "lastActivityAt"
-      from app.event_fighter_intakes
-    `),
-    loadAdminStatusCounts(`
+        max(intake.updated_at) as "lastActivityAt"
+      from app.event_fighter_intakes intake
+      ${eventScopeJoin}
+      ${eventScopeWhere}
+    `,
+      eventScopeValues
+    ),
+    loadAdminStatusCounts(
+      `
       select
         intake_status as status,
         count(*)::int as total
-      from app.event_fighter_intakes
+      from app.event_fighter_intakes intake
+      ${eventScopeJoin}
+      ${eventScopeWhere}
       group by intake_status
       order by count(*) desc, intake_status asc
-    `),
-    getDatabasePool().query(`
+    `,
+      eventScopeValues
+    ),
+    getDatabasePool().query(
+      `
       select
         intake.id,
         intake.submitted_at as "submittedAt",
@@ -2360,13 +2489,17 @@ async function loadAdminEventFighterIntakesTableData() {
         intake.intake_status as "intakeStatus",
         coalesce(photo_counts.total, 0)::int as "photoCount"
       from app.event_fighter_intakes intake
+      ${eventScopeJoin}
       left join lateral (
         select count(*)::int as total
         from app.event_fighter_intake_photos photo
         where photo.intake_id = intake.id
       ) photo_counts on true
+      ${eventScopeWhere}
       order by intake.submitted_at desc
-    `)
+    `,
+      eventScopeValues
+    )
   ]);
 
   return {
@@ -2920,8 +3053,19 @@ async function loadAdminFantasyEntryRecord(rowId) {
   };
 }
 
-async function loadAdminEventFighterIntakeRecord(rowId) {
+async function loadAdminEventFighterIntakeRecord(rowId, intakeScope) {
   const table = ADMIN_DATABASE_TABLES["event-fighter-intakes"];
+
+  if (intakeScope.limitToCurrentEvent && !intakeScope.currentEventId) {
+    return null;
+  }
+
+  const recordValues = intakeScope.currentEventId
+    ? [rowId, intakeScope.currentEventId]
+    : [rowId];
+  const eventScopeClause = intakeScope.currentEventId
+    ? "and event.id = $2::uuid"
+    : "";
   const result = await withDatabaseTransaction(
     {
       actorRole: "service",
@@ -3018,9 +3162,10 @@ async function loadAdminEventFighterIntakeRecord(rowId) {
             where photo.intake_id = intake.id
           ) photo_rows on true
           where intake.id = $1::uuid
+          ${eventScopeClause}
           limit 1
         `,
-        [rowId]
+        recordValues
       ),
     {
       requiresEncryptionKey: true
@@ -3129,7 +3274,9 @@ async function loadAdminEventFighterIntakeRecord(rowId) {
   };
 }
 
-async function loadAdminDatabaseTableData(tableId) {
+async function loadAdminDatabaseTableData(tableId, options = {}) {
+  const intakeScope = await resolveEventFighterIntakeScope(options);
+
   switch (tableId) {
     case "contact-messages":
       return loadAdminContactMessagesTableData();
@@ -3140,7 +3287,7 @@ async function loadAdminDatabaseTableData(tableId) {
     case "fighter-applications":
       return loadAdminFighterApplicationsTableData();
     case "event-fighter-intakes":
-      return loadAdminEventFighterIntakesTableData();
+      return loadAdminEventFighterIntakesTableData(intakeScope);
     case "fantasy-entries":
       return loadAdminFantasyEntriesTableData();
     default:
@@ -3148,7 +3295,9 @@ async function loadAdminDatabaseTableData(tableId) {
   }
 }
 
-async function loadAdminDatabaseRecordData(tableId, rowId) {
+async function loadAdminDatabaseRecordData(tableId, rowId, options = {}) {
+  const intakeScope = await resolveEventFighterIntakeScope(options);
+
   switch (tableId) {
     case "contact-messages":
       return loadAdminContactMessageRecord(rowId);
@@ -3159,7 +3308,7 @@ async function loadAdminDatabaseRecordData(tableId, rowId) {
     case "fighter-applications":
       return loadAdminFighterApplicationRecord(rowId);
     case "event-fighter-intakes":
-      return loadAdminEventFighterIntakeRecord(rowId);
+      return loadAdminEventFighterIntakeRecord(rowId, intakeScope);
     case "fantasy-entries":
       return loadAdminFantasyEntryRecord(rowId);
     default:
@@ -3180,7 +3329,10 @@ async function handleAdminDatabaseTable(event, tableId) {
   }
 
   try {
-    const payload = await loadAdminDatabaseTableData(tableId);
+    const eventScope = parseAdminEventScope(event);
+    const payload = await loadAdminDatabaseTableData(tableId, {
+      eventScope
+    });
 
     if (!payload) {
       return buildNotFoundResponse();
@@ -3210,7 +3362,10 @@ async function handleAdminDatabaseRecord(event, tableId, rowId) {
   }
 
   try {
-    const payload = await loadAdminDatabaseRecordData(tableId, rowId);
+    const eventScope = parseAdminEventScope(event);
+    const payload = await loadAdminDatabaseRecordData(tableId, rowId, {
+      eventScope
+    });
 
     if (!payload) {
       return buildNotFoundResponse();

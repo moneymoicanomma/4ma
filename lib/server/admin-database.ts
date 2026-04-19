@@ -414,9 +414,6 @@ type EventFighterIntakeScope = {
   currentEventId: string | null;
 };
 
-const CURRENT_EVENT_FILTER_REQUIRES_LOCAL_DB_MESSAGE =
-  "Filtro por evento atual indisponível neste ambiente. Conecte o banco local para aplicar a restrição.";
-
 function getNormalizedVisibleTableIds(options?: AdminDatabaseLoadOptions) {
   if (!options?.visibleTableIds?.length) {
     return [...ALL_ADMIN_DATABASE_TABLE_IDS];
@@ -449,25 +446,10 @@ function applyOverviewLoadOptions(
   options?: AdminDatabaseLoadOptions,
 ): AdminDatabaseOverview {
   const visibleTableIds = new Set(getNormalizedVisibleTableIds(options));
-  const limitEventIntakesToCurrent =
-    options?.limitEventFighterIntakesToCurrentEvent === true;
 
   const tables = overview.tables
     .filter((table) => isAdminDatabaseTableId(table.id) && visibleTableIds.has(table.id))
-    .map((table) => {
-      if (limitEventIntakesToCurrent && table.id === "event-fighter-intakes") {
-        return {
-          ...table,
-          rows: [],
-          statusCounts: [],
-          totalRows: 0,
-          lastActivityAt: null,
-          errorMessage: CURRENT_EVENT_FILTER_REQUIRES_LOCAL_DB_MESSAGE,
-        };
-      }
-
-      return table;
-    });
+    .map((table) => table);
 
   const availableTables = tables.filter((table) => !table.errorMessage).length;
   const unavailableTables = tables.length - availableTables;
@@ -1309,8 +1291,15 @@ export async function loadAdminDatabaseOverview(
 
   if (!isDatabaseConfigured(env) && isAdminReadUpstreamConfigured(env)) {
     try {
+      const overviewSearchParams = new URLSearchParams();
+
+      if (normalizedOptions.limitEventFighterIntakesToCurrentEvent) {
+        overviewSearchParams.set("event_scope", "current");
+      }
+
+      const overviewUrl = `${env.upstreamApiBaseUrl}${env.adminDatabaseOverviewPath}${overviewSearchParams.size ? `?${overviewSearchParams.toString()}` : ""}`;
       const overview = await getJsonFromUpstream<AdminDatabaseOverview>(
-        `${env.upstreamApiBaseUrl}${env.adminDatabaseOverviewPath}`,
+        overviewUrl,
         {
           bearerToken: getAdminReadUpstreamBearerToken(env)!,
           timeoutMs: env.upstreamRequestTimeoutMs,
@@ -1432,15 +1421,28 @@ function buildAdminDatabaseRecordUnavailable(
 
 async function loadAdminDatabaseTableFromUpstream(
   tableId: AdminDatabaseTableId,
+  options: AdminDatabaseLoadOptions,
   env: ServerEnv,
 ) {
   if (!isAdminReadUpstreamConfigured(env)) {
     return null;
   }
 
+  const searchParams = new URLSearchParams();
+
+  if (
+    options.limitEventFighterIntakesToCurrentEvent &&
+    tableId === "event-fighter-intakes"
+  ) {
+    searchParams.set("event_scope", "current");
+  }
+
+  const requestPath = `${ADMIN_DATABASE_ROUTE_BASE}/${tableId}`;
+  const requestUrl = `${env.upstreamApiBaseUrl}${requestPath}${searchParams.size ? `?${searchParams.toString()}` : ""}`;
+
   try {
     return await getJsonFromUpstream<AdminDatabaseTableData>(
-      `${env.upstreamApiBaseUrl}${ADMIN_DATABASE_ROUTE_BASE}/${tableId}`,
+      requestUrl,
       {
         bearerToken: getAdminReadUpstreamBearerToken(env)!,
         timeoutMs: env.upstreamRequestTimeoutMs,
@@ -1463,15 +1465,28 @@ async function loadAdminDatabaseTableFromUpstream(
 async function loadAdminDatabaseRecordFromUpstream(
   tableId: AdminDatabaseTableId,
   rowId: string,
+  options: AdminDatabaseLoadOptions,
   env: ServerEnv,
 ) {
   if (!isAdminReadUpstreamConfigured(env)) {
     return null;
   }
 
+  const searchParams = new URLSearchParams();
+
+  if (
+    options.limitEventFighterIntakesToCurrentEvent &&
+    tableId === "event-fighter-intakes"
+  ) {
+    searchParams.set("event_scope", "current");
+  }
+
+  const requestPath = `${ADMIN_DATABASE_ROUTE_BASE}/${tableId}/${encodeURIComponent(rowId)}`;
+  const requestUrl = `${env.upstreamApiBaseUrl}${requestPath}${searchParams.size ? `?${searchParams.toString()}` : ""}`;
+
   try {
     return await getJsonFromUpstream<AdminDatabaseRecordData>(
-      `${env.upstreamApiBaseUrl}${ADMIN_DATABASE_ROUTE_BASE}/${tableId}/${encodeURIComponent(rowId)}`,
+      requestUrl,
       {
         bearerToken: getAdminReadUpstreamBearerToken(env)!,
         timeoutMs: env.upstreamRequestTimeoutMs,
@@ -2750,20 +2765,13 @@ export async function loadAdminDatabaseTableData(
   const intakeScope = await resolveEventFighterIntakeScope(normalizedOptions);
 
   if (!isDatabaseConfigured(env) && isAdminReadUpstreamConfigured(env)) {
-    const upstreamTable = await loadAdminDatabaseTableFromUpstream(tableId, env);
+    const upstreamTable = await loadAdminDatabaseTableFromUpstream(
+      tableId,
+      normalizedOptions,
+      env,
+    );
 
     if (upstreamTable) {
-      if (tableId === "event-fighter-intakes" && intakeScope.limitToCurrentEvent) {
-        return {
-          ...upstreamTable,
-          rows: [],
-          statusCounts: [],
-          totalRows: 0,
-          lastActivityAt: null,
-          errorMessage: CURRENT_EVENT_FILTER_REQUIRES_LOCAL_DB_MESSAGE,
-        };
-      }
-
       return upstreamTable;
     }
   }
@@ -2807,13 +2815,10 @@ export async function loadAdminDatabaseRecordData(
   const intakeScope = await resolveEventFighterIntakeScope(normalizedOptions);
 
   if (!isDatabaseConfigured(env) && isAdminReadUpstreamConfigured(env)) {
-    if (tableId === "event-fighter-intakes" && intakeScope.limitToCurrentEvent) {
-      return null;
-    }
-
     const upstreamRecord = await loadAdminDatabaseRecordFromUpstream(
       tableId,
       rowId,
+      normalizedOptions,
       env,
     );
 
