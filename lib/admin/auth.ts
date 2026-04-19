@@ -3,7 +3,9 @@ export const ADMIN_DEFAULT_REDIRECT_PATH = "/admin/fantasy";
 export const ADMIN_SESSION_COOKIE_NAME = "mmmma_admin_session";
 export const ADMIN_SESSION_MAX_AGE_SECONDS = 60 * 60 * 12;
 
-type AdminSessionPayload = {
+export type AdminAuthRole = "admin" | "operator" | "auditor";
+
+type AdminSessionPayloadV1 = {
   v: 1;
   sub: string;
   iat: number;
@@ -11,9 +13,31 @@ type AdminSessionPayload = {
   cf: string;
 };
 
-export type AdminAuthConfig = {
+type AdminSessionPayloadV2 = {
+  v: 2;
+  sub: string;
+  iat: number;
+  exp: number;
+  cf: string;
+  rl: AdminAuthRole;
+};
+
+type VerifiedAdminSessionPayload = {
+  sub: string;
+  iat: number;
+  exp: number;
+  cf: string;
+  role: AdminAuthRole;
+};
+
+export type AdminAuthCredential = {
   username: string;
   password: string;
+  role: AdminAuthRole;
+};
+
+export type AdminAuthConfig = {
+  credentials: AdminAuthCredential[];
   sessionSecret: string;
 };
 
@@ -22,6 +46,24 @@ const textDecoder = new TextDecoder();
 
 function normalizeEnvValue(value: string | undefined) {
   return value?.trim() ?? "";
+}
+
+function normalizeIdentifierForMatch(value: string) {
+  return normalizeEnvValue(value).toLowerCase();
+}
+
+function normalizeAdminRole(value: unknown): AdminAuthRole {
+  if (typeof value !== "string") {
+    return "admin";
+  }
+
+  const normalizedValue = value.trim().toLowerCase();
+
+  if (normalizedValue === "auditor" || normalizedValue === "operator") {
+    return normalizedValue;
+  }
+
+  return "admin";
 }
 
 function bytesToBase64Url(bytes: Uint8Array) {
@@ -87,18 +129,100 @@ async function sha256Base64Url(value: string) {
   return bytesToBase64Url(new Uint8Array(digestBuffer));
 }
 
-export function getAdminAuthConfig(): AdminAuthConfig | null {
-  const username = normalizeEnvValue(process.env.ADMIN_USERNAME);
-  const password = process.env.ADMIN_PASSWORD ?? "";
-  const sessionSecret = normalizeEnvValue(process.env.ADMIN_SESSION_SECRET);
+function appendAdminCredential(
+  credentials: AdminAuthCredential[],
+  seenNormalizedIdentifiers: Set<string>,
+  credential: AdminAuthCredential | null,
+) {
+  if (!credential) {
+    return;
+  }
 
-  if (!username || !password || !sessionSecret) {
+  const normalizedIdentifier = normalizeIdentifierForMatch(credential.username);
+
+  if (!normalizedIdentifier || seenNormalizedIdentifiers.has(normalizedIdentifier)) {
+    return;
+  }
+
+  credentials.push(credential);
+  seenNormalizedIdentifiers.add(normalizedIdentifier);
+}
+
+function parseAdminCredentialsJson(): AdminAuthCredential[] {
+  const rawValue = normalizeEnvValue(process.env.ADMIN_CREDENTIALS_JSON);
+
+  if (!rawValue) {
+    return [];
+  }
+
+  try {
+    const parsedValue = JSON.parse(rawValue);
+
+    if (!Array.isArray(parsedValue)) {
+      return [];
+    }
+
+    const parsedCredentials: AdminAuthCredential[] = [];
+
+    for (const item of parsedValue) {
+      if (!item || typeof item !== "object") {
+        continue;
+      }
+
+      const entry = item as Record<string, unknown>;
+      const username = normalizeEnvValue(
+        typeof entry.username === "string" ? entry.username : undefined,
+      );
+      const password = typeof entry.password === "string" ? entry.password : "";
+
+      if (!username || !password) {
+        continue;
+      }
+
+      parsedCredentials.push({
+        username,
+        password,
+        role: normalizeAdminRole(entry.role),
+      });
+    }
+
+    return parsedCredentials;
+  } catch {
+    return [];
+  }
+}
+
+export function getAdminAuthConfig(): AdminAuthConfig | null {
+  const sessionSecret = normalizeEnvValue(process.env.ADMIN_SESSION_SECRET);
+  const credentials: AdminAuthCredential[] = [];
+  const seenNormalizedIdentifiers = new Set<string>();
+
+  appendAdminCredential(credentials, seenNormalizedIdentifiers, {
+    username: normalizeEnvValue(process.env.ADMIN_USERNAME),
+    password: process.env.ADMIN_PASSWORD ?? "",
+    role: "admin",
+  });
+  appendAdminCredential(credentials, seenNormalizedIdentifiers, {
+    username: normalizeEnvValue(process.env.ADMIN_OPERATOR_USERNAME),
+    password: process.env.ADMIN_OPERATOR_PASSWORD ?? "",
+    role: "operator",
+  });
+  appendAdminCredential(credentials, seenNormalizedIdentifiers, {
+    username: normalizeEnvValue(process.env.ADMIN_AUDITOR_USERNAME),
+    password: process.env.ADMIN_AUDITOR_PASSWORD ?? "",
+    role: "auditor",
+  });
+
+  for (const credential of parseAdminCredentialsJson()) {
+    appendAdminCredential(credentials, seenNormalizedIdentifiers, credential);
+  }
+
+  if (!sessionSecret || !credentials.length) {
     return null;
   }
 
   return {
-    username,
-    password,
+    credentials,
     sessionSecret
   };
 }
@@ -113,17 +237,19 @@ export async function createAdminCredentialFingerprint(username: string, passwor
 
 export async function createAdminSessionToken(
   username: string,
+  role: AdminAuthRole,
   secret: string,
   credentialFingerprint: string,
   issuedAtMs = Date.now()
 ) {
   const issuedAtSeconds = Math.floor(issuedAtMs / 1000);
-  const payload: AdminSessionPayload = {
-    v: 1,
+  const payload: AdminSessionPayloadV2 = {
+    v: 2,
     sub: username,
     iat: issuedAtSeconds,
     exp: issuedAtSeconds + ADMIN_SESSION_MAX_AGE_SECONDS,
-    cf: credentialFingerprint
+    cf: credentialFingerprint,
+    rl: role,
   };
 
   const encodedPayload = bytesToBase64Url(textEncoder.encode(JSON.stringify(payload)));
@@ -139,34 +265,86 @@ export async function verifyAdminSessionToken(token: string, secret: string) {
     return null;
   }
 
-  const expectedSignature = await signValue(encodedPayload, secret);
+  let expectedSignature: string;
 
-  if (
-    !constantTimeEquals(base64UrlToBytes(signature), base64UrlToBytes(expectedSignature))
-  ) {
+  try {
+    expectedSignature = await signValue(encodedPayload, secret);
+  } catch {
+    return null;
+  }
+
+  try {
+    if (
+      !constantTimeEquals(base64UrlToBytes(signature), base64UrlToBytes(expectedSignature))
+    ) {
+      return null;
+    }
+  } catch {
     return null;
   }
 
   try {
     const payload = JSON.parse(
       textDecoder.decode(base64UrlToBytes(encodedPayload))
-    ) as Partial<AdminSessionPayload>;
+    ) as Record<string, unknown>;
+    const payloadVersion = payload.v;
+
+    if (payloadVersion === 1) {
+      const sub = payload.sub;
+      const iat = payload.iat;
+      const exp = payload.exp;
+      const cf = payload.cf;
+
+      if (
+        typeof sub !== "string" ||
+        typeof iat !== "number" ||
+        typeof exp !== "number" ||
+        typeof cf !== "string"
+      ) {
+        return null;
+      }
+
+      if (exp <= Math.floor(Date.now() / 1000)) {
+        return null;
+      }
+
+      return {
+        sub,
+        iat,
+        exp,
+        cf,
+        role: "admin",
+      } satisfies VerifiedAdminSessionPayload;
+    }
+
+    const sub = payload.sub;
+    const iat = payload.iat;
+    const exp = payload.exp;
+    const cf = payload.cf;
+    const role = payload.rl;
 
     if (
-      payload.v !== 1 ||
-      typeof payload.sub !== "string" ||
-      typeof payload.iat !== "number" ||
-      typeof payload.exp !== "number" ||
-      typeof payload.cf !== "string"
+      payloadVersion !== 2 ||
+      typeof sub !== "string" ||
+      typeof iat !== "number" ||
+      typeof exp !== "number" ||
+      typeof cf !== "string" ||
+      (role !== "admin" && role !== "operator" && role !== "auditor")
     ) {
       return null;
     }
 
-    if (payload.exp <= Math.floor(Date.now() / 1000)) {
+    if (exp <= Math.floor(Date.now() / 1000)) {
       return null;
     }
 
-    return payload as AdminSessionPayload;
+    return {
+      sub,
+      iat,
+      exp,
+      cf,
+      role,
+    } satisfies VerifiedAdminSessionPayload;
   } catch {
     return null;
   }
@@ -185,18 +363,30 @@ export async function resolveAdminSessionIdentity(token: string) {
     return null;
   }
 
-  const credentialFingerprint = await createAdminCredentialFingerprint(
-    config.username,
-    config.password
-  );
+  for (const credential of config.credentials) {
+    if (
+      normalizeIdentifierForMatch(session.sub) !==
+      normalizeIdentifierForMatch(credential.username)
+    ) {
+      continue;
+    }
 
-  if (session.sub !== config.username || session.cf !== credentialFingerprint) {
-    return null;
+    const credentialFingerprint = await createAdminCredentialFingerprint(
+      credential.username,
+      credential.password
+    );
+
+    if (session.cf !== credentialFingerprint || session.role !== credential.role) {
+      continue;
+    }
+
+    return {
+      username: credential.username,
+      role: credential.role,
+    };
   }
 
-  return {
-    username: session.sub
-  };
+  return null;
 }
 
 export function getSafeAdminRedirectPath(

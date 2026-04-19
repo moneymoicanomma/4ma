@@ -32,7 +32,7 @@ export function AdminLoginForm({ authConfigured }: Readonly<AdminLoginFormProps>
     const reason = searchParams.get("reason");
 
     if (!authConfigured || reason === "setup") {
-      return "Configure ADMIN_USERNAME, ADMIN_PASSWORD e ADMIN_SESSION_SECRET para liberar o login do admin.";
+      return "Configure ADMIN_SESSION_SECRET e ao menos um par de credenciais admin (ex.: ADMIN_USERNAME/ADMIN_PASSWORD ou ADMIN_CREDENTIALS_JSON).";
     }
 
     if (searchParams.get("next")) {

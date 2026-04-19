@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 import type { AdminSessionResponse } from "@/lib/contracts/admin-session";
 import type { AdminBackofficeRole } from "@/lib/server/admin-access";
+import type { AdminAuthCredential } from "@/lib/admin/auth";
 import {
   authenticateAccountWithPassword,
   revokeSessionToken
@@ -52,6 +53,33 @@ function sha256Buffer(value: string) {
 
 function safeCompare(left: string, right: string) {
   return timingSafeEqual(sha256Buffer(left), sha256Buffer(right));
+}
+
+function normalizeIdentifierForMatch(input: string) {
+  return input.trim().toLowerCase();
+}
+
+function findMatchingFallbackCredential(
+  identifier: string,
+  password: string,
+  credentials: readonly AdminAuthCredential[]
+) {
+  const normalizedIdentifier = normalizeIdentifierForMatch(identifier);
+
+  for (const credential of credentials) {
+    if (!credential.username || !credential.password) {
+      continue;
+    }
+
+    if (
+      safeCompare(normalizedIdentifier, normalizeIdentifierForMatch(credential.username)) &&
+      safeCompare(password, credential.password)
+    ) {
+      return credential;
+    }
+  }
+
+  return null;
 }
 
 function getNoStoreHeaders() {
@@ -207,7 +235,13 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  if (!safeCompare(identifier, config.username) || !safeCompare(password, config.password)) {
+  const matchedFallbackCredential = findMatchingFallbackCredential(
+    identifier,
+    password,
+    config.credentials
+  );
+
+  if (!matchedFallbackCredential) {
     return buildJsonResponse(
       {
         ok: false,
@@ -218,19 +252,24 @@ export async function POST(request: NextRequest) {
   }
 
   const credentialFingerprint = await createAdminCredentialFingerprint(
-    config.username,
-    config.password
+    matchedFallbackCredential.username,
+    matchedFallbackCredential.password
   );
   const sessionToken = await createAdminSessionToken(
-    config.username,
+    matchedFallbackCredential.username,
+    matchedFallbackCredential.role,
     config.sessionSecret,
     credentialFingerprint
+  );
+
+  const fallbackRedirectByRole = getAdminDefaultRedirectPathForRole(
+    matchedFallbackCredential.role as AdminBackofficeRole
   );
 
   const response = buildJsonResponse({
     ok: true,
     message: "Login realizado com sucesso.",
-    redirectTo: fallbackRedirectTo
+    redirectTo: requestedRedirectTo || fallbackRedirectByRole || fallbackRedirectTo
   });
 
   response.cookies.set({

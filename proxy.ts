@@ -4,10 +4,9 @@ import {
   ADMIN_DEFAULT_REDIRECT_PATH,
   ADMIN_LOGIN_PATH,
   ADMIN_SESSION_COOKIE_NAME,
-  createAdminCredentialFingerprint,
-  getAdminAuthConfig,
+  isAdminAuthConfigured,
   getSafeAdminRedirectPath,
-  verifyAdminSessionToken
+  resolveAdminSessionIdentity
 } from "@/lib/admin/auth";
 
 function createAdminApiUnauthorizedResponse(message: string, status: number) {
@@ -32,8 +31,10 @@ export async function proxy(request: NextRequest) {
   const isAdminApi = pathname.startsWith("/api/admin");
   const isLoginPage = pathname === ADMIN_LOGIN_PATH;
   const isSessionRoute = pathname === "/api/admin/session";
-  const databaseConfigured = Boolean(process.env.DATABASE_URL?.trim());
-  const config = getAdminAuthConfig();
+  const databaseUrl = process.env.DATABASE_URL?.trim().toLowerCase() ?? "";
+  const databaseConfigured =
+    databaseUrl.startsWith("postgres://") || databaseUrl.startsWith("postgresql://");
+  const authConfigured = isAdminAuthConfigured();
 
   if (isSessionRoute) {
     return NextResponse.next();
@@ -44,7 +45,7 @@ export async function proxy(request: NextRequest) {
   }
 
   if (isLoginPage) {
-    if (!config) {
+    if (!authConfigured) {
       return NextResponse.next();
     }
 
@@ -54,13 +55,9 @@ export async function proxy(request: NextRequest) {
       return NextResponse.next();
     }
 
-    const session = await verifyAdminSessionToken(sessionToken, config.sessionSecret);
-    const credentialFingerprint = await createAdminCredentialFingerprint(
-      config.username,
-      config.password
-    );
+    const session = await resolveAdminSessionIdentity(sessionToken);
 
-    if (session && session.sub === config.username && session.cf === credentialFingerprint) {
+    if (session) {
       const nextPath = getSafeAdminRedirectPath(
         request.nextUrl.searchParams.get("next"),
         ADMIN_DEFAULT_REDIRECT_PATH
@@ -76,7 +73,7 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  if (!config) {
+  if (!authConfigured) {
     if (isAdminApi) {
       return createAdminApiUnauthorizedResponse(
         "Autenticação do admin ainda não foi configurada no ambiente.",
@@ -105,13 +102,9 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(redirectUrl);
   }
 
-  const session = await verifyAdminSessionToken(sessionToken, config.sessionSecret);
-  const credentialFingerprint = await createAdminCredentialFingerprint(
-    config.username,
-    config.password
-  );
+  const session = await resolveAdminSessionIdentity(sessionToken);
 
-  if (!session || session.sub !== config.username || session.cf !== credentialFingerprint) {
+  if (!session) {
     if (isAdminApi) {
       return createAdminApiUnauthorizedResponse("Sessão inválida ou expirada.", 401);
     }

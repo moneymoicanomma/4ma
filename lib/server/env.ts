@@ -146,7 +146,19 @@ export function getServerEnv(): ServerEnv {
 }
 
 export function isDatabaseConfigured(env: ServerEnv) {
-  return Boolean(env.databaseUrl);
+  const databaseUrl = env.databaseUrl;
+
+  if (!databaseUrl) {
+    return false;
+  }
+
+  try {
+    const protocol = new URL(databaseUrl).protocol.toLowerCase();
+
+    return protocol === "postgres:" || protocol === "postgresql:";
+  } catch {
+    return false;
+  }
 }
 
 export function isEventFighterPortalEnabled(env: ServerEnv) {

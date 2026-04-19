@@ -52,7 +52,7 @@ export default async function AdminLoginPage() {
     const fallbackSession = await resolveAdminSessionIdentity(sessionToken);
 
     if (fallbackSession) {
-      redirect("/admin/fantasy");
+      redirect(getAdminDefaultRedirectPathForRole(fallbackSession.role));
     }
   }
 

@@ -24,7 +24,7 @@ export type AdminSessionIdentity =
       kind: "fallback";
       username: string;
       displayName: string;
-      role: "admin";
+      role: AdminBackofficeRole;
     };
 
 function buildAdminLoginRedirectPath(nextPath: string) {
@@ -69,7 +69,7 @@ export async function getCurrentAdminSessionIdentity(
     kind: "fallback",
     username: fallbackSession.username,
     displayName: fallbackSession.username,
-    role: "admin"
+    role: fallbackSession.role
   };
 }
 
