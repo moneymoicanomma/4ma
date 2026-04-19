@@ -82,6 +82,19 @@ function findMatchingFallbackCredential(
   return null;
 }
 
+function hasFallbackCredentialIdentifier(
+  identifier: string,
+  credentials: readonly AdminAuthCredential[]
+) {
+  const normalizedIdentifier = normalizeIdentifierForMatch(identifier);
+
+  return credentials.some(
+    (credential) =>
+      credential.username &&
+      normalizeIdentifierForMatch(credential.username) === normalizedIdentifier
+  );
+}
+
 function getNoStoreHeaders() {
   return {
     "Cache-Control": "no-store, max-age=0",
@@ -242,6 +255,12 @@ export async function POST(request: NextRequest) {
   );
 
   if (!matchedFallbackCredential) {
+    console.warn("[admin-auth] fallback credential mismatch", {
+      identifier,
+      hasIdentifierMatch: hasFallbackCredentialIdentifier(identifier, config.credentials),
+      configuredCredentialCount: config.credentials.length
+    });
+
     return buildJsonResponse(
       {
         ok: false,
