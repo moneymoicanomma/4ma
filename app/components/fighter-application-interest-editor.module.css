@@ -60,14 +60,48 @@
   text-transform: uppercase;
 }
 
-.field select {
-  width: 100%;
-  min-height: 44px;
-  padding: 0 12px;
-  border: 1px solid rgba(255, 255, 255, 0.14);
+.optionList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.optionButton {
+  min-height: 40px;
+  padding: 0 14px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
   background: rgba(18, 18, 18, 0.95);
-  color: #fff;
-  font-size: 14px;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+  cursor: pointer;
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease,
+    transform 160ms ease;
+}
+
+.optionButton:hover {
+  border-color: rgba(232, 24, 26, 0.72);
+  background: rgba(232, 24, 26, 0.12);
+  transform: translateY(-1px);
+}
+
+.optionButton:focus-visible {
+  outline: 2px solid rgba(232, 24, 26, 0.72);
+  outline-offset: 2px;
+}
+
+.optionButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.optionButtonActive {
+  border-color: rgba(232, 24, 26, 0.9);
+  background: rgba(232, 24, 26, 0.22);
+  color: #ffffff;
 }
 
 .saveButton {

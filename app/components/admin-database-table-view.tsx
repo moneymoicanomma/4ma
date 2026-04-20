@@ -27,6 +27,18 @@ function getRowDetailColumnKey(tableId: AdminDatabaseTableData["table"]["id"]) {
   }
 }
 
+function getDetailLinkLabel(tableId: AdminDatabaseTableData["table"]["id"]) {
+  if (tableId === "fighter-applications" || tableId === "event-fighter-intakes") {
+    return "Ver perfil";
+  }
+
+  return "Ver emitente";
+}
+
+function shouldRenderStatusSummary(tableId: AdminDatabaseTableData["table"]["id"]) {
+  return tableId !== "fighter-applications";
+}
+
 export function AdminDatabaseTableView({
   data,
 }: Readonly<AdminDatabaseTableViewProps>) {
@@ -63,7 +75,7 @@ export function AdminDatabaseTableView({
         </div>
       </div>
 
-      {data.statusCounts.length > 0 ? (
+      {shouldRenderStatusSummary(data.table.id) && data.statusCounts.length > 0 ? (
         <div className={styles.statusRow}>
           {data.statusCounts.map((statusCount) => (
             <span className={styles.statusChip} key={`${data.table.id}-${statusCount.label}`}>
@@ -106,7 +118,7 @@ export function AdminDatabaseTableView({
                 })}
                 <td>
                   <Link className={styles.detailLink} href={`/admin/database/${data.table.id}/${row.id}`}>
-                    Ver emitente
+                    {getDetailLinkLabel(data.table.id)}
                   </Link>
                 </td>
               </tr>

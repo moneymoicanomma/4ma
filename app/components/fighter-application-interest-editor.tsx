@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 
 import styles from "./fighter-application-interest-editor.module.css";
@@ -10,6 +10,10 @@ const EDITORIAL_INTEREST_OPTIONS = [
   { value: "talvez_no_futuro", label: "Talvez no futuro" },
   { value: "nao_interessante", label: "Não interessante" },
   { value: "bizarro", label: "Bizarro" },
+] as const;
+const EDITORIAL_INTEREST_BUTTONS = [
+  { value: "", label: "Sem classificação" },
+  ...EDITORIAL_INTEREST_OPTIONS,
 ] as const;
 const EDITORIAL_INTEREST_VALUES = new Set<string>(
   EDITORIAL_INTEREST_OPTIONS.map((option) => option.value),
@@ -51,10 +55,6 @@ export function FighterApplicationInterestEditor({
   const [isPending, startTransition] = useTransition();
 
   const hasChanges = currentValue !== savedValue;
-  const selectId = useMemo(
-    () => `fighter-app-editorial-interest-${applicationId}`,
-    [applicationId],
-  );
 
   function saveEditorialInterest() {
     if (isPending || !hasChanges) {
@@ -113,25 +113,30 @@ export function FighterApplicationInterestEditor({
       </header>
 
       <div className={styles.controls}>
-        <label className={styles.field} htmlFor={selectId}>
+        <div className={styles.field}>
           <span>Atributo</span>
-          <select
-            id={selectId}
-            value={currentValue}
-            onChange={(event) => {
-              setCurrentValue(event.currentTarget.value);
-              setFeedback(null);
-            }}
-            disabled={isPending}
-          >
-            <option value="">Sem classificação</option>
-            {EDITORIAL_INTEREST_OPTIONS.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </label>
+          <div className={styles.optionList} role="radiogroup" aria-label="Classificação editorial">
+            {EDITORIAL_INTEREST_BUTTONS.map((option) => {
+              const isActive = currentValue === option.value;
+
+              return (
+                <button
+                  type="button"
+                  key={option.value || "sem-classificacao"}
+                  className={isActive ? `${styles.optionButton} ${styles.optionButtonActive}` : styles.optionButton}
+                  aria-pressed={isActive}
+                  disabled={isPending}
+                  onClick={() => {
+                    setCurrentValue(option.value);
+                    setFeedback(null);
+                  }}
+                >
+                  {option.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
 
         <button
           type="button"

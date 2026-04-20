@@ -12,8 +12,6 @@ import { requireAdminSessionIdentity } from "@/lib/server/admin-session";
 
 import styles from "./page.module.css";
 
-const numberFormatter = new Intl.NumberFormat("pt-BR");
-
 export const metadata: Metadata = {
   title: "Admin Banco | Money Moicano MMA",
   description:
@@ -51,30 +49,9 @@ export default async function AdminDatabasePage() {
               <span className={styles.titleAccent}>Banco</span>
             </h1>
             <p className={styles.heroBody}>
-              Esta área reúne as principais tabelas operacionais em leitura rápida, com contagem de
-              registros, status e preview das últimas linhas sem expor os campos mais sensíveis.
+              Esta área reúne as principais tabelas operacionais em leitura rápida com preview das
+              últimas linhas, mantendo os detalhes completos dentro do perfil de cada registro.
             </p>
-          </div>
-
-          <div className={styles.heroAside} data-reveal>
-            <div className={styles.heroAsideCard}>
-              <span>Banco</span>
-              <strong>{overview.databaseConfigured ? "Conectado" : "Indisponível"}</strong>
-            </div>
-            <div className={styles.heroAsideCard}>
-              <span>Tabelas cobertas</span>
-              <strong>
-                {overview.databaseConfigured
-                  ? `${numberFormatter.format(overview.availableTables)}/${numberFormatter.format(overview.tables.length)}`
-                  : "0/0"}
-              </strong>
-            </div>
-            <div className={styles.heroAsideCard}>
-              <span>Linhas monitoradas</span>
-              <strong>
-                {overview.databaseConfigured ? numberFormatter.format(overview.totalRows) : "—"}
-              </strong>
-            </div>
           </div>
         </div>
       </section>

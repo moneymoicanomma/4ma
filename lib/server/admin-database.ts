@@ -380,15 +380,14 @@ type PartnerInquiryPreviewRow = {
 
 type FighterApplicationPreviewRow = {
   id: string;
-  createdAt: DateValue;
   fullName: string | null;
   nickname: string | null;
   weightClass: string | null;
   editorialInterest: string | null;
+  birthDate: DateValue;
   city: string | null;
   stateCode: string | null;
-  athleteWhatsapp: string | null;
-  status: string;
+  competitionHistory: string | null;
 };
 
 type EventFighterIntakePreviewRow = {
@@ -582,6 +581,47 @@ function formatDateTime(value: DateValue) {
   const date = toDate(value);
 
   return date ? dateTimeFormatter.format(date) : "—";
+}
+
+function formatAge(value: DateValue) {
+  const birthDate = toDate(value);
+
+  if (!birthDate) {
+    return "—";
+  }
+
+  const now = new Date();
+  let age = now.getUTCFullYear() - birthDate.getUTCFullYear();
+  const monthOffset = now.getUTCMonth() - birthDate.getUTCMonth();
+
+  if (
+    monthOffset < 0 ||
+    (monthOffset === 0 && now.getUTCDate() < birthDate.getUTCDate())
+  ) {
+    age -= 1;
+  }
+
+  if (age < 0 || age > 120) {
+    return "—";
+  }
+
+  return `${numberFormatter.format(age)} anos`;
+}
+
+function formatCartelPreview(value: string | null | undefined, maxLength = 88) {
+  const normalized = normalizeText(value);
+
+  if (!normalized) {
+    return "—";
+  }
+
+  const compact = normalized.replace(/\s+/g, " ");
+
+  if (compact.length <= maxLength) {
+    return compact;
+  }
+
+  return `${compact.slice(0, maxLength - 1).trimEnd()}…`;
 }
 
 function formatClipboardScalar(value: unknown) {
@@ -834,7 +874,6 @@ async function loadContactMessagesTable() {
       { key: "fullName", label: "Nome" },
       { key: "email", label: "Email" },
       { key: "subject", label: "Assunto" },
-      { key: "status", label: "Status" },
     ],
   };
 
@@ -865,8 +904,7 @@ async function loadContactMessagesTable() {
             created_at as "createdAt",
             full_name as "fullName",
             email,
-            subject,
-            status
+            subject
           from app.contact_messages
           order by created_at desc
           limit ${TABLE_PREVIEW_LIMIT}
@@ -884,7 +922,6 @@ async function loadContactMessagesTable() {
           fullName: formatText(row.fullName),
           email: formatText(row.email),
           subject: formatText(row.subject),
-          status: formatStatus(row.status),
         }),
       ),
     };
@@ -1038,13 +1075,12 @@ async function loadFighterApplicationsTable() {
       "Aplicações enviadas por atletas interessados em participar do projeto.",
     previewLabel: "Últimos cadastros",
     columns: [
-      { key: "createdAt", label: "Data" },
       { key: "fighter", label: "Lutador" },
       { key: "weightClass", label: "Categoria" },
-      { key: "editorialInterest", label: "Interesse MMMMA" },
+      { key: "age", label: "Idade" },
       { key: "location", label: "Cidade" },
-      { key: "athleteWhatsapp", label: "WhatsApp" },
-      { key: "status", label: "Status" },
+      { key: "editorialInterest", label: "Interesse MMMMA" },
+      { key: "cartel", label: "Cartel" },
     ],
   };
 
@@ -1072,19 +1108,15 @@ async function loadFighterApplicationsTable() {
         `
           select
             fa.id,
-            fa.created_at as "createdAt",
             fa.full_name as "fullName",
             fa.nickname,
             fa.weight_class as "weightClass",
             fa.editorial_interest::text as "editorialInterest",
+            fa.birth_date as "birthDate",
             fa.city,
             fa.state_code as "stateCode",
-            contact.phone_whatsapp as "athleteWhatsapp",
-            fa.status
+            fa.competition_history as "competitionHistory"
           from app.fighter_applications fa
-          left join app.fighter_application_contacts contact
-            on contact.fighter_application_id = fa.id
-           and contact.contact_role = 'athlete'
           order by fa.created_at desc
           limit ${TABLE_PREVIEW_LIMIT}
         `,
@@ -1097,18 +1129,15 @@ async function loadFighterApplicationsTable() {
       statusCounts,
       rows: result.rows.map((row) =>
         createRow(row.id, {
-          createdAt: formatDateTime(row.createdAt),
           fighter:
             [normalizeText(row.fullName), normalizeText(row.nickname)]
               .filter(Boolean)
               .join(" / ") || "—",
           weightClass: formatWeightClass(row.weightClass),
-          editorialInterest: formatFighterApplicationEditorialInterest(
-            row.editorialInterest,
-          ),
+          age: formatAge(row.birthDate),
           location: buildLocation(row.city, row.stateCode),
-          athleteWhatsapp: formatText(row.athleteWhatsapp),
-          status: formatStatus(row.status),
+          editorialInterest: formatFighterApplicationEditorialInterest(row.editorialInterest),
+          cartel: formatCartelPreview(row.competitionHistory),
         }),
       ),
     };
@@ -1725,19 +1754,15 @@ async function loadFighterApplicationsTableDataDirect(): Promise<AdminDatabaseTa
     queryDatabase<FighterApplicationPreviewRow>(`
       select
         fa.id,
-        fa.created_at as "createdAt",
         fa.full_name as "fullName",
         fa.nickname,
         fa.weight_class as "weightClass",
         fa.editorial_interest::text as "editorialInterest",
+        fa.birth_date as "birthDate",
         fa.city,
         fa.state_code as "stateCode",
-        contact.phone_whatsapp as "athleteWhatsapp",
-        fa.status
+        fa.competition_history as "competitionHistory"
       from app.fighter_applications fa
-      left join app.fighter_application_contacts contact
-        on contact.fighter_application_id = fa.id
-       and contact.contact_role = 'athlete'
       order by fa.created_at desc
     `),
   ]);
@@ -1746,28 +1771,24 @@ async function loadFighterApplicationsTableDataDirect(): Promise<AdminDatabaseTa
     databaseConfigured: true,
     table,
     columns: [
-      { key: "createdAt", label: "Data" },
       { key: "fighter", label: "Lutador" },
       { key: "weightClass", label: "Categoria" },
-      { key: "editorialInterest", label: "Interesse MMMMA" },
+      { key: "age", label: "Idade" },
       { key: "location", label: "Cidade" },
-      { key: "athleteWhatsapp", label: "WhatsApp" },
-      { key: "status", label: "Status" },
+      { key: "editorialInterest", label: "Interesse MMMMA" },
+      { key: "cartel", label: "Cartel" },
     ],
     rows: result.rows.map((row) =>
       createRow(row.id, {
-        createdAt: formatDateTime(row.createdAt),
         fighter:
           [normalizeText(row.fullName), normalizeText(row.nickname)]
             .filter(Boolean)
             .join(" / ") || "—",
         weightClass: formatWeightClass(row.weightClass),
-        editorialInterest: formatFighterApplicationEditorialInterest(
-          row.editorialInterest,
-        ),
+        age: formatAge(row.birthDate),
         location: buildLocation(row.city, row.stateCode),
-        athleteWhatsapp: formatText(row.athleteWhatsapp),
-        status: formatStatus(row.status),
+        editorialInterest: formatFighterApplicationEditorialInterest(row.editorialInterest),
+        cartel: formatCartelPreview(row.competitionHistory),
       }),
     ),
     statusCounts,

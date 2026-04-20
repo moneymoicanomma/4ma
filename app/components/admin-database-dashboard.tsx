@@ -27,6 +27,18 @@ function getRowDetailColumnKey(tableId: AdminDatabaseOverview["tables"][number][
   }
 }
 
+function shouldRenderStatusSummary(tableId: AdminDatabaseOverview["tables"][number]["id"]) {
+  return tableId !== "contact-messages" && tableId !== "fighter-applications";
+}
+
+function getDetailLinkLabel(tableId: AdminDatabaseOverview["tables"][number]["id"]) {
+  if (tableId === "fighter-applications" || tableId === "event-fighter-intakes") {
+    return "Ver perfil";
+  }
+
+  return "Ver emitente";
+}
+
 export function AdminDatabaseDashboard({
   overview
 }: Readonly<AdminDatabaseDashboardProps>) {
@@ -95,7 +107,7 @@ export function AdminDatabaseDashboard({
                 </div>
               </header>
 
-              {table.statusCounts.length > 0 ? (
+              {shouldRenderStatusSummary(table.id) && table.statusCounts.length > 0 ? (
                 <div className={styles.statusRow}>
                   {table.statusCounts.map((statusCount) => (
                     <span className={styles.statusChip} key={`${table.id}-${statusCount.label}`}>
@@ -150,7 +162,7 @@ export function AdminDatabaseDashboard({
                             ))}
                             <td>
                               <Link className={styles.rowLink} href={`/admin/database/${table.id}/${row.id}`}>
-                                Ver emitente
+                                {getDetailLinkLabel(table.id)}
                               </Link>
                             </td>
                           </tr>
