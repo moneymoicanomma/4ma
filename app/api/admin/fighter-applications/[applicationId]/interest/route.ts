@@ -5,7 +5,13 @@ import {
   type AdminSessionIdentity,
 } from "@/lib/server/admin-session";
 import { withDatabaseTransaction } from "@/lib/server/database";
-import { getServerEnv, isDatabaseConfigured } from "@/lib/server/env";
+import {
+  getAdminWriteUpstreamBearerToken,
+  getServerEnv,
+  isAdminWriteUpstreamConfigured,
+  isDatabaseConfigured,
+} from "@/lib/server/env";
+import { postJsonToUpstream, UpstreamApiError } from "@/lib/server/http";
 import { buildRequestAuditContext } from "@/lib/server/request-context";
 import { isSameOriginRequest, readJsonRequestBody } from "@/lib/server/request-guards";
 
@@ -107,16 +113,6 @@ export async function POST(request: NextRequest, context: RouteContext) {
     );
   }
 
-  if (!isDatabaseConfigured(env)) {
-    return buildJsonResponse(
-      {
-        ok: false,
-        message: "Banco de dados indisponível neste ambiente."
-      },
-      503
-    );
-  }
-
   const { applicationId } = await context.params;
 
   if (!uuidPattern.test(applicationId)) {
@@ -159,6 +155,113 @@ export async function POST(request: NextRequest, context: RouteContext) {
   }
 
   const requestContext = buildRequestAuditContext(request);
+
+  if (!isDatabaseConfigured(env)) {
+    if (!isAdminWriteUpstreamConfigured(env)) {
+      return buildJsonResponse(
+        {
+          ok: false,
+          message: "Banco de dados indisponível neste ambiente."
+        },
+        503
+      );
+    }
+
+    try {
+      const upstreamUrl = `${env.upstreamApiBaseUrl}/v1/admin/fighter-applications/${encodeURIComponent(
+        applicationId
+      )}/interest`;
+      const upstreamResponse = await postJsonToUpstream(
+        upstreamUrl,
+        {
+          payload: {
+            editorialInterest
+          },
+          actor: {
+            accountId: identity.kind === "account" ? identity.accountId : null,
+            email: identity.username,
+            role: identity.role
+          },
+          requestContext
+        },
+        {
+          bearerToken: getAdminWriteUpstreamBearerToken(env)!,
+          timeoutMs: env.upstreamRequestTimeoutMs
+        }
+      );
+      const payload = (await upstreamResponse
+        .json()
+        .catch(() => null)) as
+        | {
+            ok?: boolean;
+            message?: string;
+            editorialInterest?: string | null;
+          }
+        | null;
+
+      if (!payload?.ok) {
+        return buildJsonResponse(
+          {
+            ok: false,
+            message: payload?.message ?? "Não foi possível salvar agora. Tente novamente em instantes."
+          },
+          503
+        );
+      }
+
+      return buildJsonResponse({
+        ok: true,
+        message: payload.message ?? "Classificação atualizada com sucesso.",
+        editorialInterest: payload.editorialInterest ?? null
+      });
+    } catch (error) {
+      if (error instanceof UpstreamApiError) {
+        if (error.status === 404) {
+          return buildJsonResponse(
+            {
+              ok: false,
+              message: "Atleta não encontrado."
+            },
+            404
+          );
+        }
+
+        if (error.status === 400) {
+          return buildJsonResponse(
+            {
+              ok: false,
+              message: "Classificação inválida."
+            },
+            400
+          );
+        }
+
+        if (error.status === 401 || error.status === 403) {
+          return buildJsonResponse(
+            {
+              ok: false,
+              message: "Seu perfil não tem permissão para editar classificações."
+            },
+            403
+          );
+        }
+      }
+
+      console.error("[admin fighter-applications] upstream update failed", {
+        error,
+        applicationId,
+        editorialInterest
+      });
+
+      return buildJsonResponse(
+        {
+          ok: false,
+          message: "Não foi possível salvar agora. Tente novamente em instantes."
+        },
+        503
+      );
+    }
+  }
 
   try {
     const result = await withDatabaseTransaction(

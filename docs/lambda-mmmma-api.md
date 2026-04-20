@@ -15,6 +15,7 @@ Este starter responde:
 - `GET /health`
 - `GET /v1/admin/database-overview`
 - `GET /v1/google-sheets/exports/:tableKey`
+- `POST /v1/admin/fighter-applications/:applicationId/interest`
 - `POST /v1/newsletter/subscriptions`
 - `POST /v1/contact-messages`
 - `POST /v1/fighter-applications`

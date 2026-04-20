@@ -19,6 +19,7 @@ const scrypt = promisify(scryptCallback);
 const EVENT_FIGHTER_ACCESS_PATH = "/v1/event-fighter-access/session";
 const ADMIN_DATABASE_OVERVIEW_PATH = "/v1/admin/database-overview";
 const ADMIN_DATABASE_ROUTE_BASE = "/v1/admin/database";
+const ADMIN_FIGHTER_APPLICATION_INTEREST_ROUTE_BASE = "/v1/admin/fighter-applications";
 const EVENT_FIGHTER_INTAKE_PATH = "/v1/event-fighter-intakes";
 const NEWSLETTER_SUBSCRIBE_PATH = "/v1/newsletter/subscriptions";
 const CONTACT_MESSAGES_PATH = "/v1/contact-messages";
@@ -125,6 +126,9 @@ const ADMIN_FIGHTER_APPLICATION_EDITORIAL_INTEREST_LABELS = {
   nao_interessante: "Não interessante",
   bizarro: "Bizarro"
 };
+const FIGHTER_APPLICATION_EDITORIAL_INTEREST_VALUES = new Set(
+  Object.keys(ADMIN_FIGHTER_APPLICATION_EDITORIAL_INTEREST_LABELS)
+);
 const FANTASY_ADMIN_STATUS_VALUES = new Set(["draft", "published", "locked", "finished"]);
 const FANTASY_ADMIN_VICTORY_METHODS = new Set(["decisao", "finalizacao", "nocaute"]);
 const FANTASY_ADMIN_ROUNDS = new Set([1, 2, 3, 4, 5]);
@@ -647,6 +651,28 @@ function adminFormatSource(value) {
 
 function adminFormatWeightClass(value) {
   return adminHumanizeToken(value);
+}
+
+function normalizeFighterApplicationEditorialInterest(value) {
+  if (value === null || value === undefined) {
+    return null;
+  }
+
+  if (typeof value !== "string") {
+    return undefined;
+  }
+
+  const normalized = value.trim().toLowerCase();
+
+  if (!normalized) {
+    return null;
+  }
+
+  if (!FIGHTER_APPLICATION_EDITORIAL_INTEREST_VALUES.has(normalized)) {
+    return undefined;
+  }
+
+  return normalized;
 }
 
 function adminFormatFighterApplicationEditorialInterest(value) {
@@ -3430,6 +3456,122 @@ async function handleAdminDatabaseRecord(event, tableId, rowId) {
   }
 }
 
+function parseAdminFighterApplicationInterestPath(rawPath) {
+  const prefix = `${ADMIN_FIGHTER_APPLICATION_INTEREST_ROUTE_BASE}/`;
+  const suffix = "/interest";
+
+  if (!rawPath.startsWith(prefix) || !rawPath.endsWith(suffix)) {
+    return null;
+  }
+
+  const encodedId = rawPath.slice(prefix.length, rawPath.length - suffix.length).trim();
+
+  if (!encodedId || encodedId.includes("/")) {
+    return null;
+  }
+
+  try {
+    return decodeURIComponent(encodedId);
+  } catch {
+    return null;
+  }
+}
+
+async function handleAdminFighterApplicationInterestUpdate(event, applicationId) {
+  if (!assertBearerForScope(event, "admin_write")) {
+    return buildJsonResponse(401, {
+      ok: false,
+      message: "Unauthorized."
+    });
+  }
+
+  if (!isUuid(applicationId)) {
+    return buildJsonResponse(400, {
+      ok: false,
+      message: "ID de atleta inválido."
+    });
+  }
+
+  let body;
+
+  try {
+    body = parseJsonBody(event);
+  } catch {
+    return buildJsonResponse(400, {
+      ok: false,
+      message: "Invalid JSON body."
+    });
+  }
+
+  const payload = getPayloadBody(body);
+  const actor = body?.actor ?? {};
+  const requestContext = buildSerializableRequestContext(getRequestContextBody(body), null);
+  const editorialInterest = normalizeFighterApplicationEditorialInterest(payload?.editorialInterest);
+
+  if (editorialInterest === undefined) {
+    return buildJsonResponse(400, {
+      ok: false,
+      message: "Classificação inválida."
+    });
+  }
+
+  const actorAccountId = isUuid(actor?.accountId) ? actor.accountId : null;
+  const actorRole = normalizeText(actor?.role) || "admin";
+  const actorEmail = normalizeEmail(actor?.email) || null;
+
+  try {
+    const result = await withDatabaseTransaction(
+      {
+        actorId: actorAccountId,
+        actorRole,
+        actorEmail,
+        requestId: requestContext.requestId,
+        clientIp: requestContext.clientIp,
+        origin: requestContext.origin,
+        userAgent: requestContext.userAgent
+      },
+      async (client) =>
+        client.query(
+          `
+            update app.fighter_applications
+            set
+              editorial_interest = $2::app.fighter_application_editorial_interest_enum,
+              updated_at = now()
+            where id = $1::uuid
+            returning editorial_interest::text as "editorialInterest"
+          `,
+          [applicationId, editorialInterest]
+        )
+    );
+
+    const row = result.rows[0];
+
+    if (!row) {
+      return buildJsonResponse(404, {
+        ok: false,
+        message: "Atleta não encontrado."
+      });
+    }
+
+    return buildJsonResponse(200, {
+      ok: true,
+      message: "Classificação atualizada com sucesso.",
+      editorialInterest: row.editorialInterest ?? null
+    });
+  } catch (error) {
+    console.error("admin fighter application interest update failed", {
+      error,
+      applicationId,
+      editorialInterest
+    });
+
+    return buildJsonResponse(503, {
+      ok: false,
+      message: "Serviço temporariamente indisponível."
+    });
+  }
+}
+
 async function handleGoogleSheetsExportTable(event, exportKey) {
   const exportConfig = GOOGLE_SHEETS_EXPORTS[exportKey];
 
@@ -4728,6 +4870,14 @@ export const handler = async (event) => {
 
     if (method === "POST" && rawPath === ADMIN_FANTASY_EVENTS_PATH) {
       return await handleAdminFantasyEvents(event);
+    }
+
+    if (method === "POST") {
+      const fighterApplicationId = parseAdminFighterApplicationInterestPath(rawPath);
+
+      if (fighterApplicationId) {
+        return await handleAdminFighterApplicationInterestUpdate(event, fighterApplicationId);
+      }
     }
 
     if (method === "POST" && rawPath === FANTASY_ENTRIES_PATH) {

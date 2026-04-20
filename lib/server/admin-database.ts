@@ -2814,8 +2814,6 @@ export async function loadAdminDatabaseTableData(
     return buildAdminDatabaseTableForbidden(table);
   }
 
-  const intakeScope = await resolveEventFighterIntakeScope(normalizedOptions);
-
   if (!isDatabaseConfigured(env) && isAdminReadUpstreamConfigured(env)) {
     const upstreamTable = await loadAdminDatabaseTableFromUpstream(
       tableId,
@@ -2841,8 +2839,10 @@ export async function loadAdminDatabaseTableData(
       return loadPartnerInquiriesTableDataDirect();
     case "fighter-applications":
       return loadFighterApplicationsTableDataDirect();
-    case "event-fighter-intakes":
+    case "event-fighter-intakes": {
+      const intakeScope = await resolveEventFighterIntakeScope(normalizedOptions);
       return loadEventFighterIntakesTableDataDirect(intakeScope);
+    }
     case "fantasy-entries":
       return loadFantasyEntriesTableDataDirect();
   }
@@ -2863,8 +2863,6 @@ export async function loadAdminDatabaseRecordData(
   if (!isTableAllowedByLoadOptions(tableId, normalizedOptions)) {
     return null;
   }
-
-  const intakeScope = await resolveEventFighterIntakeScope(normalizedOptions);
 
   if (!isDatabaseConfigured(env) && isAdminReadUpstreamConfigured(env)) {
     const upstreamRecord = await loadAdminDatabaseRecordFromUpstream(
@@ -2892,8 +2890,10 @@ export async function loadAdminDatabaseRecordData(
       return loadPartnerInquiryRecordDirect(rowId);
     case "fighter-applications":
       return loadFighterApplicationRecordDirect(rowId);
-    case "event-fighter-intakes":
+    case "event-fighter-intakes": {
+      const intakeScope = await resolveEventFighterIntakeScope(normalizedOptions);
       return loadEventFighterIntakeRecordDirect(rowId, intakeScope);
+    }
     case "fantasy-entries":
       return loadFantasyEntryRecordDirect(rowId);
   }
