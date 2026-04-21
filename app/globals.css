@@ -958,6 +958,7 @@ section[id] {
 .ticket-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: center;
   gap: 28px;
   width: min(100%, 1320px);
   margin-inline: auto;
@@ -965,11 +966,13 @@ section[id] {
 
 .ticket-card {
   display: flex;
-  min-height: 348px;
+  min-height: 0;
   flex-direction: column;
-  justify-content: flex-start;
-  gap: 18px;
-  padding: 24px;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 36px 28px;
+  text-align: center;
   background: var(--panel-soft);
   transition:
     transform 240ms var(--motion-ease-soft),
@@ -1000,6 +1003,8 @@ section[id] {
 
 .ticket-card__price-block {
   display: flex;
+  width: 100%;
+  max-width: 38ch;
   flex-direction: column;
   align-items: center;
   gap: 11px;
@@ -1007,7 +1012,7 @@ section[id] {
 
 .ticket-card__description {
   margin: 0;
-  max-width: 36ch;
+  max-width: 34ch;
   color: rgba(229, 226, 225, 0.78);
   font-family: var(--font-body);
   font-size: 14px;
@@ -1574,8 +1579,8 @@ section[id] {
   }
 
   .ticket-card {
-    min-height: 388px;
-    padding: 28px;
+    min-height: 0;
+    padding: 40px 32px;
   }
 
   .section--audience {
@@ -2717,7 +2722,8 @@ section[id] {
 
   .ticket-card {
     flex: 0 0 min(72vw, 284px);
-    min-height: 378px;
+    min-height: 0;
+    padding: 30px 22px;
     scroll-snap-align: start;
   }
 
