@@ -137,14 +137,12 @@ const ticketTiers = [
     name: "PREMIUM FIGHT",
     description:
       "Acesso à área principal do evento, com lugares próximos ao octógono e visão privilegiada das lutas. Experiência intensa, ambiente imersivo e contato direto com a ação do início ao fim.",
-    price: "R$ 300",
   },
   {
     label: "Pra quem tá rico e quer uma experiência f#d@",
     name: "VIP EXPERIENCE",
     description:
       "Acesso ao lounge exclusivo no mezanino com comidas e bebidas, meet & greet com Renato “Money” Moicano e entrada liberada para a arquibancada colada ao octógono. Conforto, exclusividade e bastidores do evento na mão.",
-    price: "R$ 800",
     featured: true,
   },
 ];
@@ -614,7 +612,6 @@ export default function Home() {
                 <div className="ticket-card__price-block">
                   <h3 className="ticket-card__name">{tier.name}</h3>
                   <p className="ticket-card__description">{tier.description}</p>
-                  <p className="ticket-card__price">{tier.price}</p>
                 </div>
               </article>
             ))}
