@@ -1,25 +1,30 @@
 import dynamic from "next/dynamic";
 import Image from "next/image";
 
-import {
-  getSiteAssetIntrinsicDimensions,
-  siteAsset
-} from "@/lib/site-assets";
+import { getSiteAssetIntrinsicDimensions, siteAsset } from "@/lib/site-assets";
 
 import { DeferredNewsletterSignupForm } from "./components/deferred-newsletter-signup-form";
 import { LandingTopbar } from "./components/landing-topbar";
 
 const LandingMotionController = dynamic(() =>
-  import("./components/landing-motion-controller").then((module) => module.LandingMotionController)
+  import("./components/landing-motion-controller").then(
+    (module) => module.LandingMotionController,
+  ),
 );
 
 const heroImage = siteAsset("hero-main-v4.webp");
 const brandLogo = siteAsset("logo money moicano mma.svg");
 const brandLogoWide = siteAsset("logo money moicano mma extenso.svg");
-const streamIcon = siteAsset("Video-Game-Logo-Streamplay--Streamline-Ultimate.svg");
-const fightsIcon = siteAsset("Fists-Crashing-Conflict--Streamline-Ultimate.svg");
+const streamIcon = siteAsset(
+  "Video-Game-Logo-Streamplay--Streamline-Ultimate.svg",
+);
+const fightsIcon = siteAsset(
+  "Fists-Crashing-Conflict--Streamline-Ultimate.svg",
+);
 const stadiumIcon = siteAsset("Stadium-Classic-2--Streamline-Ultimate.svg");
-const microphoneIcon = siteAsset("Microphone-Podcast-2--Streamline-Ultimate.svg");
+const microphoneIcon = siteAsset(
+  "Microphone-Podcast-2--Streamline-Ultimate.svg",
+);
 const cornermanIcon = siteAsset("cornerman.svg");
 const cornermanSloganLogo = siteAsset("cornerman - slogan.svg");
 const cabmmaLogo = siteAsset("cabmma.svg");
@@ -34,14 +39,19 @@ const cabmmaUrl = "https://www.instagram.com/cab_mma/";
 const transmissionUrl = "https://www.youtube.com/@RenatoMoneyMoicano";
 const joyaGearUrl = "https://joyagear.com/";
 const fighterSignupUrl = "https://mma.moicano.tv/";
-const fighterSignupLogo = "https://assets.moneymoicanomma.com.br/rinha-de-inscritos.svg";
+const fighterSignupLogo =
+  "https://assets.moneymoicanomma.com.br/rinha-de-inscritos.svg";
 
 const navItems = [
   { label: "O Evento", href: "#evento", sectionId: "evento" },
   { label: "A Transmissão", href: "#transmissao", sectionId: "transmissao" },
-  { label: "Lute no MMMMA", href: "/lute-no-mmmma", sectionId: "lute-no-mmmma" },
+  {
+    label: "Lute no MMMMA",
+    href: "/lute-no-mmmma",
+    sectionId: "lute-no-mmmma",
+  },
   { label: "Ingressos", href: "#ingressos", sectionId: "ingressos" },
-  { label: "Público", href: "#publico", sectionId: "publico" }
+  { label: "Público", href: "#publico", sectionId: "publico" },
 ];
 
 const eventFacts = [
@@ -50,40 +60,36 @@ const eventFacts = [
     label: "Localização",
     value: "Cornerman, São Paulo",
     icon: cornermanIcon,
-    href: cornermanUrl
+    href: cornermanUrl,
   },
   {
     label: "Transmissão",
     value: "Canal Money Moicano",
-    href: transmissionUrl
-  }
+    href: transmissionUrl,
+  },
 ];
 
 const featureCards = [
   {
     icon: fightsIcon,
     title: "Lutas que Valem Assistir",
-    copy:
-      "Confrontos casados com critério técnico real. Nada de enchimento de card, nada de luta fácil. Cada combate tem história, tem nível e tem motivo pra estar no card."
+    copy: "Confrontos casados com critério técnico real. Nada de enchimento de card, nada de luta fácil. Cada combate tem história, tem nível e tem motivo pra estar no card.",
   },
   {
     icon: streamIcon,
     title: "Transmissão que Não Escapa Nada",
-    copy:
-      "Replay, estatísticas, câmeras no cage e comentários ao vivo. Você assiste de casa e sente que está na arena (só que sem levar porrada)."
+    copy: "Replay, estatísticas, câmeras no cage e comentários ao vivo. Você assiste de casa e sente que está na arena (só que sem levar porrada).",
   },
   {
     icon: stadiumIcon,
     title: "Atmosfera de Evento Grande",
-    copy:
-      "Arena, estrutura profissional, pesagem, entrada dos atletas e toda a cerimônia que transforma uma luta em um espetáculo de verdade."
+    copy: "Arena, estrutura profissional, pesagem, entrada dos atletas e toda a cerimônia que transforma uma luta em um espetáculo de verdade.",
   },
   {
     icon: microphoneIcon,
     title: "Comentários Nada Relevantes",
-    copy:
-      "Análise nada técnica misturada com humor duvidoso e opiniões que nenhuma transmissão corporativa teria coragem de dar."
-  }
+    copy: "Análise nada técnica misturada com humor duvidoso e opiniões que nenhuma transmissão corporativa teria coragem de dar.",
+  },
 ];
 
 const transmissionTiles = [
@@ -91,21 +97,21 @@ const transmissionTiles = [
     title: "Comentários nada técnicos",
     image: transmissionOverlayImage,
     className: "transmission-tile transmission-tile--comments",
-    sizes: "(max-width: 780px) 72vw, (min-width: 1600px) 18vw, 319px"
+    sizes: "(max-width: 780px) 72vw, (min-width: 1600px) 18vw, 319px",
   },
   {
     title: "Torcida maluca",
     image: siteAsset("torcida-maluca.webp"),
     className: "transmission-tile transmission-tile--crowd",
-    sizes: "(max-width: 780px) 72vw, (min-width: 1600px) 18vw, 319px"
+    sizes: "(max-width: 780px) 72vw, (min-width: 1600px) 18vw, 319px",
   },
   {
     title: "Certeza de luta boa",
     titleSecondary: "(Isso realmente aconteceu)",
     image: siteAsset("luta-boa.webp"),
     className: "transmission-tile transmission-tile--fight",
-    sizes: "(max-width: 780px) 74vw, (min-width: 1600px) 24vw, 299px"
-  }
+    sizes: "(max-width: 780px) 74vw, (min-width: 1600px) 24vw, 299px",
+  },
 ];
 
 const casterCards = [
@@ -113,37 +119,38 @@ const casterCards = [
     name: "Renato Money Moicano",
     copy: "Dono dessa parada, lutador do UFC, cansado e calvo.",
     image: siteAsset("caster-renato-moicano.webp"),
-    imagePosition: "center 24%"
+    imagePosition: "center 24%",
   },
   {
     name: "Tiago Pamplona",
     copy: "Amigo do Moicano, comentarista do UFC e tem um podcast fracassado.",
     image: siteAsset("caster-tiago-pamplona.webp"),
-    imagePosition: "center 18%"
-  }
+    imagePosition: "center 18%",
+  },
 ];
 
 const ticketTiers = [
   {
     label: "Pra quem tá liso",
-    name: "VIP Fighting",
-    description: "Experiência VIP para ver a luta de perto e sentir a energia de cada golpe.",
+    name: "PREMIUM Fight",
+    description:
+      "Acesso à área principal do evento, com lugares próximos ao octógono e visão privilegiada das lutas. Experiência intensa, ambiente imersivo e contato direto com a ação do início ao fim.",
     price: "R$ 300",
     features: [],
     buttonLabel: "Em breve",
-    comingSoon: true
+    comingSoon: true,
   },
   {
     label: "Pra quem tá rico e quer uma experiência f#d@",
-    name: "VIP Networking",
+    name: "VIP Experience",
     description:
-      "Experiência VIP para assistir colado na grade, com visão privilegiada e acesso ao lounge exclusivo com empresários, influencers e lutadores.",
+      "Acesso ao lounge exclusivo no mezanino com comidas e bebidas, meet & greet com Renato “Money” Moicano e entrada liberada para a arquibancada colada ao octógono. Conforto, exclusividade e bastidores do evento na mão.",
     price: "R$ 800",
     features: [],
     buttonLabel: "Em breve",
     comingSoon: true,
-    featured: true
-  }
+    featured: true,
+  },
 ];
 
 const footerLinks = [
@@ -151,7 +158,7 @@ const footerLinks = [
   { label: "Imprensa", href: "/imprensa" },
   { label: "Termos de Uso", href: "/termos-de-uso" },
   { label: "Política de Privacidade", href: "/politica-de-privacidade" },
-  { label: "Contato", href: "/contato" }
+  { label: "Contato", href: "/contato" },
 ];
 
 const socialLinks = [
@@ -159,13 +166,13 @@ const socialLinks = [
   {
     label: "Instagram",
     href: "https://www.instagram.com/moneymoicano.mma/",
-    icon: instagramIcon
+    icon: instagramIcon,
   },
   {
     label: "YouTube",
     href: "https://www.youtube.com/@RenatoMoneyMoicano",
-    icon: youtubeIcon
-  }
+    icon: youtubeIcon,
+  },
 ];
 
 const partners = [
@@ -173,20 +180,20 @@ const partners = [
     name: "Cornerman",
     logo: cornermanSloganLogo,
     href: cornermanUrl,
-    className: "partner-logo partner-logo--cornerman"
+    className: "partner-logo partner-logo--cornerman",
   },
   {
     name: "CABMMA",
     logo: cabmmaLogo,
     href: cabmmaUrl,
-    className: "partner-logo partner-logo--cabmma"
+    className: "partner-logo partner-logo--cabmma",
   },
   {
     name: "Joya Gear",
     logo: joyaGearLogo,
     href: joyaGearUrl,
-    className: "partner-logo partner-logo--joyagear"
-  }
+    className: "partner-logo partner-logo--joyagear",
+  },
 ];
 
 type ButtonVariant = "primary" | "secondary" | "nav" | "light";
@@ -204,14 +211,15 @@ function AssetImage({
   src,
   ...props
 }: Readonly<AssetImageProps>) {
-  const dimensions = typeof src === "string" ? getSiteAssetIntrinsicDimensions(src) : null;
+  const dimensions =
+    typeof src === "string" ? getSiteAssetIntrinsicDimensions(src) : null;
 
   return (
     <img
       {...props}
       src={src}
       decoding={decoding}
-      loading={lazy ? loading ?? "lazy" : loading}
+      loading={lazy ? (loading ?? "lazy") : loading}
       width={width ?? dimensions?.width}
       height={height ?? dimensions?.height}
     />
@@ -222,7 +230,7 @@ function LandingButton({
   children,
   href,
   size = "medium",
-  variant = "primary"
+  variant = "primary",
 }: Readonly<{
   children: React.ReactNode;
   href: string;
@@ -232,7 +240,7 @@ function LandingButton({
   const className = [
     "landing-button",
     `landing-button--${variant}`,
-    variant === "nav" ? null : `landing-button--${size}`
+    variant === "nav" ? null : `landing-button--${size}`,
   ]
     .filter(Boolean)
     .join(" ");
@@ -245,7 +253,7 @@ function LandingButton({
 }
 
 function MobileRailShell({
-  children
+  children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
@@ -255,7 +263,7 @@ function MobileRailShell({
 function BrandMark({
   wide = false,
   className = "",
-  lazy = false
+  lazy = false,
 }: Readonly<{
   wide?: boolean;
   className?: string;
@@ -264,7 +272,11 @@ function BrandMark({
   return (
     <div
       aria-label="Money Moicano MMA"
-      className={wide ? `brand-mark brand-mark--wide ${className}`.trim() : `brand-mark ${className}`.trim()}
+      className={
+        wide
+          ? `brand-mark brand-mark--wide ${className}`.trim()
+          : `brand-mark ${className}`.trim()
+      }
     >
       <AssetImage
         alt="Money Moicano MMA"
@@ -277,13 +289,19 @@ function BrandMark({
 
 function SectionEyebrow({
   children,
-  centered = false
+  centered = false,
 }: Readonly<{
   children: React.ReactNode;
   centered?: boolean;
 }>) {
   return (
-    <div className={centered ? "section-eyebrow section-eyebrow--centered" : "section-eyebrow"}>
+    <div
+      className={
+        centered
+          ? "section-eyebrow section-eyebrow--centered"
+          : "section-eyebrow"
+      }
+    >
       <span className="section-eyebrow__line" />
       <span>{children}</span>
       {centered ? <span className="section-eyebrow__line" /> : null}
@@ -319,7 +337,9 @@ export default function Home() {
         <div className="hero__scrim" />
 
         <div className="hero__content">
-          <SectionEyebrow>O evento que o MMA brasileiro precisava</SectionEyebrow>
+          <SectionEyebrow>
+            O evento que o MMA brasileiro precisava
+          </SectionEyebrow>
 
           <h1 className="hero__title">
             <span>Porrada</span>
@@ -328,10 +348,10 @@ export default function Home() {
           </h1>
 
           <p className="body-copy hero__copy">
-            O Money Moicano MMA é um evento profissional de MMA comandado por Renato
-            Moicano, atleta do UFC, comentarista sem filtro e dono do canal que
-            explodiu o YouTube Brasil. Lutas reais. Transmissão ao vivo. Sem
-            paciência pra choro.
+            O Money Moicano MMA é um evento profissional de MMA comandado por
+            Renato Moicano, atleta do UFC, comentarista sem filtro e dono do
+            canal que explodiu o YouTube Brasil. Lutas reais. Transmissão ao
+            vivo. Sem paciência pra choro.
           </p>
 
           <div className="hero__actions">
@@ -344,7 +364,7 @@ export default function Home() {
 
         <div className="event-bar" data-reveal>
           <div className="event-bar__facts" data-rail>
-            {eventFacts.map((fact) => (
+            {eventFacts.map((fact) =>
               fact.href ? (
                 <a
                   className="event-fact event-fact--link"
@@ -357,7 +377,12 @@ export default function Home() {
                   <span className="event-fact__label">{fact.label}</span>
                   <span className="event-fact__value">
                     {fact.icon ? (
-                      <AssetImage className="event-fact__value-icon" lazy={false} src={fact.icon} alt="" />
+                      <AssetImage
+                        className="event-fact__value-icon"
+                        lazy={false}
+                        src={fact.icon}
+                        alt=""
+                      />
                     ) : null}
                     <span>{fact.value}</span>
                   </span>
@@ -367,13 +392,18 @@ export default function Home() {
                   <span className="event-fact__label">{fact.label}</span>
                   <span className="event-fact__value">
                     {fact.icon ? (
-                      <AssetImage className="event-fact__value-icon" lazy={false} src={fact.icon} alt="" />
+                      <AssetImage
+                        className="event-fact__value-icon"
+                        lazy={false}
+                        src={fact.icon}
+                        alt=""
+                      />
                     ) : null}
                     <span>{fact.value}</span>
                   </span>
                 </div>
-              )
-            ))}
+              ),
+            )}
           </div>
 
           <div className="event-bar__icon">
@@ -383,8 +413,13 @@ export default function Home() {
       </section>
 
       <section className="section section--proof" data-nav-section="evento">
-        <div className="section__headline section__headline--centered" data-reveal>
-          <SectionEyebrow centered>Não é mais um eventinho de MMA</SectionEyebrow>
+        <div
+          className="section__headline section__headline--centered"
+          data-reveal
+        >
+          <SectionEyebrow centered>
+            Não é mais um eventinho de MMA
+          </SectionEyebrow>
 
           <h2 className="display-title display-title--proof">
             <span>Estrutura profissional,</span>
@@ -395,17 +430,26 @@ export default function Home() {
           </h2>
 
           <p className="body-copy body-copy--lead">
-            Lutas reais e estrutura profissional chancelados pela Comissão Atlética
-            Brasileira de MMA (CABMMA). E uma transmissão que mistura análise técnica
-            com o humor sem filtro que o MMA nunca teve.
+            Lutas reais e estrutura profissional chancelados pela Comissão
+            Atlética Brasileira de MMA (CABMMA). E uma transmissão que mistura
+            análise técnica com o humor sem filtro que o MMA nunca teve.
           </p>
         </div>
 
         <MobileRailShell>
           <div className="feature-grid" data-rail>
             {featureCards.map((feature) => (
-              <article className="feature-card" data-rail-item data-reveal key={feature.title}>
-                <AssetImage className="feature-card__icon" src={feature.icon} alt="" />
+              <article
+                className="feature-card"
+                data-rail-item
+                data-reveal
+                key={feature.title}
+              >
+                <AssetImage
+                  className="feature-card__icon"
+                  src={feature.icon}
+                  alt=""
+                />
                 <h3 className="feature-card__title">{feature.title}</h3>
                 <p className="feature-card__copy">{feature.copy}</p>
               </article>
@@ -416,7 +460,11 @@ export default function Home() {
         {/* Reativar o CTA de ingressos desta seção quando o link oficial estiver disponível. */}
       </section>
 
-      <section className="section section--transmission" data-nav-section="transmissao" id="transmissao">
+      <section
+        className="section section--transmission"
+        data-nav-section="transmissao"
+        id="transmissao"
+      >
         <div className="transmission-copy" data-reveal>
           <SectionEyebrow>Produção de evento internacional</SectionEyebrow>
 
@@ -434,9 +482,18 @@ export default function Home() {
         </div>
 
         <MobileRailShell>
-          <div className="transmission-gallery" aria-label="Momentos da transmissão" data-rail>
+          <div
+            className="transmission-gallery"
+            aria-label="Momentos da transmissão"
+            data-rail
+          >
             {transmissionTiles.map((tile) => (
-              <article className={tile.className} data-rail-item data-reveal key={tile.title}>
+              <article
+                className={tile.className}
+                data-rail-item
+                data-reveal
+                key={tile.title}
+              >
                 <div className="transmission-tile__media">
                   <Image
                     alt=""
@@ -462,8 +519,15 @@ export default function Home() {
         </MobileRailShell>
       </section>
 
-      <section className="section section--casters" data-nav-section="transmissao" id="casters">
-        <div className="section__headline section__headline--centered" data-reveal>
+      <section
+        className="section section--casters"
+        data-nav-section="transmissao"
+        id="casters"
+      >
+        <div
+          className="section__headline section__headline--centered"
+          data-reveal
+        >
           <SectionEyebrow centered>Nossos casters</SectionEyebrow>
           <h2 className="display-title display-title--secondary">
             Conheça os responsáveis por essa parada
@@ -473,7 +537,12 @@ export default function Home() {
         <MobileRailShell>
           <div className="casters-grid" data-rail>
             {casterCards.map((caster) => (
-              <article className="caster-card" data-rail-item data-reveal key={caster.name}>
+              <article
+                className="caster-card"
+                data-rail-item
+                data-reveal
+                key={caster.name}
+              >
                 <div className="caster-card__visual">
                   <Image
                     alt={caster.name}
@@ -500,7 +569,10 @@ export default function Home() {
         data-nav-section="ingressos"
         id="ingressos"
       >
-        <div className="section__media section__media--tickets" aria-hidden="true">
+        <div
+          className="section__media section__media--tickets"
+          aria-hidden="true"
+        >
           <Image
             fill
             alt=""
@@ -512,10 +584,15 @@ export default function Home() {
           <span className="section__media-scrim" />
         </div>
 
-        <div className="section__headline section__headline--centered" data-reveal>
+        <div
+          className="section__headline section__headline--centered"
+          data-reveal
+        >
           <SectionEyebrow centered>Ingressos</SectionEyebrow>
 
-          <h2 className="display-title display-title--proof">Moicano wants money!!!</h2>
+          <h2 className="display-title display-title--proof">
+            Moicano wants money!!!
+          </h2>
 
           <p className="body-copy body-copy--lead">
             Meu brother, esse evento tá muito caro e o agiota já tá me cobrando
@@ -529,7 +606,11 @@ export default function Home() {
               <article
                 data-rail-item
                 data-reveal
-                className={tier.featured ? "ticket-card ticket-card--featured" : "ticket-card"}
+                className={
+                  tier.featured
+                    ? "ticket-card ticket-card--featured"
+                    : "ticket-card"
+                }
                 key={tier.name}
               >
                 <span className="ticket-card__label">{tier.label}</span>
@@ -573,7 +654,11 @@ export default function Home() {
         </MobileRailShell>
       </section>
 
-      <section className="section section--audience" data-nav-section="publico" id="publico">
+      <section
+        className="section section--audience"
+        data-nav-section="publico"
+        id="publico"
+      >
         <div className="audience-media" data-reveal>
           <Image
             alt="Audiência internacional do Money Moicano MMA"
@@ -597,9 +682,10 @@ export default function Home() {
           </h2>
 
           <p className="body-copy audience-copy__body">
-            O Money Moicano MMA rompeu fronteiras. Nossa transmissão atinge o mundo
-            todo e quem for gringo e quiser ouvir o que o Moicano tem a dizer se
-            prepare, você tem até o dia 23 de maio pra aprender português brasileiro.
+            O Money Moicano MMA rompeu fronteiras. Nossa transmissão atinge o
+            mundo todo e quem for gringo e quiser ouvir o que o Moicano tem a
+            dizer se prepare, você tem até o dia 23 de maio pra aprender
+            português brasileiro.
           </p>
 
           {/* Reativar o CTA de ingressos desta seção quando o link oficial estiver disponível. */}
@@ -614,9 +700,9 @@ export default function Home() {
               Se vai cobrir, faz direito.
             </h2>
             <p className="body-copy newsletter-panel__text">
-              Se você é jornalista, criador de conteúdo ou um veículo de comunicação,
-              inscreva-se para receber press kit, histórico dos atletas, novidades
-              exclusivas e atualizações direto no e-mail.
+              Se você é jornalista, criador de conteúdo ou um veículo de
+              comunicação, inscreva-se para receber press kit, histórico dos
+              atletas, novidades exclusivas e atualizações direto no e-mail.
             </p>
           </div>
 
@@ -633,7 +719,11 @@ export default function Home() {
           Nossos parceiros:
         </h2>
 
-        <div className="partners-row" aria-label="Parceiros do evento" data-reveal>
+        <div
+          className="partners-row"
+          aria-label="Parceiros do evento"
+          data-reveal
+        >
           {partners.map((partner) => (
             <a
               className={partner.className}
@@ -648,7 +738,11 @@ export default function Home() {
           ))}
         </div>
 
-        <LandingButton href="/seja-um-parceiro" size="large" variant="secondary">
+        <LandingButton
+          href="/seja-um-parceiro"
+          size="large"
+          variant="secondary"
+        >
           Quero ser um parceiro
         </LandingButton>
       </section>
