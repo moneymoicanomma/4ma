@@ -967,7 +967,7 @@ section[id] {
   display: flex;
   min-height: 428px;
   flex-direction: column;
-  justify-content: space-between;
+  justify-content: flex-start;
   gap: 24px;
   padding: 28px;
   background: var(--panel-soft);
@@ -1051,6 +1051,11 @@ section[id] {
 .ticket-card--featured .ticket-card__description,
 .ticket-card--featured .ticket-card__price {
   color: #ffffff;
+}
+
+.ticket-cta {
+  align-self: center;
+  justify-content: center;
 }
 
 .section--audience {

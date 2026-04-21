@@ -39,6 +39,8 @@ const cabmmaUrl = "https://www.instagram.com/cab_mma/";
 const transmissionUrl = "https://www.youtube.com/@RenatoMoneyMoicano";
 const joyaGearUrl = "https://joyagear.com/";
 const fighterSignupUrl = "https://mma.moicano.tv/";
+const symplaTicketsUrl =
+  "https://www.sympla.com.br/evento/money-moicano-mma-1/3391967?share_id=site";
 const fighterSignupLogo =
   "https://assets.moneymoicanomma.com.br/rinha-de-inscritos.svg";
 
@@ -132,23 +134,17 @@ const casterCards = [
 const ticketTiers = [
   {
     label: "Pra quem tá liso",
-    name: "PREMIUM Fight",
+    name: "PREMIUM FIGHT",
     description:
       "Acesso à área principal do evento, com lugares próximos ao octógono e visão privilegiada das lutas. Experiência intensa, ambiente imersivo e contato direto com a ação do início ao fim.",
     price: "R$ 300",
-    features: [],
-    buttonLabel: "Em breve",
-    comingSoon: true,
   },
   {
     label: "Pra quem tá rico e quer uma experiência f#d@",
-    name: "VIP Experience",
+    name: "VIP EXPERIENCE",
     description:
       "Acesso ao lounge exclusivo no mezanino com comidas e bebidas, meet & greet com Renato “Money” Moicano e entrada liberada para a arquibancada colada ao octógono. Conforto, exclusividade e bastidores do evento na mão.",
     price: "R$ 800",
-    features: [],
-    buttonLabel: "Em breve",
-    comingSoon: true,
     featured: true,
   },
 ];
@@ -620,38 +616,20 @@ export default function Home() {
                   <p className="ticket-card__description">{tier.description}</p>
                   <p className="ticket-card__price">{tier.price}</p>
                 </div>
-
-                {tier.features.length ? (
-                  <ul className="ticket-card__list">
-                    {tier.features.map((feature) => (
-                      <li className="ticket-card__item" key={feature}>
-                        {feature}
-                      </li>
-                    ))}
-                  </ul>
-                ) : null}
-
-                {/* Reativar o botão com o link oficial de ingressos aqui quando ele existir. */}
-                {tier.comingSoon ? (
-                  <span
-                    aria-disabled="true"
-                    className={`landing-button landing-button--${tier.featured ? "light" : "secondary"} landing-button--large landing-button--disabled`}
-                  >
-                    {tier.buttonLabel}
-                  </span>
-                ) : (
-                  <LandingButton
-                    href="#evento"
-                    size="large"
-                    variant={tier.featured ? "light" : "secondary"}
-                  >
-                    {tier.buttonLabel}
-                  </LandingButton>
-                )}
               </article>
             ))}
           </div>
         </MobileRailShell>
+
+        <a
+          className="landing-button landing-button--large landing-button--primary ticket-cta"
+          data-reveal
+          href={symplaTicketsUrl}
+          rel="noopener noreferrer"
+          target="_blank"
+        >
+          Comprar ingressos no Sympla
+        </a>
       </section>
 
       <section
