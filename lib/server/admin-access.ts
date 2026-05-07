@@ -2,7 +2,7 @@ import "server-only";
 
 import type { AdminDatabaseTableId } from "@/lib/server/admin-database";
 
-export type AdminBackofficeRole = "admin" | "operator" | "auditor";
+export type AdminBackofficeRole = "admin" | "operator" | "auditor" | "editor";
 
 const AUDITOR_DATABASE_TABLE_IDS: readonly AdminDatabaseTableId[] = [
   "fighter-applications",
@@ -23,11 +23,23 @@ export function getAdminDefaultRedirectPathForRole(role: AdminBackofficeRole) {
     return "/admin/database";
   }
 
+  if (role === "editor") {
+    return "/admin/blog";
+  }
+
   return "/admin/fantasy";
 }
 
 export function canAccessFantasyAdmin(role: AdminBackofficeRole) {
-  return role !== "auditor";
+  return role === "admin" || role === "operator";
+}
+
+export function canAccessBlogAdmin(role: AdminBackofficeRole) {
+  return role === "admin" || role === "editor";
+}
+
+export function canAccessAnyDatabase(role: AdminBackofficeRole) {
+  return role !== "editor";
 }
 
 export function getVisibleAdminDatabaseTableIds(
@@ -37,6 +49,10 @@ export function getVisibleAdminDatabaseTableIds(
     return AUDITOR_DATABASE_TABLE_IDS;
   }
 
+  if (role === "editor") {
+    return [];
+  }
+
   return FULL_DATABASE_TABLE_IDS;
 }
 
@@ -44,7 +60,7 @@ export function canAccessAdminDatabaseTable(
   role: AdminBackofficeRole,
   tableId: AdminDatabaseTableId,
 ) {
-  return getVisibleAdminDatabaseTableIds(role).includes(tableId);
+  return canAccessAnyDatabase(role) && getVisibleAdminDatabaseTableIds(role).includes(tableId);
 }
 
 export function shouldLimitEventFighterIntakesToCurrentEvent(role: AdminBackofficeRole) {

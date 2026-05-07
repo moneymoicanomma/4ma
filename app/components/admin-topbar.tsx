@@ -10,6 +10,11 @@ const brandLogoWide = siteAsset("logo money moicano mma extenso.svg");
 
 const adminNavigationItems = [
   {
+    href: "/admin/blog",
+    id: "blog",
+    label: "Blog"
+  },
+  {
     href: "/admin/fantasy",
     id: "fantasy",
     label: "Fantasy"
@@ -28,9 +33,11 @@ type AdminTopbarProps = {
 
 export function AdminTopbar({ active, role = "admin" }: Readonly<AdminTopbarProps>) {
   const navigationItems =
-    role === "auditor"
-      ? adminNavigationItems.filter((item) => item.id === "database")
-      : adminNavigationItems;
+    role === "editor"
+      ? adminNavigationItems.filter((item) => item.id === "blog")
+      : role === "auditor"
+        ? adminNavigationItems.filter((item) => item.id === "database")
+        : adminNavigationItems;
 
   return (
     <header className={styles.topbar}>
@@ -62,8 +69,11 @@ export function AdminTopbar({ active, role = "admin" }: Readonly<AdminTopbarProp
       </div>
 
       <div className={styles.actions}>
+        <Link className={styles.secondaryLink} href="/blog">
+          Blog publico
+        </Link>
         <Link className={styles.secondaryLink} href="/fantasy">
-          Fantasy público
+          Fantasy publico
         </Link>
         <Link className={styles.primaryLink} href="/">
           Voltar ao site

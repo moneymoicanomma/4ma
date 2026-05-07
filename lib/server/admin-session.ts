@@ -43,7 +43,7 @@ export async function getCurrentAdminSessionIdentity(
 
   if (isDatabaseConfigured(env)) {
     const session = await getSessionAccountFromToken({
-      acceptedRoles: ["admin", "operator", "auditor"],
+      acceptedRoles: ["admin", "operator", "auditor", "editor"],
       sessionKind: "backoffice",
       sessionToken
     }).catch(() => null);
