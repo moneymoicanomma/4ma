@@ -63,8 +63,10 @@ create table if not exists app.blog_posts (
   updated_at timestamptz not null default now(),
   published_at timestamptz,
   check (slug ~ '^[a-z0-9]+(?:-[a-z0-9]+)*$'),
-  check (char_length(title) between 3 and 140),
-  check (char_length(description) between 40 and 260),
+  check (char_length(title) between 1 and 140),
+  check (description = '' or char_length(description) between 40 and 260),
+  check (status = 'draft' or char_length(title) between 3 and 140),
+  check (status = 'draft' or char_length(description) between 40 and 260),
   check (cover_alt_text is null or char_length(cover_alt_text) between 3 and 240),
   check (cover_caption is null or char_length(cover_caption) <= 500),
   check (char_length(author_name) between 2 and 120),
@@ -117,6 +119,36 @@ create index if not exists blog_post_tags_tag_id_idx
 create index if not exists blog_media_created_at_idx
   on app.blog_media (created_at desc);
 
+create trigger blog_posts_touch_updated_at
+before update on app.blog_posts
+for each row
+execute function app.touch_updated_at();
+
+create trigger blog_media_audit
+after insert or update or delete on app.blog_media
+for each row
+execute function audit.log_row_change();
+
+create trigger blog_posts_audit
+after insert or update or delete on app.blog_posts
+for each row
+execute function audit.log_row_change();
+
+create trigger blog_tags_audit
+after insert or update or delete on app.blog_tags
+for each row
+execute function audit.log_row_change();
+
+create trigger blog_post_tags_audit
+after insert or update or delete on app.blog_post_tags
+for each row
+execute function audit.log_row_change();
+
+create trigger blog_slug_redirects_audit
+after insert or update or delete on app.blog_slug_redirects
+for each row
+execute function audit.log_row_change();
+
 alter table app.blog_media enable row level security;
 alter table app.blog_media force row level security;
 alter table app.blog_posts enable row level security;
@@ -131,7 +163,26 @@ alter table app.blog_slug_redirects force row level security;
 create policy blog_media_read_policy
 on app.blog_media
 for select
-using ((select app.is_internal_read_role()) or (select app.is_public_api_role()));
+using (
+  (select app.is_internal_read_role())
+  or (
+    (select app.is_public_api_role())
+    and exists (
+      select 1
+      from app.blog_posts post
+      where post.status = 'published'
+        and (
+          post.cover_media_id = app.blog_media.id
+          or post.social_media_id = app.blog_media.id
+          or exists (
+            select 1
+            from jsonb_array_elements(post.content_blocks) as block(value)
+            where block.value ->> 'mediaId' = app.blog_media.id::text
+          )
+        )
+    )
+  )
+);
 
 create policy blog_media_write_policy
 on app.blog_media
@@ -142,7 +193,7 @@ with check ((select app.is_internal_write_role()));
 create policy blog_posts_read_policy
 on app.blog_posts
 for select
-using ((select app.is_internal_read_role()) or (status = 'published' and not noindex));
+using ((select app.is_internal_read_role()) or status = 'published');
 
 create policy blog_posts_write_policy
 on app.blog_posts
@@ -153,7 +204,20 @@ with check ((select app.is_internal_write_role()));
 create policy blog_tags_read_policy
 on app.blog_tags
 for select
-using ((select app.is_internal_read_role()) or (select app.is_public_api_role()));
+using (
+  (select app.is_internal_read_role())
+  or (
+    (select app.is_public_api_role())
+    and exists (
+      select 1
+      from app.blog_post_tags post_tag
+      join app.blog_posts post
+        on post.id = post_tag.post_id
+      where post_tag.tag_id = app.blog_tags.id
+        and post.status = 'published'
+    )
+  )
+);
 
 create policy blog_tags_write_policy
 on app.blog_tags
@@ -164,7 +228,18 @@ with check ((select app.is_internal_write_role()));
 create policy blog_post_tags_read_policy
 on app.blog_post_tags
 for select
-using ((select app.is_internal_read_role()) or (select app.is_public_api_role()));
+using (
+  (select app.is_internal_read_role())
+  or (
+    (select app.is_public_api_role())
+    and exists (
+      select 1
+      from app.blog_posts post
+      where post.id = app.blog_post_tags.post_id
+        and post.status = 'published'
+    )
+  )
+);
 
 create policy blog_post_tags_write_policy
 on app.blog_post_tags
@@ -175,7 +250,18 @@ with check ((select app.is_internal_write_role()));
 create policy blog_slug_redirects_read_policy
 on app.blog_slug_redirects
 for select
-using ((select app.is_internal_read_role()) or (select app.is_public_api_role()));
+using (
+  (select app.is_internal_read_role())
+  or (
+    (select app.is_public_api_role())
+    and exists (
+      select 1
+      from app.blog_posts post
+      where post.id = app.blog_slug_redirects.post_id
+        and post.status = 'published'
+    )
+  )
+);
 
 create policy blog_slug_redirects_write_policy
 on app.blog_slug_redirects
@@ -183,8 +269,64 @@ for all
 using ((select app.is_internal_write_role()))
 with check ((select app.is_internal_write_role()));
 
+grant select (
+  id,
+  storage_provider,
+  storage_bucket,
+  object_key,
+  public_url,
+  content_type,
+  width,
+  height,
+  alt_text,
+  caption,
+  created_at
+)
+  on app.blog_media
+  to mmmma_public_api;
+
+grant select (
+  id,
+  title,
+  slug,
+  description,
+  cover_media_id,
+  cover_alt_text,
+  cover_caption,
+  author_name,
+  status,
+  is_featured,
+  content_blocks,
+  seo_title,
+  seo_description,
+  canonical_url_override,
+  noindex,
+  social_title,
+  social_description,
+  social_media_id,
+  word_count,
+  reading_time_minutes,
+  created_at,
+  updated_at,
+  published_at
+)
+  on app.blog_posts
+  to mmmma_public_api;
+
+grant select (id, name, slug, created_at)
+  on app.blog_tags
+  to mmmma_public_api;
+
+grant select (post_id, tag_id, created_at)
+  on app.blog_post_tags
+  to mmmma_public_api;
+
+grant select (old_slug, post_id, created_at)
+  on app.blog_slug_redirects
+  to mmmma_public_api;
+
 grant select on app.blog_media, app.blog_posts, app.blog_tags, app.blog_post_tags, app.blog_slug_redirects
-  to mmmma_public_api, mmmma_backoffice, mmmma_service;
+  to mmmma_backoffice, mmmma_service;
 
 grant insert, update, delete on app.blog_media, app.blog_posts, app.blog_tags, app.blog_post_tags, app.blog_slug_redirects
   to mmmma_backoffice, mmmma_service;
