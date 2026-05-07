@@ -37,7 +37,9 @@ export function AdminTopbar({ active, role = "admin" }: Readonly<AdminTopbarProp
       ? adminNavigationItems.filter((item) => item.id === "blog")
       : role === "auditor"
         ? adminNavigationItems.filter((item) => item.id === "database")
-        : adminNavigationItems;
+        : role === "operator"
+          ? adminNavigationItems.filter((item) => item.id !== "blog")
+          : adminNavigationItems;
 
   return (
     <header className={styles.topbar}>
