@@ -4,6 +4,10 @@ import { getSiteAssetRemotePatterns } from "./lib/site-assets";
 
 const repoRoot = process.cwd();
 const siteAssetRemotePatterns = getSiteAssetRemotePatterns();
+type NextImageRemotePattern = Exclude<
+  NonNullable<NonNullable<NextConfig["images"]>["remotePatterns"]>[number],
+  URL
+>;
 const defaultConnectSrcOrigins = [
   "'self'",
   "https://assets.moneymoicanomma.com.br",
@@ -27,6 +31,27 @@ function resolveOrigin(value: string) {
   }
 }
 
+function resolveRemotePattern(value: string | undefined): NextImageRemotePattern | null {
+  if (!value) {
+    return null;
+  }
+
+  try {
+    const url = new URL(value);
+
+    if (url.protocol !== "https:") {
+      return null;
+    }
+
+    return {
+      protocol: "https" as const,
+      hostname: url.hostname
+    };
+  } catch {
+    return null;
+  }
+}
+
 function getConnectSrcOrigins() {
   const origins = new Set<string>(defaultConnectSrcOrigins);
 
@@ -44,6 +69,19 @@ function getConnectSrcOrigins() {
   return Array.from(origins);
 }
 
+const blogMediaRemotePattern = resolveRemotePattern(process.env.NEXT_PUBLIC_SITE_ASSET_BASE_URL);
+const imageRemotePatterns: NonNullable<NonNullable<NextConfig["images"]>["remotePatterns"]> = [
+  ...siteAssetRemotePatterns,
+  {
+    protocol: "https",
+    hostname: "moneymoicanomma.com.br"
+  },
+  ...(blogMediaRemotePattern ? [blogMediaRemotePattern] : [])
+];
+
+const productionOnlySecurityDirectives =
+  process.env.NODE_ENV === "production" ? ["upgrade-insecure-requests"] : [];
+
 const contentSecurityPolicy = [
   "default-src 'self'",
   "base-uri 'self'",
@@ -59,7 +97,7 @@ const contentSecurityPolicy = [
   "frame-src 'self' https://challenges.cloudflare.com",
   "worker-src 'self' blob:",
   "manifest-src 'self'",
-  "upgrade-insecure-requests"
+  ...productionOnlySecurityDirectives
 ].join("; ");
 
 const securityHeaders = [
@@ -111,18 +149,20 @@ const nextConfig: NextConfig = {
       }
     ];
   },
+  async rewrites() {
+    return [
+      {
+        source: "/blog/:slug.md",
+        destination: "/blog-md/:slug"
+      }
+    ];
+  },
   images: {
     deviceSizes: [360, 390, 414, 535, 640, 750, 828, 960, 1080, 1200, 1273, 1366, 1440, 1600, 1920],
     imageSizes: [21, 23, 24, 30, 32, 46, 58, 88, 180, 220, 283, 319, 352],
     formats: ["image/avif", "image/webp"],
     minimumCacheTTL: 31536000,
-    remotePatterns: [
-      ...siteAssetRemotePatterns,
-      {
-        protocol: "https",
-        hostname: "moneymoicanomma.com.br"
-      }
-    ]
+    remotePatterns: imageRemotePatterns
   }
 };
 

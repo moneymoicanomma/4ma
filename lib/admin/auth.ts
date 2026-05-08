@@ -3,7 +3,7 @@ export const ADMIN_DEFAULT_REDIRECT_PATH = "/admin/fantasy";
 export const ADMIN_SESSION_COOKIE_NAME = "mmmma_admin_session";
 export const ADMIN_SESSION_MAX_AGE_SECONDS = 60 * 60 * 12;
 
-export type AdminAuthRole = "admin" | "operator" | "auditor" | "public_relations";
+export type AdminAuthRole = "admin" | "operator" | "auditor" | "public_relations" | "editor";
 
 type AdminSessionPayloadV1 = {
   v: 1;
@@ -62,7 +62,8 @@ function normalizeAdminRole(value: unknown): AdminAuthRole {
   if (
     normalizedValue === "auditor" ||
     normalizedValue === "operator" ||
-    normalizedValue === "public_relations"
+    normalizedValue === "public_relations" ||
+    normalizedValue === "editor"
   ) {
     return normalizedValue;
   }
@@ -232,6 +233,11 @@ export function getAdminAuthConfig(): AdminAuthConfig | null {
     password: normalizeEnvValue(process.env.ADMIN_PUBLIC_RELATIONS_PASSWORD),
     role: "public_relations",
   });
+  appendAdminCredential(credentials, seenNormalizedIdentifiers, {
+    username: normalizeEnvValue(process.env.ADMIN_EDITOR_USERNAME),
+    password: normalizeEnvValue(process.env.ADMIN_EDITOR_PASSWORD),
+    role: "editor",
+  });
 
   for (const credential of parseAdminCredentialsJson()) {
     appendAdminCredential(credentials, seenNormalizedIdentifiers, credential);
@@ -352,7 +358,8 @@ export async function verifyAdminSessionToken(token: string, secret: string) {
       (role !== "admin" &&
         role !== "operator" &&
         role !== "auditor" &&
-        role !== "public_relations")
+        role !== "public_relations" &&
+        role !== "editor")
     ) {
       return null;
     }

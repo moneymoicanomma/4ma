@@ -1,0 +1,465 @@
+.editorShell {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 1440px);
+  margin: 0 auto;
+  padding: 32px;
+}
+
+.editorHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 22px;
+  margin-bottom: 18px;
+}
+
+.editorHeader h1 {
+  margin: 14px 0 10px;
+  color: #ffffff;
+  font-family: var(--font-title);
+  font-size: clamp(42px, 6vw, 86px);
+  font-weight: 700;
+  line-height: 0.9;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.editorHeader p {
+  margin: 0;
+  max-width: 58rem;
+  color: rgba(227, 226, 225, 0.72);
+  font-size: 15px;
+  line-height: 1.65;
+}
+
+.headerActions,
+.blockActions,
+.rowActions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.headerActions {
+  justify-content: flex-end;
+  min-width: 320px;
+}
+
+.backLink,
+.primaryButton,
+.secondaryButton,
+.ghostButton,
+.fileField,
+.blockToolbar button,
+.blockActions button,
+.listItemRow button,
+.tokenInputRow button,
+.tokenList button,
+.suggestionRail button {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  padding: 0 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.015);
+  color: rgba(255, 255, 255, 0.78);
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+  transition:
+    transform 160ms ease,
+    border-color 160ms ease,
+    background-color 160ms ease,
+    color 160ms ease;
+}
+
+.primaryButton {
+  border-color: rgba(232, 24, 26, 0.76);
+  background: linear-gradient(135deg, #ff2c30 0%, #b01013 100%);
+  color: #ffffff;
+}
+
+.backLink:hover,
+.backLink:focus-visible,
+.primaryButton:hover,
+.primaryButton:focus-visible,
+.secondaryButton:hover,
+.secondaryButton:focus-visible,
+.ghostButton:hover,
+.ghostButton:focus-visible,
+.fileField:hover,
+.fileField:focus-within,
+.blockToolbar button:hover,
+.blockToolbar button:focus-visible,
+.blockActions button:hover,
+.blockActions button:focus-visible,
+.listItemRow button:hover,
+.listItemRow button:focus-visible,
+.tokenInputRow button:hover,
+.tokenInputRow button:focus-visible,
+.tokenList button:hover,
+.tokenList button:focus-visible,
+.suggestionRail button:hover,
+.suggestionRail button:focus-visible {
+  transform: translateY(-1px);
+  border-color: rgba(232, 24, 26, 0.3);
+}
+
+.primaryButton:disabled,
+.secondaryButton:disabled,
+.ghostButton:disabled,
+.blockActions button:disabled,
+.fileField:has(input:disabled) {
+  cursor: wait;
+  opacity: 0.62;
+  transform: none;
+}
+
+.status {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 0 11px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.72);
+  background: rgba(255, 255, 255, 0.02);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+}
+
+.status-published {
+  border-color: rgba(232, 24, 26, 0.52);
+  color: #ffffff;
+}
+
+.status-draft {
+  color: rgba(255, 255, 255, 0.58);
+}
+
+.notice {
+  margin: 0 0 18px;
+  padding: 14px 16px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: rgba(227, 226, 225, 0.76);
+  background: rgba(255, 255, 255, 0.018);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.notice-success {
+  border-color: rgba(74, 222, 128, 0.26);
+  color: rgba(220, 252, 231, 0.9);
+}
+
+.notice-error {
+  border-color: rgba(248, 113, 113, 0.36);
+  color: rgba(254, 226, 226, 0.94);
+}
+
+.notice-neutral {
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.editorLayout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 380px);
+  gap: 22px;
+  align-items: start;
+}
+
+.editorMain,
+.seoPanel,
+.blockStack,
+.blockList,
+.panel,
+.field,
+.emptyState {
+  display: grid;
+}
+
+.editorMain,
+.seoPanel,
+.blockStack,
+.blockList {
+  gap: 18px;
+}
+
+.seoPanel {
+  position: sticky;
+  top: 92px;
+}
+
+.panel,
+.block {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.018) 0%, rgba(255, 255, 255, 0.01) 100%),
+    rgba(7, 7, 7, 0.92);
+}
+
+.panel {
+  gap: 18px;
+  padding: 20px;
+}
+
+.panelHeader,
+.blockHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.kicker,
+.panelHeader strong,
+.counter,
+.field span,
+.checkboxField span,
+.fileField span,
+.publishFacts dt,
+.publishFacts dd {
+  color: rgba(255, 255, 255, 0.54);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+}
+
+.kicker {
+  color: rgba(232, 24, 26, 0.92);
+  letter-spacing: 1.8px;
+}
+
+.formGrid,
+.inlineGrid,
+.coverGrid {
+  display: grid;
+  gap: 12px;
+}
+
+.formGrid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.inlineGrid {
+  grid-template-columns: minmax(140px, 0.5fr) minmax(0, 1fr);
+}
+
+.coverGrid {
+  grid-template-columns: minmax(280px, 0.85fr) minmax(0, 1fr);
+  align-items: start;
+}
+
+.fieldWide {
+  grid-column: 1 / -1;
+}
+
+.field {
+  gap: 8px;
+}
+
+.field input,
+.field textarea,
+.field select,
+.tokenInputRow input,
+.listItemRow input {
+  width: 100%;
+  min-height: 48px;
+  padding: 0 14px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.02);
+  color: #ffffff;
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.45;
+}
+
+.field textarea {
+  min-height: 118px;
+  padding-top: 12px;
+  resize: vertical;
+}
+
+.field option {
+  background: #080808;
+  color: #ffffff;
+}
+
+.checkboxField {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.checkboxField input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--accent);
+}
+
+.fileField {
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.fileField input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.coverPreview,
+.imagePreview {
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background:
+    linear-gradient(135deg, rgba(232, 24, 26, 0.08), transparent 42%),
+    rgba(255, 255, 255, 0.018);
+}
+
+.coverPreview {
+  aspect-ratio: 16 / 9;
+}
+
+.imagePreview {
+  aspect-ratio: 16 / 9;
+}
+
+.coverPreview img,
+.imagePreview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.tokenInputRow,
+.listItemRow,
+.blockToolbar,
+.tokenList,
+.suggestionRail {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tokenInputRow input,
+.listItemRow input {
+  flex: 1 1 220px;
+}
+
+.tokenList button {
+  border-color: rgba(232, 24, 26, 0.28);
+  color: #ffffff;
+}
+
+.suggestionRail button {
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.blockToolbar button {
+  min-height: 38px;
+}
+
+.block {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+}
+
+.blockHeader span {
+  color: #ffffff;
+  font-family: var(--font-title);
+  font-size: 24px;
+  line-height: 0.95;
+  text-transform: uppercase;
+}
+
+.blockActions button,
+.listItemRow button {
+  min-height: 36px;
+  padding: 0 10px;
+  font-size: 10px;
+}
+
+.publishFacts {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+}
+
+.publishFacts div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.publishFacts dd {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.78);
+  text-align: right;
+}
+
+@media (max-width: 1100px) {
+  .editorHeader,
+  .editorLayout,
+  .coverGrid,
+  .formGrid,
+  .inlineGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .editorHeader {
+    display: grid;
+  }
+
+  .headerActions {
+    justify-content: flex-start;
+    min-width: 0;
+  }
+
+  .seoPanel {
+    position: static;
+  }
+}
+
+@media (max-width: 720px) {
+  .editorShell {
+    padding: 24px 20px 64px;
+  }
+
+  .headerActions,
+  .blockActions,
+  .tokenInputRow,
+  .listItemRow {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .backLink,
+  .primaryButton,
+  .secondaryButton,
+  .ghostButton,
+  .headerActions button,
+  .headerActions a,
+  .blockActions button,
+  .tokenInputRow button,
+  .tokenInputRow input,
+  .listItemRow button,
+  .listItemRow input {
+    width: 100%;
+  }
+}

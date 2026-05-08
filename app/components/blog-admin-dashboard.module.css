@@ -1,0 +1,312 @@
+.dashboard {
+  display: grid;
+  grid-template-columns: minmax(240px, 300px) minmax(0, 1fr);
+  gap: 22px;
+  align-items: start;
+}
+
+.sidebar,
+.commandBar,
+.filters,
+.postRow,
+.emptyState {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.018) 0%, rgba(255, 255, 255, 0.01) 100%),
+    rgba(7, 7, 7, 0.92);
+}
+
+.sidebar {
+  position: sticky;
+  top: 92px;
+  display: grid;
+  gap: 16px;
+  padding: 20px;
+}
+
+.sidebarHeader,
+.commandBar,
+.postRow,
+.rowActions {
+  display: flex;
+  gap: 16px;
+}
+
+.sidebarHeader,
+.commandBar,
+.postRow {
+  justify-content: space-between;
+}
+
+.sidebarHeader,
+.commandBar {
+  align-items: flex-start;
+}
+
+.sidebarHeader strong {
+  color: #ffffff;
+  font-family: var(--font-title);
+  font-size: 44px;
+  line-height: 0.9;
+}
+
+.kicker {
+  color: rgba(232, 24, 26, 0.92);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1.8px;
+  text-transform: uppercase;
+}
+
+.metricsGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.metric {
+  display: grid;
+  gap: 8px;
+  min-height: 94px;
+  padding: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.015);
+}
+
+.metric span,
+.resultCount,
+.postMeta,
+.postAside span,
+.postAside small,
+.field span {
+  color: rgba(255, 255, 255, 0.54);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+}
+
+.metric strong {
+  color: #ffffff;
+  font-family: var(--font-title);
+  font-size: 34px;
+  line-height: 0.9;
+}
+
+.primaryButton,
+.secondaryButton,
+.ghostButton {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  padding: 0 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.78);
+  background: rgba(255, 255, 255, 0.015);
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+  transition:
+    transform 160ms ease,
+    border-color 160ms ease,
+    background-color 160ms ease,
+    color 160ms ease;
+}
+
+.primaryButton {
+  border-color: rgba(232, 24, 26, 0.76);
+  background: linear-gradient(135deg, #ff2c30 0%, #b01013 100%);
+  color: #ffffff;
+}
+
+.primaryButton:hover,
+.primaryButton:focus-visible,
+.secondaryButton:hover,
+.secondaryButton:focus-visible,
+.ghostButton:hover,
+.ghostButton:focus-visible {
+  transform: translateY(-1px);
+  border-color: rgba(232, 24, 26, 0.3);
+}
+
+.primaryButton:disabled,
+.secondaryButton:disabled,
+.ghostButton:disabled {
+  cursor: wait;
+  opacity: 0.68;
+  transform: none;
+}
+
+.main,
+.postList,
+.postMain,
+.postAside,
+.field,
+.emptyState {
+  display: grid;
+}
+
+.main,
+.postList,
+.postMain,
+.postAside {
+  gap: 14px;
+}
+
+.commandBar,
+.filters,
+.emptyState {
+  padding: 20px;
+}
+
+.commandBar h2,
+.emptyState h3,
+.postRow h3 {
+  margin: 0;
+  color: #ffffff;
+  font-family: var(--font-title);
+  font-weight: 700;
+  line-height: 0.96;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.commandBar h2 {
+  margin-top: 8px;
+  font-size: clamp(28px, 3vw, 42px);
+}
+
+.filters {
+  display: grid;
+  grid-template-columns: minmax(220px, 1.2fr) repeat(3, minmax(150px, 0.7fr));
+  gap: 12px;
+}
+
+.field {
+  gap: 8px;
+}
+
+.field input,
+.field select {
+  width: 100%;
+  min-height: 48px;
+  padding: 0 14px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.02);
+  color: #ffffff;
+  font-family: var(--font-body);
+  font-size: 15px;
+}
+
+.field option {
+  background: #080808;
+  color: #ffffff;
+}
+
+.postRow {
+  align-items: flex-start;
+  padding: 18px;
+}
+
+.postMeta,
+.tagList,
+.rowActions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.postMeta,
+.tagList {
+  gap: 8px;
+}
+
+.status,
+.featured,
+.tagList span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 26px;
+  padding: 0 9px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.018);
+  color: rgba(255, 255, 255, 0.68);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+}
+
+.status-published,
+.featured {
+  border-color: rgba(232, 24, 26, 0.48);
+  color: #ffffff;
+}
+
+.status-draft {
+  color: rgba(255, 255, 255, 0.56);
+}
+
+.postRow h3 {
+  font-size: clamp(24px, 2.4vw, 36px);
+}
+
+.postRow p,
+.emptyState p {
+  margin: 0;
+  color: rgba(227, 226, 225, 0.72);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.notice {
+  margin: 0;
+  color: rgba(227, 226, 225, 0.72);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.postAside {
+  justify-items: end;
+  min-width: 220px;
+  text-align: right;
+}
+
+.postAside small {
+  text-transform: none;
+}
+
+.emptyState {
+  gap: 12px;
+}
+
+.emptyState h3 {
+  font-size: clamp(26px, 3vw, 38px);
+}
+
+@media (max-width: 1080px) {
+  .dashboard,
+  .filters {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    position: static;
+  }
+}
+
+@media (max-width: 720px) {
+  .postRow {
+    display: grid;
+  }
+
+  .postAside {
+    justify-items: start;
+    min-width: 0;
+    text-align: left;
+  }
+}
