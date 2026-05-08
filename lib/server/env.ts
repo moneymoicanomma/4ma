@@ -35,6 +35,10 @@ export type ServerEnv = {
   fantasyEntrySubmitPath: string;
   upstreamRequestTimeoutMs: number;
   allowedFormOrigins: ReadonlySet<string>;
+  instagramUserId: string | null;
+  instagramAccessToken: string | null;
+  instagramPostLimit: number;
+  instagramCacheSeconds: number;
 };
 
 function normalizePath(pathname: string, fallback: string) {
@@ -48,6 +52,8 @@ function normalizePath(pathname: string, fallback: string) {
 function createServerEnv(): ServerEnv {
   const timeout = Number.parseInt(process.env.UPSTREAM_REQUEST_TIMEOUT_MS ?? "10000", 10);
   const poolMaxConnections = Number.parseInt(process.env.DATABASE_POOL_MAX_CONNECTIONS ?? "10", 10);
+  const instagramPostLimit = Number.parseInt(process.env.INSTAGRAM_POST_LIMIT ?? "4", 10);
+  const instagramCacheSeconds = Number.parseInt(process.env.INSTAGRAM_CACHE_SECONDS ?? "3600", 10);
   const databaseSslMode = process.env.DATABASE_SSL_MODE?.trim().toLowerCase();
   const databaseSslAllowInvalidCertificates =
     process.env.DATABASE_SSL_ALLOW_INVALID_CERTIFICATES?.trim().toLowerCase() === "true";
@@ -135,7 +141,17 @@ function createServerEnv(): ServerEnv {
         .split(",")
         .map((origin) => origin.trim())
         .filter(Boolean)
-    )
+    ),
+    instagramUserId: process.env.INSTAGRAM_USER_ID?.trim() || null,
+    instagramAccessToken: process.env.INSTAGRAM_ACCESS_TOKEN?.trim() || null,
+    instagramPostLimit:
+      Number.isFinite(instagramPostLimit) && instagramPostLimit > 0
+        ? Math.min(instagramPostLimit, 6)
+        : 4,
+    instagramCacheSeconds:
+      Number.isFinite(instagramCacheSeconds) && instagramCacheSeconds >= 60
+        ? instagramCacheSeconds
+        : 3600
   };
 }
 

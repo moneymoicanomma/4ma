@@ -2,9 +2,16 @@ import dynamic from "next/dynamic";
 import Image from "next/image";
 
 import { getSiteAssetIntrinsicDimensions, siteAsset } from "@/lib/site-assets";
+import { getServerEnv } from "@/lib/server/env";
+import {
+  fetchInstagramFeed,
+  type InstagramFeedPost
+} from "@/lib/server/instagram";
 
 import { DeferredNewsletterSignupForm } from "./components/deferred-newsletter-signup-form";
 import { LandingTopbar } from "./components/landing-topbar";
+
+export const revalidate = 3600;
 
 const LandingMotionController = dynamic(() =>
   import("./components/landing-motion-controller").then(
@@ -47,6 +54,7 @@ const fighterStatUrl = "https://fighterstat.com/";
 const kr3wUrl = "http://kr3w.gg/";
 const mdueUrl =
   "https://hub.la/g/3KzbFzhm4Lb56jJcDqut?utm_id=97760_v0_s00_e0_tv3";
+const instagramProfileUrl = "https://www.instagram.com/moneymoicano.mma/";
 const fighterSignupUrl = "https://mma.moicano.tv/";
 const symplaTicketsUrl =
   "https://www.sympla.com.br/evento/money-moicano-mma-1/3391967?share_id=site";
@@ -256,12 +264,16 @@ function AssetImage({
 function LandingButton({
   children,
   href,
+  rel,
   size = "medium",
+  target,
   variant = "primary",
 }: Readonly<{
   children: React.ReactNode;
   href: string;
+  rel?: string;
   size?: ButtonSize;
+  target?: React.HTMLAttributeAnchorTarget;
   variant?: ButtonVariant;
 }>) {
   const className = [
@@ -273,7 +285,7 @@ function LandingButton({
     .join(" ");
 
   return (
-    <a className={className} href={href}>
+    <a className={className} href={href} rel={rel} target={target}>
       {children}
     </a>
   );
@@ -336,7 +348,143 @@ function SectionEyebrow({
   );
 }
 
-export default function Home() {
+function formatInstagramDate(timestamp: string) {
+  const date = new Date(timestamp);
+
+  if (Number.isNaN(date.getTime())) {
+    return "Instagram";
+  }
+
+  return new Intl.DateTimeFormat("pt-BR", {
+    day: "2-digit",
+    month: "short"
+  })
+    .format(date)
+    .replace(".", "");
+}
+
+function getInstagramCaptionPreview(caption: string) {
+  const normalized = caption.replace(/\s+/g, " ").trim();
+
+  if (!normalized) {
+    return "Saiu post novo no Instagram do Money Moicano MMA.";
+  }
+
+  return normalized.length > 118
+    ? `${normalized.slice(0, 115).trim()}...`
+    : normalized;
+}
+
+function getInstagramPostLabel(post: InstagramFeedPost) {
+  switch (post.mediaType) {
+    case "VIDEO":
+      return "Reel";
+    case "CAROUSEL_ALBUM":
+      return "Carrossel";
+    case "IMAGE":
+    default:
+      return "Post";
+  }
+}
+
+function InstagramFeedSection({
+  posts
+}: Readonly<{
+  posts: InstagramFeedPost[];
+}>) {
+  return (
+    <section
+      aria-labelledby="instagram-title"
+      className="section section--instagram"
+      data-nav-section="publico"
+    >
+      <div className="instagram-feed__header" data-reveal>
+        <div className="instagram-feed__copy">
+          <SectionEyebrow>Instagram</SectionEyebrow>
+          <h2
+            className="display-title display-title--instagram"
+            id="instagram-title"
+          >
+            Se liga no Instagram
+          </h2>
+          <p className="body-copy instagram-feed__text">
+            Bastidor, chamada de luta, corte da transmissão e o tipo de caos que
+            só faz sentido no feed do Money Moicano MMA.
+          </p>
+        </div>
+
+        <LandingButton
+          href={instagramProfileUrl}
+          rel="noreferrer"
+          target="_blank"
+          variant="secondary"
+        >
+          Seguir @moneymoicano.mma
+        </LandingButton>
+      </div>
+
+      {posts.length > 0 ? (
+        <MobileRailShell>
+          <div
+            className="instagram-feed__grid"
+            aria-label="Últimos posts do Instagram"
+            data-rail
+            data-reveal
+          >
+            {posts.map((post) => (
+              <a
+                className="instagram-post"
+                data-rail-item
+                href={post.permalink}
+                key={post.id}
+                rel="noreferrer"
+                target="_blank"
+              >
+                <span className="instagram-post__media">
+                  <img
+                    alt={getInstagramCaptionPreview(post.caption)}
+                    decoding="async"
+                    loading="lazy"
+                    src={post.imageUrl}
+                  />
+                </span>
+                <span className="instagram-post__content">
+                  <span className="instagram-post__meta">
+                    <span>{formatInstagramDate(post.timestamp)}</span>
+                    <span>{getInstagramPostLabel(post)}</span>
+                  </span>
+                  <span className="instagram-post__caption">
+                    {getInstagramCaptionPreview(post.caption)}
+                  </span>
+                </span>
+              </a>
+            ))}
+          </div>
+        </MobileRailShell>
+      ) : (
+        <div className="instagram-feed__fallback" data-reveal>
+          <p>
+            Os posts entram aqui assim que a API do Instagram estiver conectada.
+            Enquanto isso, cola direto no perfil.
+          </p>
+          <LandingButton
+            href={instagramProfileUrl}
+            rel="noreferrer"
+            target="_blank"
+            variant="secondary"
+          >
+            Abrir Instagram
+          </LandingButton>
+        </div>
+      )}
+    </section>
+  );
+}
+
+export default async function Home() {
+  const instagramFeed = await fetchInstagramFeed(getServerEnv());
+  const instagramPosts = instagramFeed.ok ? instagramFeed.posts : [];
+
   return (
     <main className="page-shell">
       <LandingMotionController />
@@ -699,6 +847,8 @@ export default function Home() {
           {/* Reativar o CTA de ingressos desta seção quando o link oficial estiver disponível. */}
         </div>
       </section>
+
+      <InstagramFeedSection posts={instagramPosts} />
 
       <section className="section section--cta" data-nav-section="publico">
         <div className="newsletter-panel" data-reveal>
