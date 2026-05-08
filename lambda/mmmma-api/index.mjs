@@ -129,6 +129,12 @@ const ADMIN_FIGHTER_APPLICATION_EDITORIAL_INTEREST_LABELS = {
 const FIGHTER_APPLICATION_EDITORIAL_INTEREST_VALUES = new Set(
   Object.keys(ADMIN_FIGHTER_APPLICATION_EDITORIAL_INTEREST_LABELS)
 );
+const FIGHTER_APPLICATION_EDITORIAL_INTEREST_LABEL_TO_VALUE = new Map(
+  Object.entries(ADMIN_FIGHTER_APPLICATION_EDITORIAL_INTEREST_LABELS).map(([value, label]) => [
+    normalizeNameForMatch(label),
+    value
+  ])
+);
 const FANTASY_ADMIN_STATUS_VALUES = new Set(["draft", "published", "locked", "finished"]);
 const FANTASY_ADMIN_VICTORY_METHODS = new Set(["decisao", "finalizacao", "nocaute"]);
 const FANTASY_ADMIN_ROUNDS = new Set([1, 2, 3, 4, 5]);
@@ -691,7 +697,7 @@ function normalizeFighterApplicationEditorialInterest(value) {
     return undefined;
   }
 
-  const normalized = value.trim().toLowerCase();
+  const normalized = normalizeNameForMatch(value).replace(/\s+/g, "_");
 
   if (!normalized) {
     return null;
@@ -701,7 +707,7 @@ function normalizeFighterApplicationEditorialInterest(value) {
     return undefined;
   }
 
-  return normalized;
+  return FIGHTER_APPLICATION_EDITORIAL_INTEREST_LABEL_TO_VALUE.get(normalizeNameForMatch(value));
 }
 
 function adminFormatFighterApplicationEditorialInterest(value) {
@@ -768,10 +774,11 @@ function adminFormatAccountLabel(displayName, email) {
   return parts.length ? parts.join(" / ") : "—";
 }
 
-function adminCreateRow(id, cells) {
+function adminCreateRow(id, cells, options = {}) {
   return {
     id,
-    cells
+    cells,
+    ...options
   };
 }
 
@@ -1104,17 +1111,30 @@ async function loadAdminFighterApplicationsTable() {
       ...summary,
       statusCounts,
       rows: result.rows.map((row) =>
-        adminCreateRow(row.id, {
-          fighter:
-            [normalizeText(row.fullName), normalizeText(row.nickname)]
-              .filter(Boolean)
-              .join(" / ") || "—",
-          weightClass: adminFormatWeightClass(row.weightClass),
-          age: adminFormatAge(row.birthDate),
-          location: adminBuildLocation(row.city, row.stateCode),
-          editorialInterest: adminFormatFighterApplicationEditorialInterest(row.editorialInterest),
-          cartel: adminFormatCartelPreview(row.competitionHistory)
-        })
+        adminCreateRow(
+          row.id,
+          {
+            fighter:
+              [normalizeText(row.fullName), normalizeText(row.nickname)]
+                .filter(Boolean)
+                .join(" / ") || "—",
+            weightClass: adminFormatWeightClass(row.weightClass),
+            age: adminFormatAge(row.birthDate),
+            location: adminBuildLocation(row.city, row.stateCode),
+            editorialInterest: adminFormatFighterApplicationEditorialInterest(row.editorialInterest),
+            cartel: adminFormatCartelPreview(row.competitionHistory)
+          },
+          {
+            fighterApplication: {
+              fullName: normalizeNullableText(row.fullName),
+              nickname: normalizeNullableText(row.nickname),
+              city: normalizeNullableText(row.city),
+              stateCode: normalizeNullableText(row.stateCode),
+              competitionHistory: normalizeNullableText(row.competitionHistory),
+              editorialInterest: normalizeNullableText(row.editorialInterest)
+            }
+          }
+        )
       )
     };
   });
@@ -2486,17 +2506,30 @@ async function loadAdminFighterApplicationsTableData() {
       { key: "cartel", label: "Cartel" }
     ],
     rows: result.rows.map((row) =>
-      adminCreateRow(row.id, {
-        fighter:
-          [normalizeText(row.fullName), normalizeText(row.nickname)]
-            .filter(Boolean)
-            .join(" / ") || "—",
-        weightClass: adminFormatWeightClass(row.weightClass),
-        age: adminFormatAge(row.birthDate),
-        location: adminBuildLocation(row.city, row.stateCode),
-        editorialInterest: adminFormatFighterApplicationEditorialInterest(row.editorialInterest),
-        cartel: adminFormatCartelPreview(row.competitionHistory)
-      })
+      adminCreateRow(
+        row.id,
+        {
+          fighter:
+            [normalizeText(row.fullName), normalizeText(row.nickname)]
+              .filter(Boolean)
+              .join(" / ") || "—",
+          weightClass: adminFormatWeightClass(row.weightClass),
+          age: adminFormatAge(row.birthDate),
+          location: adminBuildLocation(row.city, row.stateCode),
+          editorialInterest: adminFormatFighterApplicationEditorialInterest(row.editorialInterest),
+          cartel: adminFormatCartelPreview(row.competitionHistory)
+        },
+        {
+          fighterApplication: {
+            fullName: normalizeNullableText(row.fullName),
+            nickname: normalizeNullableText(row.nickname),
+            city: normalizeNullableText(row.city),
+            stateCode: normalizeNullableText(row.stateCode),
+            competitionHistory: normalizeNullableText(row.competitionHistory),
+            editorialInterest: normalizeNullableText(row.editorialInterest)
+          }
+        }
+      )
     ),
     statusCounts,
     totalRows: summary.totalRows,
@@ -3503,6 +3536,26 @@ function parseAdminFighterApplicationInterestPath(rawPath) {
   }
 }
 
+function parseAdminFighterApplicationPath(rawPath) {
+  const prefix = `${ADMIN_FIGHTER_APPLICATION_INTEREST_ROUTE_BASE}/`;
+
+  if (!rawPath.startsWith(prefix)) {
+    return null;
+  }
+
+  const encodedId = rawPath.slice(prefix.length).trim();
+
+  if (!encodedId || encodedId.includes("/")) {
+    return null;
+  }
+
+  try {
+    return decodeURIComponent(encodedId);
+  } catch {
+    return null;
+  }
+}
+
 async function handleAdminFighterApplicationInterestUpdate(event, applicationId) {
   if (!assertBearerForScope(event, "admin_write")) {
     return buildJsonResponse(401, {
@@ -3589,6 +3642,87 @@ async function handleAdminFighterApplicationInterestUpdate(event, applicationId)
       error,
       applicationId,
       editorialInterest
+    });
+
+    return buildJsonResponse(503, {
+      ok: false,
+      message: "Serviço temporariamente indisponível."
+    });
+  }
+}
+
+async function handleAdminFighterApplicationDelete(event, applicationId) {
+  if (!assertBearerForScope(event, "admin_write")) {
+    return buildJsonResponse(401, {
+      ok: false,
+      message: "Unauthorized."
+    });
+  }
+
+  if (!isUuid(applicationId)) {
+    return buildJsonResponse(400, {
+      ok: false,
+      message: "ID de atleta inválido."
+    });
+  }
+
+  let body;
+
+  try {
+    body = parseJsonBody(event);
+  } catch {
+    return buildJsonResponse(400, {
+      ok: false,
+      message: "Invalid JSON body."
+    });
+  }
+
+  const actor = body?.actor ?? {};
+  const requestContext = buildSerializableRequestContext(getRequestContextBody(body), null);
+  const actorAccountId = isUuid(actor?.accountId) ? actor.accountId : null;
+  const actorRole = normalizeText(actor?.role) || "admin";
+  const actorEmail = normalizeEmail(actor?.email) || null;
+
+  try {
+    const result = await withDatabaseTransaction(
+      {
+        actorId: actorAccountId,
+        actorRole,
+        actorEmail,
+        requestId: requestContext.requestId,
+        clientIp: requestContext.clientIp,
+        origin: requestContext.origin,
+        userAgent: requestContext.userAgent
+      },
+      async (client) =>
+        client.query(
+          `
+            delete from app.fighter_applications
+            where id = $1::uuid
+            returning id
+          `,
+          [applicationId]
+        )
+    );
+
+    const row = result.rows[0];
+
+    if (!row) {
+      return buildJsonResponse(404, {
+        ok: false,
+        message: "Atleta não encontrado."
+      });
+    }
+
+    return buildJsonResponse(200, {
+      ok: true,
+      message: "Cadastro excluído com sucesso.",
+      deletedApplicationId: row.id
+    });
+  } catch (error) {
+    console.error("admin fighter application delete failed", {
+      error,
+      applicationId
     });
 
     return buildJsonResponse(503, {
@@ -4903,6 +5037,14 @@ export const handler = async (event) => {
 
       if (fighterApplicationId) {
         return await handleAdminFighterApplicationInterestUpdate(event, fighterApplicationId);
+      }
+    }
+
+    if (method === "DELETE") {
+      const fighterApplicationId = parseAdminFighterApplicationPath(rawPath);
+
+      if (fighterApplicationId) {
+        return await handleAdminFighterApplicationDelete(event, fighterApplicationId);
       }
     }
 

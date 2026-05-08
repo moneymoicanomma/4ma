@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { normalizeFighterApplicationEditorialInterest } from "@/lib/admin/fighter-application-list";
 import {
   getCurrentAdminSessionIdentity,
   type AdminSessionIdentity,
@@ -12,37 +11,32 @@ import {
   isAdminWriteUpstreamConfigured,
   isDatabaseConfigured,
 } from "@/lib/server/env";
-import { postJsonToUpstream, UpstreamApiError } from "@/lib/server/http";
+import { deleteJsonFromUpstream, UpstreamApiError } from "@/lib/server/http";
 import { buildRequestAuditContext } from "@/lib/server/request-context";
-import { isSameOriginRequest, readJsonRequestBody } from "@/lib/server/request-guards";
+import { isSameOriginRequest } from "@/lib/server/request-guards";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const MAX_ADMIN_INTEREST_BODY_BYTES = 8 * 1024;
 const uuidPattern =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-
-type AdminFighterApplicationInterestRequestBody = {
-  editorialInterest?: string | null;
-};
 
 function getNoStoreHeaders() {
   return {
     "Cache-Control": "no-store, max-age=0",
     "Referrer-Policy": "same-origin",
-    "X-Content-Type-Options": "nosniff"
+    "X-Content-Type-Options": "nosniff",
   };
 }
 
 function buildJsonResponse(payload: object, status = 200) {
   return NextResponse.json(payload, {
     status,
-    headers: getNoStoreHeaders()
+    headers: getNoStoreHeaders(),
   });
 }
 
-function canEditFighterApplications(identity: AdminSessionIdentity) {
+function canDeleteFighterApplications(identity: AdminSessionIdentity) {
   return identity.role === "admin" || identity.role === "operator";
 }
 
@@ -52,14 +46,14 @@ type RouteContext = {
   }>;
 };
 
-export async function POST(request: NextRequest, context: RouteContext) {
+export async function DELETE(request: NextRequest, context: RouteContext) {
   if (!isSameOriginRequest(request)) {
     return buildJsonResponse(
       {
         ok: false,
-        message: "Origem não permitida."
+        message: "Origem não permitida.",
       },
-      403
+      403,
     );
   }
 
@@ -70,19 +64,19 @@ export async function POST(request: NextRequest, context: RouteContext) {
     return buildJsonResponse(
       {
         ok: false,
-        message: "Sessão administrativa inválida."
+        message: "Sessão administrativa inválida.",
       },
-      401
+      401,
     );
   }
 
-  if (!canEditFighterApplications(identity)) {
+  if (!canDeleteFighterApplications(identity)) {
     return buildJsonResponse(
       {
         ok: false,
-        message: "Seu perfil não tem permissão para editar classificações."
+        message: "Seu perfil não tem permissão para excluir cadastros.",
       },
-      403
+      403,
     );
   }
 
@@ -92,40 +86,9 @@ export async function POST(request: NextRequest, context: RouteContext) {
     return buildJsonResponse(
       {
         ok: false,
-        message: "ID de atleta inválido."
+        message: "ID de atleta inválido.",
       },
-      400
-    );
-  }
-
-  const requestBody = await readJsonRequestBody<AdminFighterApplicationInterestRequestBody>(
-    request,
-    {
-      maxBytes: MAX_ADMIN_INTEREST_BODY_BYTES
-    }
-  );
-
-  if (!requestBody.ok) {
-    return buildJsonResponse(
-      {
-        ok: false,
-        message: requestBody.message
-      },
-      requestBody.status
-    );
-  }
-
-  const editorialInterest = normalizeFighterApplicationEditorialInterest(
-    requestBody.data?.editorialInterest,
-  );
-
-  if (editorialInterest === undefined) {
-    return buildJsonResponse(
-      {
-        ok: false,
-        message: "Classificação inválida."
-      },
-      400
+      400,
     );
   }
 
@@ -136,41 +99,36 @@ export async function POST(request: NextRequest, context: RouteContext) {
       return buildJsonResponse(
         {
           ok: false,
-          message: "Banco de dados indisponível neste ambiente."
+          message: "Banco de dados indisponível neste ambiente.",
         },
-        503
+        503,
       );
     }
 
     try {
       const upstreamUrl = `${env.upstreamApiBaseUrl}/v1/admin/fighter-applications/${encodeURIComponent(
-        applicationId
-      )}/interest`;
-      const upstreamResponse = await postJsonToUpstream(
+        applicationId,
+      )}`;
+      const upstreamResponse = await deleteJsonFromUpstream(
         upstreamUrl,
         {
-          payload: {
-            editorialInterest
-          },
           actor: {
             accountId: identity.kind === "account" ? identity.accountId : null,
             email: identity.username,
-            role: identity.role
+            role: identity.role,
           },
-          requestContext
+          requestContext,
         },
         {
           bearerToken: getAdminWriteUpstreamBearerToken(env)!,
-          timeoutMs: env.upstreamRequestTimeoutMs
-        }
+          timeoutMs: env.upstreamRequestTimeoutMs,
+        },
       );
-      const payload = (await upstreamResponse
-        .json()
-        .catch(() => null)) as
+      const payload = (await upstreamResponse.json().catch(() => null)) as
         | {
             ok?: boolean;
             message?: string;
-            editorialInterest?: string | null;
+            deletedApplicationId?: string;
           }
         | null;
 
@@ -178,16 +136,16 @@ export async function POST(request: NextRequest, context: RouteContext) {
         return buildJsonResponse(
           {
             ok: false,
-            message: payload?.message ?? "Não foi possível salvar agora. Tente novamente em instantes."
+            message: payload?.message ?? "Não foi possível excluir agora. Tente novamente em instantes.",
           },
-          503
+          503,
         );
       }
 
       return buildJsonResponse({
         ok: true,
-        message: payload.message ?? "Classificação atualizada com sucesso.",
-        editorialInterest: payload.editorialInterest ?? null
+        message: payload.message ?? "Cadastro excluído com sucesso.",
+        deletedApplicationId: payload.deletedApplicationId ?? applicationId,
       });
     } catch (error) {
       if (error instanceof UpstreamApiError) {
@@ -195,19 +153,9 @@ export async function POST(request: NextRequest, context: RouteContext) {
           return buildJsonResponse(
             {
               ok: false,
-              message: "Atleta não encontrado."
+              message: "Atleta não encontrado.",
             },
-            404
-          );
-        }
-
-        if (error.status === 400) {
-          return buildJsonResponse(
-            {
-              ok: false,
-              message: "Classificação inválida."
-            },
-            400
+            404,
           );
         }
 
@@ -215,25 +163,24 @@ export async function POST(request: NextRequest, context: RouteContext) {
           return buildJsonResponse(
             {
               ok: false,
-              message: "Seu perfil não tem permissão para editar classificações."
+              message: "Seu perfil não tem permissão para excluir cadastros.",
             },
-            403
+            403,
           );
         }
       }
 
-      console.error("[admin fighter-applications] upstream update failed", {
+      console.error("[admin fighter-applications] upstream delete failed", {
         error,
         applicationId,
-        editorialInterest
       });
 
       return buildJsonResponse(
         {
           ok: false,
-          message: "Não foi possível salvar agora. Tente novamente em instantes."
+          message: "Não foi possível excluir agora. Tente novamente em instantes.",
         },
-        503
+        503,
       );
     }
   }
@@ -247,22 +194,17 @@ export async function POST(request: NextRequest, context: RouteContext) {
         requestId: requestContext.requestId,
         clientIp: requestContext.clientIp,
         origin: requestContext.requestOrigin,
-        userAgent: requestContext.userAgent
+        userAgent: requestContext.userAgent,
       },
       async (transaction) =>
-        transaction.query<{
-          editorialInterest: string | null;
-        }>(
+        transaction.query<{ id: string }>(
           `
-            update app.fighter_applications
-            set
-              editorial_interest = $2::app.fighter_application_editorial_interest_enum,
-              updated_at = now()
+            delete from app.fighter_applications
             where id = $1::uuid
-            returning editorial_interest::text as "editorialInterest"
+            returning id
           `,
-          [applicationId, editorialInterest]
-        )
+          [applicationId],
+        ),
     );
 
     const row = result.rows[0];
@@ -271,30 +213,29 @@ export async function POST(request: NextRequest, context: RouteContext) {
       return buildJsonResponse(
         {
           ok: false,
-          message: "Atleta não encontrado."
+          message: "Atleta não encontrado.",
         },
-        404
+        404,
       );
     }
 
     return buildJsonResponse({
       ok: true,
-      message: "Classificação atualizada com sucesso.",
-      editorialInterest: row.editorialInterest ?? null
+      message: "Cadastro excluído com sucesso.",
+      deletedApplicationId: row.id,
     });
   } catch (error) {
-    console.error("[admin fighter-applications] failed to update editorial interest", {
+    console.error("[admin fighter-applications] failed to delete application", {
       error,
       applicationId,
-      editorialInterest
     });
 
     return buildJsonResponse(
       {
         ok: false,
-        message: "Não foi possível salvar agora. Tente novamente em instantes."
+        message: "Não foi possível excluir agora. Tente novamente em instantes.",
       },
-      503
+      503,
     );
   }
 }

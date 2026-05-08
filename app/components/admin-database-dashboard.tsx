@@ -1,5 +1,9 @@
 import Link from "next/link";
 
+import {
+  FighterApplicationInterestInlineEditor,
+  FighterApplicationRowActions,
+} from "@/app/components/fighter-application-admin-controls";
 import type { AdminDatabaseOverview } from "@/lib/server/admin-database";
 
 import styles from "./admin-database-dashboard.module.css";
@@ -37,6 +41,18 @@ function getDetailLinkLabel(tableId: AdminDatabaseOverview["tables"][number]["id
   }
 
   return "Ver emitente";
+}
+
+function getFighterApplicationRowLabel(
+  row: AdminDatabaseOverview["tables"][number]["rows"][number],
+) {
+  return (
+    [row.fighterApplication?.fullName, row.fighterApplication?.nickname]
+      .filter(Boolean)
+      .join(" / ") ||
+    row.cells.fighter ||
+    "este cadastro"
+  );
 }
 
 export function AdminDatabaseDashboard({
@@ -140,30 +156,60 @@ export function AdminDatabaseDashboard({
                               {column.label}
                             </th>
                           ))}
-                          <th scope="col">Detalhe</th>
+                          <th scope="col">
+                            {table.id === "fighter-applications" ? "Ações" : "Detalhe"}
+                          </th>
                         </tr>
                       </thead>
                       <tbody>
                         {table.rows.map((row) => (
                           <tr key={row.id}>
-                            {table.columns.map((column) => (
-                              <td key={`${row.id}-${column.key}`}>
-                                {column.key === detailColumnKey ? (
-                                  <Link
-                                    className={styles.rowLink}
-                                    href={`/admin/database/${table.id}/${row.id}`}
-                                  >
-                                    {row.cells[column.key] ?? "—"}
-                                  </Link>
-                                ) : (
-                                  row.cells[column.key] ?? "—"
-                                )}
-                              </td>
-                            ))}
+                            {table.columns.map((column) => {
+                              const cellValue = row.cells[column.key] ?? "—";
+                              const detailHref = `/admin/database/${table.id}/${row.id}`;
+                              const rowLabel =
+                                table.id === "fighter-applications"
+                                  ? getFighterApplicationRowLabel(row)
+                                  : cellValue;
+
+                              return (
+                                <td key={`${row.id}-${column.key}`}>
+                                  {column.key === detailColumnKey ? (
+                                    <Link
+                                      className={styles.rowLink}
+                                      href={detailHref}
+                                    >
+                                      {cellValue}
+                                    </Link>
+                                  ) : table.id === "fighter-applications" &&
+                                    column.key === "editorialInterest" ? (
+                                    <FighterApplicationInterestInlineEditor
+                                      applicationId={row.id}
+                                      initialEditorialInterest={
+                                        row.fighterApplication?.editorialInterest ?? cellValue
+                                      }
+                                      rowLabel={rowLabel}
+                                    />
+                                  ) : (
+                                    cellValue
+                                  )}
+                                </td>
+                              );
+                            })}
                             <td>
-                              <Link className={styles.rowLink} href={`/admin/database/${table.id}/${row.id}`}>
-                                {getDetailLinkLabel(table.id)}
-                              </Link>
+                              {table.id === "fighter-applications" ? (
+                                <FighterApplicationRowActions
+                                  applicationId={row.id}
+                                  detailHref={`/admin/database/${table.id}/${row.id}`}
+                                  detailLabel={getDetailLinkLabel(table.id)}
+                                  detailLinkClassName={styles.rowLink}
+                                  rowLabel={getFighterApplicationRowLabel(row)}
+                                />
+                              ) : (
+                                <Link className={styles.rowLink} href={`/admin/database/${table.id}/${row.id}`}>
+                                  {getDetailLinkLabel(table.id)}
+                                </Link>
+                              )}
                             </td>
                           </tr>
                         ))}

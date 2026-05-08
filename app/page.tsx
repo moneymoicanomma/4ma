@@ -29,6 +29,10 @@ const cornermanIcon = siteAsset("cornerman.svg");
 const cornermanSloganLogo = siteAsset("cornerman - slogan.svg");
 const cabmmaLogo = siteAsset("cabmma.svg");
 const joyaGearLogo = siteAsset("joyagear.svg");
+const timeoutBrazilLogo = siteAsset("Timeout.svg");
+const fighterStatLogo = siteAsset("fighter_stat.svg");
+const kr3wLogo = siteAsset("krew.svg");
+const mdueLogo = siteAsset("mdue.svg");
 const instagramIcon = siteAsset("instagram_logo.svg");
 const youtubeIcon = siteAsset("youtube_logo.svg");
 const xIcon = siteAsset("x_logo.svg.svg");
@@ -38,6 +42,11 @@ const cornermanUrl = "https://cornerman.com.br/";
 const cabmmaUrl = "https://www.instagram.com/cab_mma/";
 const transmissionUrl = "https://www.youtube.com/@RenatoMoneyMoicano";
 const joyaGearUrl = "https://joyagear.com/";
+const timeoutBrazilUrl = "https://timeoutbrazil.com.br";
+const fighterStatUrl = "https://fighterstat.com/";
+const kr3wUrl = "http://kr3w.gg/";
+const mdueUrl =
+  "https://hub.la/g/3KzbFzhm4Lb56jJcDqut?utm_id=97760_v0_s00_e0_tv3";
 const fighterSignupUrl = "https://mma.moicano.tv/";
 const symplaTicketsUrl =
   "https://www.sympla.com.br/evento/money-moicano-mma-1/3391967?share_id=site";
@@ -187,6 +196,30 @@ const partners = [
     logo: joyaGearLogo,
     href: joyaGearUrl,
     className: "partner-logo partner-logo--joyagear",
+  },
+  {
+    name: "Timeout Brazil",
+    logo: timeoutBrazilLogo,
+    href: timeoutBrazilUrl,
+    className: "partner-logo partner-logo--timeout",
+  },
+  {
+    name: "Fighter Stat",
+    logo: fighterStatLogo,
+    href: fighterStatUrl,
+    className: "partner-logo partner-logo--fighter-stat",
+  },
+  {
+    name: "KR3W",
+    logo: kr3wLogo,
+    href: kr3wUrl,
+    className: "partner-logo partner-logo--kr3w",
+  },
+  {
+    name: "Mdue",
+    logo: mdueLogo,
+    href: mdueUrl,
+    className: "partner-logo partner-logo--mdue",
   },
 ];
 

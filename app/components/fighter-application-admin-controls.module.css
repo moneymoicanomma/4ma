@@ -1,0 +1,157 @@
+.filters {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(8, 8, 8, 0.82);
+}
+
+.filterGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+  align-items: end;
+}
+
+.filterField {
+  display: grid;
+  gap: 7px;
+}
+
+.filterField span,
+.filterMeta {
+  color: rgba(255, 255, 255, 0.58);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+}
+
+.filterInput,
+.filterSelect,
+.interestSelect {
+  width: 100%;
+  min-height: 40px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(16, 16, 16, 0.96);
+  color: rgba(255, 255, 255, 0.92);
+  font: inherit;
+  font-size: 13px;
+}
+
+.filterInput,
+.filterSelect {
+  padding: 0 11px;
+}
+
+.interestSelect {
+  min-width: 170px;
+  padding: 0 9px;
+}
+
+.filterInput:focus,
+.filterSelect:focus,
+.interestSelect:focus {
+  border-color: rgba(232, 24, 26, 0.72);
+  outline: 2px solid rgba(232, 24, 26, 0.24);
+  outline-offset: 0;
+}
+
+.resetButton,
+.deleteButton {
+  min-height: 40px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.04);
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.resetButton {
+  padding: 0 14px;
+}
+
+.resetButton:disabled,
+.deleteButton:disabled,
+.interestSelect:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.filterFooter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.recordHint,
+.feedback {
+  margin: 0;
+  color: rgba(255, 202, 128, 0.92);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.feedback {
+  color: #9cf2a6;
+}
+
+.feedbackError {
+  color: #ff8f8f;
+}
+
+.interestControl,
+.deleteControl,
+.rowActions {
+  display: grid;
+  gap: 8px;
+}
+
+.rowActions {
+  min-width: 132px;
+  justify-items: start;
+}
+
+.deleteButton {
+  min-height: 34px;
+  padding: 0 11px;
+  border-color: rgba(255, 120, 120, 0.34);
+  background: rgba(232, 24, 26, 0.1);
+  color: rgba(255, 185, 185, 0.96);
+}
+
+.deleteButton:hover:not(:disabled),
+.resetButton:hover:not(:disabled) {
+  border-color: rgba(232, 24, 26, 0.68);
+  background: rgba(232, 24, 26, 0.15);
+}
+
+.emptyFilteredState {
+  display: grid;
+  gap: 8px;
+  padding: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(8, 8, 8, 0.82);
+  color: rgba(227, 226, 225, 0.76);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.emptyFilteredState strong {
+  color: #ffffff;
+}
+
+@media (max-width: 720px) {
+  .filterGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .resetButton {
+    width: 100%;
+  }
+}

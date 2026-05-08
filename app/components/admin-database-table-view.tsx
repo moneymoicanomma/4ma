@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { FighterApplicationsAdminTable } from "@/app/components/fighter-application-admin-controls";
 import type { AdminDatabaseTableData } from "@/lib/server/admin-database";
 
 import styles from "./admin-database-table-view.module.css";
@@ -85,47 +86,55 @@ export function AdminDatabaseTableView({
         </div>
       ) : null}
 
-      <div className={styles.tableScroller}>
-        <table className={styles.table}>
-          <thead>
-            <tr>
-              {data.columns.map((column) => (
-                <th key={`${data.table.id}-${column.key}`} scope="col">
-                  {column.label}
-                </th>
-              ))}
-              <th scope="col">Detalhe</th>
-            </tr>
-          </thead>
-          <tbody>
-            {data.rows.map((row) => (
-              <tr key={row.id}>
-                {data.columns.map((column) => {
-                  const cellValue = row.cells[column.key] ?? "—";
-                  const detailHref = `/admin/database/${data.table.id}/${row.id}`;
-
-                  return (
-                    <td key={`${row.id}-${column.key}`}>
-                      {column.key === detailColumnKey ? (
-                        <Link className={styles.primaryCellLink} href={detailHref}>
-                          {cellValue}
-                        </Link>
-                      ) : (
-                        cellValue
-                      )}
-                    </td>
-                  );
-                })}
-                <td>
-                  <Link className={styles.detailLink} href={`/admin/database/${data.table.id}/${row.id}`}>
-                    {getDetailLinkLabel(data.table.id)}
-                  </Link>
-                </td>
+      {data.table.id === "fighter-applications" ? (
+        <FighterApplicationsAdminTable
+          columns={data.columns}
+          detailHrefBase={`/admin/database/${data.table.id}`}
+          rows={data.rows}
+        />
+      ) : (
+        <div className={styles.tableScroller}>
+          <table className={styles.table}>
+            <thead>
+              <tr>
+                {data.columns.map((column) => (
+                  <th key={`${data.table.id}-${column.key}`} scope="col">
+                    {column.label}
+                  </th>
+                ))}
+                <th scope="col">Detalhe</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {data.rows.map((row) => (
+                <tr key={row.id}>
+                  {data.columns.map((column) => {
+                    const cellValue = row.cells[column.key] ?? "—";
+                    const detailHref = `/admin/database/${data.table.id}/${row.id}`;
+
+                    return (
+                      <td key={`${row.id}-${column.key}`}>
+                        {column.key === detailColumnKey ? (
+                          <Link className={styles.primaryCellLink} href={detailHref}>
+                            {cellValue}
+                          </Link>
+                        ) : (
+                          cellValue
+                        )}
+                      </td>
+                    );
+                  })}
+                  <td>
+                    <Link className={styles.detailLink} href={`/admin/database/${data.table.id}/${row.id}`}>
+                      {getDetailLinkLabel(data.table.id)}
+                    </Link>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }

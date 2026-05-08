@@ -1,5 +1,9 @@
 import "server-only";
 
+import {
+  formatFighterApplicationEditorialInterest,
+  type FighterApplicationAdminRowData,
+} from "@/lib/admin/fighter-application-list";
 import { queryDatabase, withDatabaseTransaction } from "@/lib/server/database";
 import { getJsonFromUpstream, UpstreamApiError } from "@/lib/server/http";
 import {
@@ -55,13 +59,6 @@ const sourceLabels: Record<string, string> = {
   newsletter_signup: "Newsletter",
   partner_inquiry: "Parceria",
   press_newsletter: "Newsletter imprensa",
-};
-
-const fighterApplicationEditorialInterestLabels: Record<string, string> = {
-  interessante: "Interessante",
-  talvez_no_futuro: "Talvez no futuro",
-  nao_interessante: "Não interessante",
-  bizarro: "Bizarro",
 };
 
 export type AdminDatabaseTableId =
@@ -142,6 +139,7 @@ export type AdminDatabaseColumn = {
 export type AdminDatabaseRow = {
   id: string;
   cells: Record<string, string>;
+  fighterApplication?: FighterApplicationAdminRowData;
 };
 
 export type AdminDatabaseStatusCount = {
@@ -736,18 +734,6 @@ function formatWeightClass(value: string | null | undefined) {
   return humanizeToken(value);
 }
 
-function formatFighterApplicationEditorialInterest(value: string | null | undefined) {
-  const normalized = normalizeText(value);
-
-  if (!normalized) {
-    return "—";
-  }
-
-  return (
-    fighterApplicationEditorialInterestLabels[normalized] ?? humanizeToken(normalized)
-  );
-}
-
 function formatScore(value: number | string | null | undefined) {
   return `${formatNumber(value)} pts`;
 }
@@ -812,10 +798,14 @@ export function getAdminDatabaseTableMeta(value: string) {
 function createRow(
   id: string,
   cells: Record<string, string>,
+  options?: {
+    fighterApplication?: FighterApplicationAdminRowData;
+  },
 ): AdminDatabaseRow {
   return {
     id,
     cells,
+    ...options,
   };
 }
 
@@ -1128,17 +1118,30 @@ async function loadFighterApplicationsTable() {
       ...summary,
       statusCounts,
       rows: result.rows.map((row) =>
-        createRow(row.id, {
-          fighter:
-            [normalizeText(row.fullName), normalizeText(row.nickname)]
-              .filter(Boolean)
-              .join(" / ") || "—",
-          weightClass: formatWeightClass(row.weightClass),
-          age: formatAge(row.birthDate),
-          location: buildLocation(row.city, row.stateCode),
-          editorialInterest: formatFighterApplicationEditorialInterest(row.editorialInterest),
-          cartel: formatCartelPreview(row.competitionHistory),
-        }),
+        createRow(
+          row.id,
+          {
+            fighter:
+              [normalizeText(row.fullName), normalizeText(row.nickname)]
+                .filter(Boolean)
+                .join(" / ") || "—",
+            weightClass: formatWeightClass(row.weightClass),
+            age: formatAge(row.birthDate),
+            location: buildLocation(row.city, row.stateCode),
+            editorialInterest: formatFighterApplicationEditorialInterest(row.editorialInterest),
+            cartel: formatCartelPreview(row.competitionHistory),
+          },
+          {
+            fighterApplication: {
+              fullName: normalizeText(row.fullName),
+              nickname: normalizeText(row.nickname),
+              city: normalizeText(row.city),
+              stateCode: normalizeText(row.stateCode),
+              competitionHistory: normalizeText(row.competitionHistory),
+              editorialInterest: normalizeText(row.editorialInterest),
+            },
+          },
+        ),
       ),
     };
   });
@@ -1779,17 +1782,30 @@ async function loadFighterApplicationsTableDataDirect(): Promise<AdminDatabaseTa
       { key: "cartel", label: "Cartel" },
     ],
     rows: result.rows.map((row) =>
-      createRow(row.id, {
-        fighter:
-          [normalizeText(row.fullName), normalizeText(row.nickname)]
-            .filter(Boolean)
-            .join(" / ") || "—",
-        weightClass: formatWeightClass(row.weightClass),
-        age: formatAge(row.birthDate),
-        location: buildLocation(row.city, row.stateCode),
-        editorialInterest: formatFighterApplicationEditorialInterest(row.editorialInterest),
-        cartel: formatCartelPreview(row.competitionHistory),
-      }),
+      createRow(
+        row.id,
+        {
+          fighter:
+            [normalizeText(row.fullName), normalizeText(row.nickname)]
+              .filter(Boolean)
+              .join(" / ") || "—",
+          weightClass: formatWeightClass(row.weightClass),
+          age: formatAge(row.birthDate),
+          location: buildLocation(row.city, row.stateCode),
+          editorialInterest: formatFighterApplicationEditorialInterest(row.editorialInterest),
+          cartel: formatCartelPreview(row.competitionHistory),
+        },
+        {
+          fighterApplication: {
+            fullName: normalizeText(row.fullName),
+            nickname: normalizeText(row.nickname),
+            city: normalizeText(row.city),
+            stateCode: normalizeText(row.stateCode),
+            competitionHistory: normalizeText(row.competitionHistory),
+            editorialInterest: normalizeText(row.editorialInterest),
+          },
+        },
+      ),
     ),
     statusCounts,
     totalRows: summary.totalRows,
