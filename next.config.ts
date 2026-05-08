@@ -79,6 +79,9 @@ const imageRemotePatterns: NonNullable<NonNullable<NextConfig["images"]>["remote
   ...(blogMediaRemotePattern ? [blogMediaRemotePattern] : [])
 ];
 
+const productionOnlySecurityDirectives =
+  process.env.NODE_ENV === "production" ? ["upgrade-insecure-requests"] : [];
+
 const contentSecurityPolicy = [
   "default-src 'self'",
   "base-uri 'self'",
@@ -94,7 +97,7 @@ const contentSecurityPolicy = [
   "frame-src 'self' https://challenges.cloudflare.com",
   "worker-src 'self' blob:",
   "manifest-src 'self'",
-  "upgrade-insecure-requests"
+  ...productionOnlySecurityDirectives
 ].join("; ");
 
 const securityHeaders = [

@@ -25,6 +25,7 @@ import {
   withDatabaseTransaction,
   type DatabaseTransaction
 } from "@/lib/server/database";
+import { getServerEnv, isDatabaseConfigured } from "@/lib/server/env";
 import { verifyBlogMediaUpload } from "@/lib/server/blog-media-storage";
 import type { RequestAuditContext } from "@/lib/server/request-context";
 
@@ -85,6 +86,23 @@ type BlogMediaVerificationRow = {
 const publicQueryExecutor: BlogQueryExecutor = {
   query: queryDatabase
 };
+
+function isBlogDatabaseReadable() {
+  return isDatabaseConfigured(getServerEnv());
+}
+
+function createEmptyPublicBlogIndex(): {
+  featured: BlogPostSummary | null;
+  posts: BlogPostSummary[];
+  tags: Array<{ name: string; slug: string; count: number }>;
+} {
+  return {
+    featured: null,
+    posts: [],
+    tags: []
+  };
+}
+
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 function isUuid(value: string) {
@@ -757,6 +775,10 @@ export async function listPublicBlogPosts(): Promise<{
   posts: BlogPostSummary[];
   tags: Array<{ name: string; slug: string; count: number }>;
 }> {
+  if (!isBlogDatabaseReadable()) {
+    return createEmptyPublicBlogIndex();
+  }
+
   const [postsResult, tagsResult] = await Promise.all([
     queryDatabase<BlogPostRow>(
       `
@@ -792,13 +814,19 @@ export async function listPublicBlogPosts(): Promise<{
 export async function getPublicBlogPostBySlug(slug: string): Promise<BlogPostDetail | null> {
   const normalizedSlug = normalizeBlogSlug(slug);
 
-  return normalizedSlug ? queryBlogPostBySlug(publicQueryExecutor, normalizedSlug) : null;
+  return normalizedSlug && isBlogDatabaseReadable()
+    ? queryBlogPostBySlug(publicQueryExecutor, normalizedSlug)
+    : null;
 }
 
 export async function getBlogRedirectForSlug(slug: string): Promise<string | null> {
   const normalizedSlug = normalizeBlogSlug(slug);
 
   if (!normalizedSlug) {
+    return null;
+  }
+
+  if (!isBlogDatabaseReadable()) {
     return null;
   }
 
@@ -823,6 +851,10 @@ export async function listPublicBlogPostsByTag(
   const normalizedSlug = normalizeBlogSlug(tagSlug);
 
   if (!normalizedSlug) {
+    return null;
+  }
+
+  if (!isBlogDatabaseReadable()) {
     return null;
   }
 
@@ -889,6 +921,10 @@ export async function listBlogTagSuggestions(): Promise<
 }
 
 export async function listBlogSitemapEntries(): Promise<Array<{ href: string; updatedAt: Date }>> {
+  if (!isBlogDatabaseReadable()) {
+    return [];
+  }
+
   const result = await queryDatabase<BlogSitemapRow>(
     `
       select '/blog' as href, coalesce(max(updated_at), now()) as "updatedAt"
@@ -919,6 +955,17 @@ export async function listBlogSitemapEntries(): Promise<Array<{ href: string; up
 }
 
 export async function getBlogLlmsIndex(): Promise<string> {
+  if (!isBlogDatabaseReadable()) {
+    return [
+      "# Money Moicano MMA Blog",
+      "",
+      "Indice textual dos posts publicados do Money Moicano MMA.",
+      "",
+      "Nenhum post publicado no momento.",
+      ""
+    ].join("\n");
+  }
+
   const result = await queryDatabase<{
     title: string;
     slug: string;
