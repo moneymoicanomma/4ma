@@ -1115,7 +1115,12 @@ section[id] {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 28px;
-  align-items: end;
+  align-items: start;
+}
+
+.instagram-feed__header > .landing-button {
+  align-self: start;
+  margin-top: 40px;
 }
 
 .instagram-feed__copy {
@@ -2989,6 +2994,7 @@ section[id] {
   .instagram-feed__header > .landing-button {
     width: 100%;
     max-width: 340px;
+    margin-top: 0;
   }
 
   .instagram-feed__grid {

@@ -21,7 +21,9 @@ describe("landing page Instagram section", () => {
     assert.ok(audienceIndex > -1, "Missing audience section");
     assert.ok(instagramIndex > audienceIndex, "Instagram section should follow audience");
     assert.ok(newsletterIndex > instagramIndex, "Newsletter section should follow Instagram");
-    assert.ok(landingPageSource.includes("Se liga no Instagram"));
+    assert.ok(
+      landingPageSource.includes("Siga o melhor evento de MMA da Galáxia")
+    );
     assert.ok(landingPageSource.includes("fetchInstagramFeed"));
     assert.ok(landingPageSource.includes("instagram-feed__grid"));
     assert.ok(landingPageSource.includes(instagramProfileUrl));

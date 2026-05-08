@@ -405,7 +405,7 @@ function InstagramFeedSection({
             className="display-title display-title--instagram"
             id="instagram-title"
           >
-            Se liga no Instagram
+            Siga o melhor evento de MMA da Galáxia
           </h2>
           <p className="body-copy instagram-feed__text">
             Bastidor, chamada de luta, corte da transmissão e o tipo de caos que
