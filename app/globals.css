@@ -1437,21 +1437,25 @@ section[id] {
 }
 
 .partners-row {
-  display: flex;
+  display: grid;
   align-items: center;
   justify-content: center;
-  gap: clamp(40px, 7vw, 120px);
-  width: min(100%, 1180px);
-  flex-wrap: wrap;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  column-gap: clamp(28px, 4vw, 76px);
+  row-gap: 22px;
+  width: min(100%, 1120px);
 }
 
 .partner-logo {
+  --partner-logo-height: 64px;
+  --partner-logo-width: 176px;
+
   display: flex;
   align-items: center;
   justify-content: center;
-  width: min(100%, 220px);
-  min-width: 180px;
-  min-height: 88px;
+  grid-column: span 2;
+  min-width: 0;
+  min-height: 96px;
   color: inherit;
   opacity: 0.82;
   text-decoration: none;
@@ -1463,15 +1467,49 @@ section[id] {
 
 .partner-logo img {
   display: block;
-  width: auto;
+  width: var(--partner-logo-width);
   max-width: 100%;
-  height: 58px;
+  height: var(--partner-logo-height);
   object-fit: contain;
 }
 
-.partner-logo--cabmma img {
-  transform: scale(1.14);
-  transform-origin: center;
+.partner-logo:nth-child(5) {
+  grid-column: 2 / span 2;
+}
+
+.partner-logo--cornerman {
+  --partner-logo-height: 58px;
+  --partner-logo-width: 224px;
+}
+
+.partner-logo--cabmma {
+  --partner-logo-height: 62px;
+  --partner-logo-width: 176px;
+}
+
+.partner-logo--joyagear {
+  --partner-logo-height: 64px;
+  --partner-logo-width: 92px;
+}
+
+.partner-logo--timeout {
+  --partner-logo-height: 68px;
+  --partner-logo-width: 178px;
+}
+
+.partner-logo--fighter-stat {
+  --partner-logo-height: 62px;
+  --partner-logo-width: 214px;
+}
+
+.partner-logo--kr3w {
+  --partner-logo-height: 58px;
+  --partner-logo-width: 210px;
+}
+
+.partner-logo--mdue {
+  --partner-logo-height: 68px;
+  --partner-logo-width: 132px;
 }
 
 .transmission-tile:hover,
@@ -1817,17 +1855,48 @@ section[id] {
   }
 
   .partners-row {
-    width: min(100%, 1440px);
-    gap: clamp(56px, 6vw, 132px);
+    width: min(100%, 1280px);
+    column-gap: clamp(36px, 4.8vw, 92px);
+    row-gap: 28px;
   }
 
   .partner-logo {
-    width: min(100%, 250px);
-    min-height: 100px;
+    min-height: 108px;
   }
 
-  .partner-logo img {
-    height: 64px;
+  .partner-logo--cornerman {
+    --partner-logo-height: 64px;
+    --partner-logo-width: 250px;
+  }
+
+  .partner-logo--cabmma {
+    --partner-logo-height: 66px;
+    --partner-logo-width: 196px;
+  }
+
+  .partner-logo--joyagear {
+    --partner-logo-height: 68px;
+    --partner-logo-width: 104px;
+  }
+
+  .partner-logo--timeout {
+    --partner-logo-height: 72px;
+    --partner-logo-width: 204px;
+  }
+
+  .partner-logo--fighter-stat {
+    --partner-logo-height: 66px;
+    --partner-logo-width: 236px;
+  }
+
+  .partner-logo--kr3w {
+    --partner-logo-height: 64px;
+    --partner-logo-width: 232px;
+  }
+
+  .partner-logo--mdue {
+    --partner-logo-height: 72px;
+    --partner-logo-width: 146px;
   }
 
   .footer {
@@ -3088,17 +3157,57 @@ section[id] {
   }
 
   .partners-row {
-    gap: 22px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px 16px;
+    width: min(100%, 420px);
   }
 
   .partner-logo {
-    min-width: min(42vw, 170px);
-    min-height: 66px;
+    grid-column: auto;
+    min-height: 76px;
   }
 
-  .partner-logo img {
-    height: 42px;
-    max-height: none;
+  .partner-logo:nth-child(5) {
+    grid-column: auto;
+  }
+
+  .partner-logo:nth-child(7) {
+    grid-column: 1 / -1;
+  }
+
+  .partner-logo--cornerman {
+    --partner-logo-height: 44px;
+    --partner-logo-width: 158px;
+  }
+
+  .partner-logo--cabmma {
+    --partner-logo-height: 48px;
+    --partner-logo-width: 136px;
+  }
+
+  .partner-logo--joyagear {
+    --partner-logo-height: 50px;
+    --partner-logo-width: 76px;
+  }
+
+  .partner-logo--timeout {
+    --partner-logo-height: 50px;
+    --partner-logo-width: 136px;
+  }
+
+  .partner-logo--fighter-stat {
+    --partner-logo-height: 48px;
+    --partner-logo-width: 154px;
+  }
+
+  .partner-logo--kr3w {
+    --partner-logo-height: 46px;
+    --partner-logo-width: 150px;
+  }
+
+  .partner-logo--mdue {
+    --partner-logo-height: 50px;
+    --partner-logo-width: 92px;
   }
 
   .section--sponsors > .landing-button {

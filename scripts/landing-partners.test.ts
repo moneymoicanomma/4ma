@@ -10,6 +10,10 @@ const siteAssetsSource = readFileSync(
   new URL("../lib/site-assets.ts", import.meta.url),
   "utf8"
 );
+const globalsCssSource = readFileSync(
+  new URL("../app/globals.css", import.meta.url),
+  "utf8"
+);
 
 const expectedPartners = [
   {
@@ -56,4 +60,12 @@ describe("landing page partner sponsors", () => {
       );
     });
   }
+
+  it("centers the sponsor logo wall as four logos over three on desktop", () => {
+    assert.ok(
+      globalsCssSource.includes("grid-template-columns: repeat(8, minmax(0, 1fr))")
+    );
+    assert.ok(globalsCssSource.includes(".partner-logo:nth-child(5)"));
+    assert.ok(globalsCssSource.includes("grid-column: 2 / span 2"));
+  });
 });
