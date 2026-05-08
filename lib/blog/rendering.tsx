@@ -1,5 +1,34 @@
 import type { BlogContentBlock } from "@/lib/contracts/blog";
 
+export function getBlogSafeHref(value: string | null | undefined) {
+  const href = value?.trim();
+
+  if (!href) {
+    return null;
+  }
+
+  if (href.startsWith("/") && !href.startsWith("//")) {
+    return href;
+  }
+
+  try {
+    const url = new URL(href);
+
+    if (
+      url.protocol === "http:" ||
+      url.protocol === "https:" ||
+      url.protocol === "mailto:" ||
+      url.protocol === "tel:"
+    ) {
+      return url.toString();
+    }
+  } catch {
+    return null;
+  }
+
+  return null;
+}
+
 function getSafeExternalRel(url: string) {
   return url.startsWith("http") ? "noreferrer" : undefined;
 }
@@ -41,20 +70,32 @@ export function BlogBlocks({ blocks }: Readonly<{ blocks: readonly BlogContentBl
         }
 
         if (block.type === "embed") {
+          const href = getBlogSafeHref(block.url);
+
           return (
             <p key={block.id}>
-              <a href={block.url} rel={getSafeExternalRel(block.url)}>
-                {block.title || block.url}
-              </a>
+              {href ? (
+                <a href={href} rel={getSafeExternalRel(href)}>
+                  {block.title || href}
+                </a>
+              ) : (
+                block.title || block.url
+              )}
             </p>
           );
         }
 
+        const href = getBlogSafeHref(block.url);
+
         return (
           <p key={block.id}>
-            <a href={block.url} rel={getSafeExternalRel(block.url)}>
-              {block.label}
-            </a>
+            {href ? (
+              <a href={href} rel={getSafeExternalRel(href)}>
+                {block.label}
+              </a>
+            ) : (
+              block.label
+            )}
           </p>
         );
       })}

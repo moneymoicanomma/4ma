@@ -11,10 +11,39 @@ function resolveUrl(value: string) {
   return `${siteUrl}${value.startsWith("/") ? value : `/${value}`}`;
 }
 
+export function resolveBlogCanonical(value: string | null | undefined, fallbackPath: string) {
+  const fallback = fallbackPath.startsWith("/") && !fallbackPath.startsWith("//") ? fallbackPath : "/";
+  const normalized = value?.trim();
+
+  if (!normalized) {
+    return fallback;
+  }
+
+  if (normalized.startsWith("/") && !normalized.startsWith("//")) {
+    return normalized;
+  }
+
+  try {
+    const url = new URL(normalized);
+
+    if (url.protocol === "http:" || url.protocol === "https:") {
+      return url.toString();
+    }
+  } catch {
+    return fallback;
+  }
+
+  return fallback;
+}
+
+export function serializeJsonLdForScript(input: unknown) {
+  return JSON.stringify(input).replace(/</g, "\\u003c");
+}
+
 export function createBlogPostMetadata(post: BlogPostDetail): Metadata {
   const title = post.seoTitle || `${post.title} | ${siteName}`;
   const description = post.seoDescription || post.description;
-  const canonical = post.canonicalUrlOverride || `/blog/${post.slug}`;
+  const canonical = resolveBlogCanonical(post.canonicalUrlOverride, `/blog/${post.slug}`);
   const image = post.coverUrl || defaultOgImagePath;
   const imageAlt = post.coverAltText || post.title;
 

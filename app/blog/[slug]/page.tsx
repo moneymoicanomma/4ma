@@ -3,7 +3,11 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
 import { BlogBlocks } from "@/lib/blog/rendering";
-import { createBlogPostJsonLd, createBlogPostMetadata } from "@/lib/blog/metadata";
+import {
+  createBlogPostJsonLd,
+  createBlogPostMetadata,
+  serializeJsonLdForScript
+} from "@/lib/blog/metadata";
 import { normalizeBlogSlug } from "@/lib/contracts/blog";
 import { getBlogRedirectForSlug, getPublicBlogPostBySlug } from "@/lib/server/blog";
 import { siteAsset } from "@/lib/site-assets";
@@ -83,7 +87,7 @@ export default async function BlogPostPage({
   return (
     <main className={styles.page}>
       <script
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: serializeJsonLdForScript(jsonLd) }}
         type="application/ld+json"
       />
 
