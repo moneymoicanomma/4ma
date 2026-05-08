@@ -91,6 +91,34 @@ describe("blog contracts", () => {
     assert.match(validation.message, /Alt text/);
   });
 
+  it("rejects publishing with descriptions shorter than the database constraint", () => {
+    const validation = validateBlogPostForPublish({
+      title: "Titulo valido",
+      slug: "titulo-valido",
+      description: "Descricao curta com 39 caracteres.",
+      authorName: "Equipe Money Moicano MMA",
+      coverMediaId: "00000000-0000-0000-0000-000000000000",
+      coverAltText: "Moicano em treino",
+      contentBlocks: [{ id: "p", type: "paragraph", text: "Conteudo real do post." }],
+      tags: ["MMA"]
+    });
+
+    assert.equal(validation.ok, false);
+    assert.match(validation.message, /Descrição/);
+  });
+
+  it("rejects malformed media ids before persistence", () => {
+    const parsed = parseBlogPostSavePayload({
+      title: "Novo Post",
+      slug: "novo-post",
+      coverMediaId: "not-a-uuid",
+      description: "Descricao longa o suficiente para ser usada no blog publico."
+    });
+
+    assert.equal(parsed.ok, false);
+    assert.match(parsed.message, /mídia/);
+  });
+
   it("normalizes missing block ids deterministically", () => {
     assert.deepEqual(normalizeBlogBlocks([{ type: "paragraph", text: "Sem id." }]), [
       { id: "block-0", type: "paragraph", text: "Sem id." }

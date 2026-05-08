@@ -58,6 +58,7 @@ export type BlogPostSummary = {
 
 export type BlogPostDetail = BlogPostSummary &
   BlogSeoMetadata & {
+    coverMediaId: string | null;
     coverCaption: string | null;
     contentBlocks: BlogContentBlock[];
     markdown: string;
@@ -117,6 +118,7 @@ const MAX_BLOCKS = 120;
 const MAX_LIST_ITEMS = 30;
 const MAX_TAGS = 12;
 const MAX_INTERNAL_KEYWORDS = 30;
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 function normalizeShortText(input: unknown) {
   return typeof input === "string" ? input.trim().replace(/\s+/g, " ") : "";
@@ -134,6 +136,22 @@ function normalizeOptionalShortText(input: unknown) {
 function normalizeNullableId(input: unknown) {
   const value = normalizeShortText(input);
   return value || null;
+}
+
+function parseNullableUuid(input: unknown, label: string): { ok: true; value: string | null } | { ok: false; message: string } {
+  const value = normalizeNullableId(input);
+
+  if (!value || UUID_PATTERN.test(value)) {
+    return {
+      ok: true,
+      value
+    };
+  }
+
+  return {
+    ok: false,
+    message: `${label} de mídia inválido.`
+  };
 }
 
 function normalizeNullableShortText(input: unknown, maxLength: number) {
@@ -452,6 +470,8 @@ export function parseBlogPostSavePayload(input: unknown): BlogPostSaveParseResul
   const description = truncateText(normalizeLongText(input.description), MAX_DESCRIPTION_LENGTH);
   const authorName =
     truncateText(normalizeShortText(input.authorName), MAX_AUTHOR_LENGTH) || BLOG_DEFAULT_AUTHOR;
+  const coverMediaId = parseNullableUuid(input.coverMediaId, "ID da capa");
+  const socialMediaId = parseNullableUuid(input.socialMediaId, "ID social");
   const coverAltText = normalizeNullableShortText(input.coverAltText, MAX_ALT_TEXT_LENGTH);
   const tags = normalizeStringList(input.tags, normalizeBlogTagName, normalizeBlogTag, MAX_TAGS);
   const internalKeywords = normalizeStringList(
@@ -481,6 +501,20 @@ export function parseBlogPostSavePayload(input: unknown): BlogPostSaveParseResul
     };
   }
 
+  if (!coverMediaId.ok) {
+    return {
+      ok: false,
+      message: coverMediaId.message
+    };
+  }
+
+  if (!socialMediaId.ok) {
+    return {
+      ok: false,
+      message: socialMediaId.message
+    };
+  }
+
   if (coverAltText && coverAltText.length < 3) {
     return {
       ok: false,
@@ -495,7 +529,7 @@ export function parseBlogPostSavePayload(input: unknown): BlogPostSaveParseResul
       slug,
       description,
       authorName,
-      coverMediaId: normalizeNullableId(input.coverMediaId),
+      coverMediaId: coverMediaId.value,
       coverAltText,
       coverCaption: normalizeNullableLongText(input.coverCaption, MAX_CAPTION_LENGTH),
       isFeatured: input.isFeatured === true,
@@ -508,7 +542,7 @@ export function parseBlogPostSavePayload(input: unknown): BlogPostSaveParseResul
       internalKeywords,
       socialTitle: normalizeNullableShortText(input.socialTitle, MAX_SHORT_TEXT_LENGTH),
       socialDescription: normalizeNullableLongText(input.socialDescription, MAX_DESCRIPTION_LENGTH),
-      socialMediaId: normalizeNullableId(input.socialMediaId)
+      socialMediaId: socialMediaId.value
     }
   };
 }
@@ -539,7 +573,7 @@ export function validateBlogPostForPublish(input: {
     }) ??
     validateRequiredText(description, {
       label: "Descrição",
-      minLength: 20,
+      minLength: 40,
       maxLength: MAX_DESCRIPTION_LENGTH
     }) ??
     validateRequiredText(authorName, {
