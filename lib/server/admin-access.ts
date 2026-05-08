@@ -2,9 +2,15 @@ import "server-only";
 
 import type { AdminDatabaseTableId } from "@/lib/server/admin-database";
 
-export type AdminBackofficeRole = "admin" | "operator" | "auditor";
+export type AdminBackofficeRole = "admin" | "operator" | "auditor" | "public_relations";
 
 const AUDITOR_DATABASE_TABLE_IDS: readonly AdminDatabaseTableId[] = [
+  "fighter-applications",
+  "event-fighter-intakes",
+];
+
+const PUBLIC_RELATIONS_DATABASE_TABLE_IDS: readonly AdminDatabaseTableId[] = [
+  "newsletter-subscriptions",
   "fighter-applications",
   "event-fighter-intakes",
 ];
@@ -19,7 +25,7 @@ const FULL_DATABASE_TABLE_IDS: readonly AdminDatabaseTableId[] = [
 ];
 
 export function getAdminDefaultRedirectPathForRole(role: AdminBackofficeRole) {
-  if (role === "auditor") {
+  if (role === "auditor" || role === "public_relations") {
     return "/admin/database";
   }
 
@@ -27,7 +33,7 @@ export function getAdminDefaultRedirectPathForRole(role: AdminBackofficeRole) {
 }
 
 export function canAccessFantasyAdmin(role: AdminBackofficeRole) {
-  return role !== "auditor";
+  return role !== "auditor" && role !== "public_relations";
 }
 
 export function getVisibleAdminDatabaseTableIds(
@@ -35,6 +41,10 @@ export function getVisibleAdminDatabaseTableIds(
 ): readonly AdminDatabaseTableId[] {
   if (role === "auditor") {
     return AUDITOR_DATABASE_TABLE_IDS;
+  }
+
+  if (role === "public_relations") {
+    return PUBLIC_RELATIONS_DATABASE_TABLE_IDS;
   }
 
   return FULL_DATABASE_TABLE_IDS;
@@ -48,5 +58,5 @@ export function canAccessAdminDatabaseTable(
 }
 
 export function shouldLimitEventFighterIntakesToCurrentEvent(role: AdminBackofficeRole) {
-  return role === "auditor";
+  return role === "auditor" || role === "public_relations";
 }

@@ -71,7 +71,7 @@ export default async function AdminDatabaseRecordPage({
   const canEditFighterApplicationInterest =
     tableId === "fighter-applications" &&
     data.databaseConfigured &&
-    identity.role !== "auditor";
+    (identity.role === "admin" || identity.role === "operator");
 
   return (
     <main className={styles.page}>

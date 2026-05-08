@@ -191,7 +191,7 @@ export async function POST(request: NextRequest) {
   if (databaseConfigured) {
     const auditContext = buildRequestAuditContext(request);
     const authenticatedSession = await authenticateAccountWithPassword({
-      acceptedRoles: ["admin", "operator", "auditor"],
+      acceptedRoles: ["admin", "operator", "auditor", "public_relations"],
       email: identifier.toLowerCase(),
       password,
       requestContext: auditContext,

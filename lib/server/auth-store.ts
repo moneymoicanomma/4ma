@@ -6,7 +6,7 @@ import { withDatabaseTransaction, queryDatabase } from "@/lib/server/database";
 import type { RequestAuditContext } from "@/lib/server/request-context";
 import { verifyPasswordHash } from "@/lib/server/password-hash";
 
-type AccountRole = "admin" | "operator" | "auditor" | "fighter";
+type AccountRole = "admin" | "operator" | "auditor" | "public_relations" | "fighter";
 type SessionKind = "backoffice" | "fighter_portal";
 
 type AccountRow = {
