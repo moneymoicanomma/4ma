@@ -5,7 +5,7 @@ import { getSiteAssetIntrinsicDimensions, siteAsset } from "@/lib/site-assets";
 import { getServerEnv } from "@/lib/server/env";
 import {
   fetchInstagramFeed,
-  type InstagramFeedPost
+  type InstagramFeedPost,
 } from "@/lib/server/instagram";
 
 import { DeferredNewsletterSignupForm } from "./components/deferred-newsletter-signup-form";
@@ -19,7 +19,7 @@ const LandingMotionController = dynamic(() =>
   ),
 );
 
-const heroImage = siteAsset("hero-main-v4.webp");
+const heroImage = siteAsset("hero-main-v5.webp");
 const brandLogo = siteAsset("logo money moicano mma.svg");
 const brandLogoWide = siteAsset("logo money moicano mma extenso.svg");
 const streamIcon = siteAsset(
@@ -357,7 +357,7 @@ function formatInstagramDate(timestamp: string) {
 
   return new Intl.DateTimeFormat("pt-BR", {
     day: "2-digit",
-    month: "short"
+    month: "short",
   })
     .format(date)
     .replace(".", "");
@@ -388,7 +388,7 @@ function getInstagramPostLabel(post: InstagramFeedPost) {
 }
 
 function InstagramFeedSection({
-  posts
+  posts,
 }: Readonly<{
   posts: InstagramFeedPost[];
 }>) {

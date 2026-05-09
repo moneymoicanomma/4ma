@@ -10,14 +10,18 @@ import { createPageMetadata } from "@/lib/seo";
 import styles from "./page.module.css";
 
 const brandLogoWide = siteAsset("logo money moicano mma extenso.svg");
-const heroImage = siteAsset("hero-main-v3.webp");
+const heroImage = siteAsset("hero-main-v5.webp");
 
 export const metadata: Metadata = createPageMetadata({
   path: "/seja-um-parceiro",
   title: "Seja um parceiro | Money Moicano MMA",
   description:
     "Canal comercial para marcas e empresas interessadas em patrocinio, ativacoes e parceria com o Money Moicano MMA.",
-  keywords: ["patrocinio esportivo", "parceria comercial", "ativacao de marca em evento"]
+  keywords: [
+    "patrocinio esportivo",
+    "parceria comercial",
+    "ativacao de marca em evento",
+  ],
 });
 
 export default function SejaUmParceiroPage() {
@@ -26,7 +30,11 @@ export default function SejaUmParceiroPage() {
       <LandingMotionController />
 
       <header className={styles.topbar}>
-        <Link aria-label="Voltar para a página principal do Money Moicano MMA" className={styles.brand} href="/">
+        <Link
+          aria-label="Voltar para a página principal do Money Moicano MMA"
+          className={styles.brand}
+          href="/"
+        >
           <img alt="Money Moicano MMA" src={brandLogoWide} />
         </Link>
 
@@ -61,23 +69,32 @@ export default function SejaUmParceiroPage() {
               <span className={styles.titleAccent}>no MMMMA</span>
             </h1>
             <p className={styles.heroBody}>
-              Se a sua empresa quer conversar sobre patrocínio, ativações ou presença de
-              marca no evento, deixe seu contato. A equipe avalia o encaixe e retorna para
-              seguir a conversa comercial.
+              Se a sua empresa quer conversar sobre patrocínio, ativações ou
+              presença de marca no evento, deixe seu contato. A equipe avalia o
+              encaixe e retorna para seguir a conversa comercial.
             </p>
 
             <div className={styles.heroPoints}>
               <div className={styles.heroPoint}>
                 <span className={styles.heroPointNumber}>01</span>
-                <p>Arena, mídia e conteúdo social no mesmo ecossistema de visibilidade.</p>
+                <p>
+                  Arena, mídia e conteúdo social no mesmo ecossistema de
+                  visibilidade.
+                </p>
               </div>
               <div className={styles.heroPoint}>
                 <span className={styles.heroPointNumber}>02</span>
-                <p>Espaço para patrocínio, ativação presencial, collab e ação de marca.</p>
+                <p>
+                  Espaço para patrocínio, ativação presencial, collab e ação de
+                  marca.
+                </p>
               </div>
               <div className={styles.heroPoint}>
                 <span className={styles.heroPointNumber}>03</span>
-                <p>Se houver fit, a equipe retorna para discutir formato, entrega e timing.</p>
+                <p>
+                  Se houver fit, a equipe retorna para discutir formato, entrega
+                  e timing.
+                </p>
               </div>
             </div>
           </div>
@@ -87,24 +104,34 @@ export default function SejaUmParceiroPage() {
       <section className={styles.formSection} id="formulario">
         <div className={styles.formIntro} data-reveal>
           <p className={styles.formKicker}>Formulário comercial</p>
-          <h2 className={styles.formTitle}>Deixe um contato direto e seguimos dali.</h2>
+          <h2 className={styles.formTitle}>
+            Deixe um contato direto e seguimos dali.
+          </h2>
           <p className={styles.formBody}>
-            Esse formulário serve para abrir a conversa. Sem briefing obrigatório, sem fricção
-            desnecessária no primeiro contato.
+            Esse formulário serve para abrir a conversa. Sem briefing
+            obrigatório, sem fricção desnecessária no primeiro contato.
           </p>
 
           <div className={styles.steps}>
             <div className={styles.step}>
               <span className={styles.stepBadge}>1</span>
-              <p>Preencha os dados de quem toca ou aprova a parceria dentro da empresa.</p>
+              <p>
+                Preencha os dados de quem toca ou aprova a parceria dentro da
+                empresa.
+              </p>
             </div>
             <div className={styles.step}>
               <span className={styles.stepBadge}>2</span>
-              <p>Se quiser, deixe uma mensagem curta com o interesse da marca.</p>
+              <p>
+                Se quiser, deixe uma mensagem curta com o interesse da marca.
+              </p>
             </div>
             <div className={styles.step}>
               <span className={styles.stepBadge}>3</span>
-              <p>Se fizer sentido para o evento, a equipe retorna por e-mail ou WhatsApp.</p>
+              <p>
+                Se fizer sentido para o evento, a equipe retorna por e-mail ou
+                WhatsApp.
+              </p>
             </div>
           </div>
         </div>

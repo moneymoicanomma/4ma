@@ -9,7 +9,7 @@ import { siteAsset } from "@/lib/site-assets";
 import styles from "./site-page-shell.module.css";
 
 const brandLogoWide = siteAsset("logo money moicano mma extenso.svg");
-const heroImage = siteAsset("hero-main-v3.webp");
+const heroImage = siteAsset("hero-main-v5.webp");
 
 type PageAction = {
   href: string;
@@ -26,7 +26,7 @@ type HeroAside = {
 
 function ActionLink({
   action,
-  className
+  className,
 }: Readonly<{
   action: PageAction;
   className: string;
@@ -55,7 +55,7 @@ export function SitePageShell({
   heroAside,
   contentId = "conteudo",
   sidebar,
-  children
+  children,
 }: Readonly<{
   eyebrow: string;
   title: string;
@@ -72,10 +72,11 @@ export function SitePageShell({
     ({
       href: `#${contentId}`,
       label: "Abrir conteúdo",
-      variant: "primary"
+      variant: "primary",
     } satisfies PageAction);
 
-  const secondaryActions = actions?.filter((action) => action.variant === "secondary") ?? [];
+  const secondaryActions =
+    actions?.filter((action) => action.variant === "secondary") ?? [];
 
   return (
     <main className={styles.page}>
@@ -116,14 +117,20 @@ export function SitePageShell({
             <p className={styles.eyebrow}>{eyebrow}</p>
             <h1 className={styles.title}>
               {title}
-              {accent ? <span className={styles.titleAccent}>{accent}</span> : null}
+              {accent ? (
+                <span className={styles.titleAccent}>{accent}</span>
+              ) : null}
             </h1>
             <p className={styles.heroBody}>{description}</p>
 
             <div className={styles.heroActions}>
               <ActionLink action={ctaAction} className={styles.primaryLink} />
               {secondaryActions.map((action) => (
-                <ActionLink action={action} className={styles.secondaryLink} key={`${action.href}-${action.label}`} />
+                <ActionLink
+                  action={action}
+                  className={styles.secondaryLink}
+                  key={`${action.href}-${action.label}`}
+                />
               ))}
             </div>
           </div>
@@ -148,7 +155,9 @@ export function SitePageShell({
 
       <section className={styles.contentSection} id={contentId}>
         <div className={styles.contentWrap}>
-          <div className={`${styles.contentGrid} ${sidebar ? styles.hasSidebar : ""}`.trim()}>
+          <div
+            className={`${styles.contentGrid} ${sidebar ? styles.hasSidebar : ""}`.trim()}
+          >
             <div className={styles.article} data-reveal>
               {children}
             </div>

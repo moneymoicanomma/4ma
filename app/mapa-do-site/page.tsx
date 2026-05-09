@@ -7,27 +7,29 @@ import {
   homepageSectionLinks,
   publicSiteRoutes,
   restrictedAreaNotes,
-  siteUrl
+  siteUrl,
 } from "@/lib/site";
 import { siteAsset } from "@/lib/site-assets";
 
 import styles from "./page.module.css";
 
 const brandLogoWide = siteAsset("logo money moicano mma extenso.svg");
-const heroImage = siteAsset("hero-main-v3.webp");
-const publicEntryPoints = publicSiteRoutes.filter((route) => route.href !== "/mapa-do-site");
+const heroImage = siteAsset("hero-main-v5.webp");
+const publicEntryPoints = publicSiteRoutes.filter(
+  (route) => route.href !== "/mapa-do-site",
+);
 
 export const metadata: Metadata = {
   title: "Mapa Interno do Site | Money Moicano MMA",
   description:
     "Índice interno com os acessos abertos e arquivos técnicos do Money Moicano MMA.",
   alternates: {
-    canonical: "/mapa-do-site"
+    canonical: "/mapa-do-site",
   },
   robots: {
     index: false,
-    follow: false
-  }
+    follow: false,
+  },
 };
 
 export default function SiteMapPage() {
@@ -75,9 +77,9 @@ export default function SiteMapPage() {
               <span className={styles.titleAccent}>Interno</span>
             </h1>
             <p className={styles.heroBody}>
-              Esta área existe só para consulta interna rápida. Ela organiza os acessos
-              abertos e os arquivos técnicos sem expor esse índice na navegação pública
-              do site.
+              Esta área existe só para consulta interna rápida. Ela organiza os
+              acessos abertos e os arquivos técnicos sem expor esse índice na
+              navegação pública do site.
             </p>
 
             <div className={styles.heroActions}>
@@ -113,8 +115,9 @@ export default function SiteMapPage() {
             </dl>
 
             <p className={styles.asideBody}>
-              Rotas privadas, operacionais e administrativas ficam fora da indexação
-              pública. Este mapa também não entra mais como atalho no footer.
+              Rotas privadas, operacionais e administrativas ficam fora da
+              indexação pública. Este mapa também não entra mais como atalho no
+              footer.
             </p>
           </aside>
         </div>
@@ -129,7 +132,9 @@ export default function SiteMapPage() {
             <ol className={styles.routeList}>
               {publicEntryPoints.map((route, index) => (
                 <li className={styles.routeItem} key={route.href}>
-                  <span className={styles.routeIndex}>{String(index + 1).padStart(2, "0")}</span>
+                  <span className={styles.routeIndex}>
+                    {String(index + 1).padStart(2, "0")}
+                  </span>
 
                   <div className={styles.routeBody}>
                     <div className={styles.routeHeader}>
@@ -156,7 +161,9 @@ export default function SiteMapPage() {
                 <li className={styles.sectionItem} key={section.href}>
                   <Link className={styles.sectionLink} href={section.href}>
                     <span className={styles.sectionLabel}>{section.label}</span>
-                    <span className={styles.sectionDescription}>{section.description}</span>
+                    <span className={styles.sectionDescription}>
+                      {section.description}
+                    </span>
                   </Link>
                 </li>
               ))}
@@ -169,11 +176,14 @@ export default function SiteMapPage() {
         <div className={styles.technicalGrid}>
           <div className={styles.technicalCopy} data-reveal>
             <p className={styles.sectionKicker}>Indexação técnica</p>
-            <h2 className={styles.sectionTitle}>Indexação organizada sem expor o índice</h2>
+            <h2 className={styles.sectionTitle}>
+              Indexação organizada sem expor o índice
+            </h2>
             <p className={styles.technicalBody}>
-              O site mantém um <code>sitemap.xml</code> com as rotas abertas e um
-              <code>robots.txt</code> que bloqueia áreas privadas. Este índice serve só
-              como apoio interno e não entra na descoberta pública.
+              O site mantém um <code>sitemap.xml</code> com as rotas abertas e
+              um
+              <code>robots.txt</code> que bloqueia áreas privadas. Este índice
+              serve só como apoio interno e não entra na descoberta pública.
             </p>
             <p className={styles.technicalMeta}>Domínio canônico: {siteUrl}</p>
           </div>
