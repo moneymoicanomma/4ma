@@ -89,6 +89,45 @@
   justify-content: space-between;
 }
 
+.sortButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 28px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  letter-spacing: inherit;
+  text-align: left;
+  text-transform: inherit;
+  cursor: pointer;
+}
+
+.sortButton:hover,
+.sortButton:focus-visible {
+  color: #ffffff;
+  outline: none;
+}
+
+.sortButton:focus-visible .sortIcon {
+  outline: 2px solid rgba(232, 24, 26, 0.72);
+  outline-offset: 3px;
+}
+
+.sortIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  color: rgba(255, 120, 120, 0.92);
+  font-size: 11px;
+  line-height: 1;
+}
+
 .recordHint,
 .feedback {
   margin: 0;

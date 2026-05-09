@@ -1128,6 +1128,7 @@ async function loadAdminFighterApplicationsTable() {
             fighterApplication: {
               fullName: normalizeNullableText(row.fullName),
               nickname: normalizeNullableText(row.nickname),
+              weightClass: normalizeNullableText(row.weightClass),
               city: normalizeNullableText(row.city),
               stateCode: normalizeNullableText(row.stateCode),
               competitionHistory: normalizeNullableText(row.competitionHistory),
@@ -2523,6 +2524,7 @@ async function loadAdminFighterApplicationsTableData() {
           fighterApplication: {
             fullName: normalizeNullableText(row.fullName),
             nickname: normalizeNullableText(row.nickname),
+            weightClass: normalizeNullableText(row.weightClass),
             city: normalizeNullableText(row.city),
             stateCode: normalizeNullableText(row.stateCode),
             competitionHistory: normalizeNullableText(row.competitionHistory),

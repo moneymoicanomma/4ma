@@ -6,12 +6,15 @@ import { useRouter } from "next/navigation";
 
 import { BRAZILIAN_STATES } from "@/lib/contracts/brazilian-states";
 import {
+  FIGHTER_APPLICATION_EDITORIAL_INTEREST_FILTER_OPTIONS,
   FIGHTER_APPLICATION_EDITORIAL_INTEREST_BUTTONS,
   filterFighterApplicationRows,
   isFighterRecordFilterValid,
   normalizeFighterApplicationEditorialInterest,
+  sortFighterApplicationRows,
   type FighterApplicationAdminListRow,
   type FighterApplicationFilters,
+  type FighterApplicationSort,
 } from "@/lib/admin/fighter-application-list";
 
 import tableStyles from "./admin-database-table-view.module.css";
@@ -76,9 +79,30 @@ function emptyFilters(): FighterApplicationFilters {
     name: "",
     city: "",
     state: "",
+    weightClass: "",
+    editorialInterest: "",
     minRecord: "",
     maxRecord: "",
   };
+}
+
+function buildWeightClassOptions(rows: readonly FighterApplicationAdminListRow[]) {
+  const options = new Map<string, string>();
+
+  for (const row of rows) {
+    const value = row.fighterApplication?.weightClass?.trim();
+
+    if (value) {
+      options.set(value, row.cells.weightClass || value);
+    }
+  }
+
+  return Array.from(options, ([value, label]) => ({ value, label })).sort((left, right) =>
+    left.label.localeCompare(right.label, "pt-BR", {
+      numeric: true,
+      sensitivity: "base",
+    }),
+  );
 }
 
 export function FighterApplicationInterestInlineEditor({
@@ -279,9 +303,12 @@ export function FighterApplicationsAdminTable({
   detailHrefBase,
 }: Readonly<FighterApplicationsAdminTableProps>) {
   const [filters, setFilters] = useState<FighterApplicationFilters>(() => emptyFilters());
-  const filteredRows = useMemo(
-    () => filterFighterApplicationRows(rows, filters),
-    [filters, rows],
+  const [sort, setSort] = useState<FighterApplicationSort | null>(null);
+  const weightClassOptions = useMemo(() => buildWeightClassOptions(rows), [rows]);
+  const filteredRows = useMemo(() => filterFighterApplicationRows(rows, filters), [filters, rows]);
+  const sortedRows = useMemo(
+    () => sortFighterApplicationRows(filteredRows, sort),
+    [filteredRows, sort],
   );
   const hasActiveFilters = Object.values(filters).some((value) => value.trim());
   const hasInvalidRecordFilter =
@@ -293,6 +320,30 @@ export function FighterApplicationsAdminTable({
       ...currentFilters,
       [key]: value,
     }));
+  }
+
+  function toggleSort(columnKey: string) {
+    setSort((currentSort) => {
+      if (currentSort?.key === columnKey) {
+        return {
+          key: columnKey,
+          direction: currentSort.direction === "asc" ? "desc" : "asc",
+        };
+      }
+
+      return {
+        key: columnKey,
+        direction: "asc",
+      };
+    });
+  }
+
+  function getColumnSortDirection(columnKey: string) {
+    if (sort?.key !== columnKey) {
+      return "none";
+    }
+
+    return sort.direction === "asc" ? "ascending" : "descending";
   }
 
   return (
@@ -338,6 +389,38 @@ export function FighterApplicationsAdminTable({
           </label>
 
           <label className={styles.filterField}>
+            <span>Categoria</span>
+            <select
+              className={styles.filterSelect}
+              value={filters.weightClass}
+              onChange={(event) => updateFilter("weightClass", event.target.value)}
+            >
+              <option value="">Todas</option>
+              {weightClassOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className={styles.filterField}>
+            <span>Interesse MMMMA</span>
+            <select
+              className={styles.filterSelect}
+              value={filters.editorialInterest}
+              onChange={(event) => updateFilter("editorialInterest", event.target.value)}
+            >
+              <option value="">Todos</option>
+              {FIGHTER_APPLICATION_EDITORIAL_INTEREST_FILTER_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className={styles.filterField}>
             <span>Cartel mínimo</span>
             <input
               className={styles.filterInput}
@@ -371,7 +454,7 @@ export function FighterApplicationsAdminTable({
 
         <div className={styles.filterFooter}>
           <span className={styles.filterMeta}>
-            {filteredRows.length} de {rows.length} cadastros
+            {sortedRows.length} de {rows.length} cadastros
           </span>
           {hasInvalidRecordFilter ? (
             <p className={styles.recordHint} role="status">
@@ -381,21 +464,38 @@ export function FighterApplicationsAdminTable({
         </div>
       </section>
 
-      {filteredRows.length > 0 ? (
+      {sortedRows.length > 0 ? (
         <div className={tableStyles.tableScroller}>
           <table className={tableStyles.table}>
             <thead>
               <tr>
                 {columns.map((column) => (
-                  <th key={`fighter-applications-${column.key}`} scope="col">
-                    {column.label}
+                  <th
+                    aria-sort={getColumnSortDirection(column.key)}
+                    key={`fighter-applications-${column.key}`}
+                    scope="col"
+                  >
+                    <button
+                      className={styles.sortButton}
+                      type="button"
+                      onClick={() => toggleSort(column.key)}
+                    >
+                      <span>{column.label}</span>
+                      <span aria-hidden="true" className={styles.sortIcon}>
+                        {sort?.key === column.key
+                          ? sort.direction === "asc"
+                            ? "▲"
+                            : "▼"
+                          : "↕"}
+                      </span>
+                    </button>
                   </th>
                 ))}
                 <th scope="col">Ações</th>
               </tr>
             </thead>
             <tbody>
-              {filteredRows.map((row) => {
+              {sortedRows.map((row) => {
                 const rowLabel = getRowLabel(row);
                 const detailHref = `${detailHrefBase}/${row.id}`;
 

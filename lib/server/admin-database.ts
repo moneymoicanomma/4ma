@@ -1135,6 +1135,7 @@ async function loadFighterApplicationsTable() {
             fighterApplication: {
               fullName: normalizeText(row.fullName),
               nickname: normalizeText(row.nickname),
+              weightClass: normalizeText(row.weightClass),
               city: normalizeText(row.city),
               stateCode: normalizeText(row.stateCode),
               competitionHistory: normalizeText(row.competitionHistory),
@@ -1799,6 +1800,7 @@ async function loadFighterApplicationsTableDataDirect(): Promise<AdminDatabaseTa
           fighterApplication: {
             fullName: normalizeText(row.fullName),
             nickname: normalizeText(row.nickname),
+            weightClass: normalizeText(row.weightClass),
             city: normalizeText(row.city),
             stateCode: normalizeText(row.stateCode),
             competitionHistory: normalizeText(row.competitionHistory),

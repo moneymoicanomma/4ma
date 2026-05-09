@@ -9,6 +9,11 @@ export const FIGHTER_APPLICATION_EDITORIAL_INTEREST_BUTTONS = [
   { value: "", label: "Sem classificação" },
   ...FIGHTER_APPLICATION_EDITORIAL_INTEREST_OPTIONS,
 ] as const;
+export const FIGHTER_APPLICATION_NO_INTEREST_FILTER_VALUE = "__none";
+export const FIGHTER_APPLICATION_EDITORIAL_INTEREST_FILTER_OPTIONS = [
+  ...FIGHTER_APPLICATION_EDITORIAL_INTEREST_OPTIONS,
+  { value: FIGHTER_APPLICATION_NO_INTEREST_FILTER_VALUE, label: "Sem classificação" },
+] as const;
 
 export type FighterApplicationEditorialInterest =
   (typeof FIGHTER_APPLICATION_EDITORIAL_INTEREST_OPTIONS)[number]["value"];
@@ -16,6 +21,7 @@ export type FighterApplicationEditorialInterest =
 export type FighterApplicationAdminRowData = {
   fullName: string | null;
   nickname: string | null;
+  weightClass: string | null;
   city: string | null;
   stateCode: string | null;
   competitionHistory: string | null;
@@ -32,8 +38,15 @@ export type FighterApplicationFilters = {
   name: string;
   city: string;
   state: string;
+  weightClass: string;
+  editorialInterest: string;
   minRecord: string;
   maxRecord: string;
+};
+
+export type FighterApplicationSort = {
+  key: string;
+  direction: "asc" | "desc";
 };
 
 export type FighterRecord = {
@@ -52,6 +65,10 @@ const EDITORIAL_INTEREST_LABEL_TO_VALUE = new Map(
     option.value,
   ]),
 );
+const collator = new Intl.Collator("pt-BR", {
+  numeric: true,
+  sensitivity: "base",
+});
 const recordPattern = /(?:^|[^\d])(\d{1,3})\s*[-x]\s*(\d{1,3})(?:\s*[-x]\s*(\d{1,3}))?(?=$|[^\d])/i;
 
 function normalizeWhitespace(value: string) {
@@ -179,6 +196,10 @@ function getFighterCitySearchValue(row: FighterApplicationAdminListRow) {
   return row.fighterApplication?.city ?? getRowText(row, "location").split(",")[0] ?? "";
 }
 
+function getFighterWeightClassSearchValue(row: FighterApplicationAdminListRow) {
+  return row.fighterApplication?.weightClass ?? getRowText(row, "weightClass");
+}
+
 function getFighterStateSearchValue(row: FighterApplicationAdminListRow) {
   return row.fighterApplication?.stateCode ?? getFallbackStateCode(getRowText(row, "location"));
 }
@@ -187,11 +208,79 @@ function getFighterRecordSearchValue(row: FighterApplicationAdminListRow) {
   return row.fighterApplication?.competitionHistory ?? getRowText(row, "cartel");
 }
 
+function getFighterInterestSearchValue(row: FighterApplicationAdminListRow) {
+  return normalizeFighterApplicationEditorialInterest(
+    row.fighterApplication?.editorialInterest ?? getRowText(row, "editorialInterest"),
+  );
+}
+
+function parseNumberFromText(value: string | null | undefined) {
+  const match = (value ?? "").match(/\d+/);
+
+  return match ? Number.parseInt(match[0], 10) : null;
+}
+
+function compareNullableNumbers(left: number | null, right: number | null) {
+  if (left === null && right === null) {
+    return 0;
+  }
+
+  if (left === null) {
+    return 1;
+  }
+
+  if (right === null) {
+    return -1;
+  }
+
+  return left - right;
+}
+
+function compareNullableRecords(left: FighterRecord | null, right: FighterRecord | null) {
+  if (left === null && right === null) {
+    return 0;
+  }
+
+  if (left === null) {
+    return 1;
+  }
+
+  if (right === null) {
+    return -1;
+  }
+
+  return compareFighterRecordByExperience(left, right);
+}
+
+function getSortTextValue(row: FighterApplicationAdminListRow, key: string) {
+  if (key === "fighter") {
+    return getFighterNameSearchValue(row);
+  }
+
+  if (key === "weightClass") {
+    return getRowText(row, "weightClass") || getFighterWeightClassSearchValue(row);
+  }
+
+  if (key === "editorialInterest") {
+    return getRowText(row, "editorialInterest") || formatFighterApplicationEditorialInterest(
+      row.fighterApplication?.editorialInterest,
+    );
+  }
+
+  if (key === "location") {
+    return getRowText(row, "location");
+  }
+
+  return getRowText(row, key);
+}
+
 export function filterFighterApplicationRows<Row extends FighterApplicationAdminListRow>(
   rows: readonly Row[],
   filters: FighterApplicationFilters,
 ) {
   const stateFilter = filters.state.trim().toUpperCase();
+  const weightClassFilter = filters.weightClass.trim();
+  const interestFilter = filters.editorialInterest.trim();
   const minRecord = parseFighterRecordFromText(filters.minRecord);
   const maxRecord = parseFighterRecordFromText(filters.maxRecord);
 
@@ -206,6 +295,22 @@ export function filterFighterApplicationRows<Row extends FighterApplicationAdmin
 
     if (stateFilter && getFighterStateSearchValue(row).toUpperCase() !== stateFilter) {
       return false;
+    }
+
+    if (weightClassFilter && getFighterWeightClassSearchValue(row) !== weightClassFilter) {
+      return false;
+    }
+
+    if (interestFilter) {
+      const rowInterest = getFighterInterestSearchValue(row);
+
+      if (interestFilter === FIGHTER_APPLICATION_NO_INTEREST_FILTER_VALUE) {
+        if (rowInterest !== null) {
+          return false;
+        }
+      } else if (rowInterest !== interestFilter) {
+        return false;
+      }
     }
 
     if (minRecord || maxRecord) {
@@ -225,5 +330,43 @@ export function filterFighterApplicationRows<Row extends FighterApplicationAdmin
     }
 
     return true;
+  });
+}
+
+export function sortFighterApplicationRows<Row extends FighterApplicationAdminListRow>(
+  rows: readonly Row[],
+  sort: FighterApplicationSort | null,
+) {
+  if (!sort) {
+    return [...rows];
+  }
+
+  const directionMultiplier = sort.direction === "asc" ? 1 : -1;
+
+  return [...rows].sort((left, right) => {
+    let comparison = 0;
+
+    if (sort.key === "age") {
+      comparison = compareNullableNumbers(
+        parseNumberFromText(getRowText(left, "age")),
+        parseNumberFromText(getRowText(right, "age")),
+      );
+    } else if (sort.key === "cartel") {
+      comparison = compareNullableRecords(
+        parseFighterRecordFromText(getFighterRecordSearchValue(left)),
+        parseFighterRecordFromText(getFighterRecordSearchValue(right)),
+      );
+    } else {
+      comparison = collator.compare(
+        getSortTextValue(left, sort.key),
+        getSortTextValue(right, sort.key),
+      );
+    }
+
+    if (comparison === 0) {
+      comparison = collator.compare(getFighterNameSearchValue(left), getFighterNameSearchValue(right));
+    }
+
+    return comparison * directionMultiplier;
   });
 }
