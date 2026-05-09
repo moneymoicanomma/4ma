@@ -433,8 +433,8 @@ section[id] {
   top: clamp(64px, 9vh, 104px);
   right: clamp(-128px, -7vw, -48px);
   left: auto;
-  width: clamp(660px, 56vw, 960px);
-  height: auto;
+  width: auto;
+  height: clamp(440px, calc(100dvh - var(--topbar-height) - 156px), 620px);
   aspect-ratio: 1280 / 670;
 }
 
@@ -1642,8 +1642,8 @@ section[id] {
     right: clamp(-152px, -6vw, -80px);
     bottom: auto;
     left: auto;
-    width: clamp(920px, 52vw, 1100px);
-    height: auto;
+    width: auto;
+    height: clamp(520px, calc(100dvh - var(--topbar-height) - 156px), 800px);
     aspect-ratio: 1280 / 670;
   }
 
