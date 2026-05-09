@@ -430,18 +430,16 @@ section[id] {
 
 .hero__image-shell {
   position: absolute;
-  top: clamp(64px, 9vh, 104px);
-  right: clamp(-128px, -7vw, -48px);
-  left: auto;
-  width: auto;
-  height: clamp(440px, calc(100dvh - var(--topbar-height) - 156px), 620px);
-  aspect-ratio: 1280 / 670;
+  top: -96px;
+  left: 252px;
+  width: 1273px;
+  height: 849px;
 }
 
 .hero__image {
   width: 100%;
   height: 100%;
-  object-fit: contain;
+  object-fit: cover;
   transform: none;
   transform-origin: center;
 }
@@ -1638,13 +1636,12 @@ section[id] {
   }
 
   .hero__image-shell {
-    top: clamp(72px, 9vh, 120px);
-    right: clamp(-152px, -6vw, -80px);
-    bottom: auto;
-    left: auto;
+    top: -124px;
+    right: -72px;
+    bottom: -96px;
+    left: clamp(320px, 20vw, 430px);
     width: auto;
-    height: clamp(520px, calc(100dvh - var(--topbar-height) - 156px), 800px);
-    aspect-ratio: 1280 / 670;
+    height: auto;
   }
 
   .hero__content {
@@ -2025,12 +2022,10 @@ section[id] {
   }
 
   .hero__image-shell {
-    top: clamp(44px, 7vw, 72px);
-    right: clamp(-320px, -28vw, -220px);
-    left: auto;
-    width: clamp(600px, 68vw, 700px);
-    height: auto;
-    aspect-ratio: 1280 / 670;
+    top: -24px;
+    left: 43.5%;
+    width: 920px;
+    height: 100%;
   }
 
   .event-bar {
@@ -2640,18 +2635,17 @@ section[id] {
   }
 
   .hero__image-shell {
-    top: 74px;
-    right: clamp(-230px, -48vw, -150px);
-    bottom: auto;
-    left: auto;
-    width: clamp(560px, 162vw, 760px);
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    width: auto;
     height: auto;
-    aspect-ratio: 1280 / 670;
   }
 
   .hero__image {
     transform: none;
-    object-position: center;
+    object-position: 66% 42%;
   }
 
   .hero__scrim {
