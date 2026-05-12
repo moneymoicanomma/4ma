@@ -6,7 +6,25 @@ const fantasyPageSource = readFileSync(
   new URL("../app/fantasy/page.tsx", import.meta.url),
   "utf8"
 );
+const fantasyExperienceSource = readFileSync(
+  new URL("../app/components/fantasy-experience.tsx", import.meta.url),
+  "utf8"
+);
+const fantasyExperienceCssSource = readFileSync(
+  new URL("../app/components/fantasy-experience.module.css", import.meta.url),
+  "utf8"
+);
 const normalizedFantasyPageSource = fantasyPageSource.replace(/\s+/g, " ");
+
+function evaluateFighterInitials(name: string) {
+  const match = fantasyExperienceSource.match(
+    /function fighterInitials\(name: string\) \{([\s\S]*?)\n\}/
+  );
+
+  assert.ok(match?.[1], "Missing fighterInitials helper");
+
+  return new Function("name", match[1])(name) as string;
+}
 
 describe("fantasy public page", () => {
   it("uses the public site header instead of exposing admin navigation", () => {
@@ -37,5 +55,17 @@ describe("fantasy public page", () => {
       fantasyPageSource.includes('<div className={styles.interfaceShell} data-reveal>'),
       false
     );
+  });
+
+  it("ignores nickname quotes when rendering fallback fighter initials", () => {
+    assert.equal(evaluateFighterInitials('ricardo "capoeira"'), "RC");
+    assert.equal(evaluateFighterInitials('rodrigo "zé colmeia"'), "RZ");
+  });
+
+  it("uses blue selected styling for the blue corner fighter card", () => {
+    assert.ok(fantasyExperienceSource.includes("fighterButtonSelectedBlue"));
+    assert.ok(fantasyExperienceSource.includes("portraitSelectedBlue"));
+    assert.ok(fantasyExperienceCssSource.includes(".fighterButtonSelectedBlue"));
+    assert.ok(fantasyExperienceCssSource.includes(".portraitSelectedBlue"));
   });
 });

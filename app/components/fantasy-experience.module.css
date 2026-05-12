@@ -176,10 +176,25 @@
   border-color: rgba(232, 24, 26, 0.24);
 }
 
+.fighterButtonBlue:hover,
+.fighterButtonBlue:focus-visible {
+  border-color: rgba(49, 136, 255, 0.34);
+}
+
+.fighterButtonBlue:focus-visible {
+  outline-color: rgba(49, 136, 255, 0.88);
+}
+
 .fighterButtonSelected {
   border-color: rgba(232, 24, 26, 0.68);
   background:
     linear-gradient(180deg, rgba(232, 24, 26, 0.12) 0%, rgba(255, 255, 255, 0.015) 100%);
+}
+
+.fighterButtonSelectedBlue {
+  border-color: rgba(49, 136, 255, 0.72);
+  background:
+    linear-gradient(180deg, rgba(49, 136, 255, 0.14) 0%, rgba(255, 255, 255, 0.015) 100%);
 }
 
 .cornerLabel {
@@ -206,9 +221,20 @@
   transition: border-color 160ms ease, box-shadow 160ms ease;
 }
 
+.portraitBlue {
+  background:
+    radial-gradient(circle at 30% 22%, rgba(49, 136, 255, 0.38), transparent 34%),
+    linear-gradient(180deg, rgba(24, 24, 24, 0.9) 0%, rgba(6, 6, 6, 0.98) 100%);
+}
+
 .portraitSelected {
   border-color: rgba(232, 24, 26, 0.84);
   box-shadow: 0 0 0 1px rgba(232, 24, 26, 0.18), 0 20px 42px rgba(232, 24, 26, 0.18);
+}
+
+.portraitSelectedBlue {
+  border-color: rgba(49, 136, 255, 0.88);
+  box-shadow: 0 0 0 1px rgba(49, 136, 255, 0.22), 0 20px 42px rgba(49, 136, 255, 0.18);
 }
 
 .portrait img {

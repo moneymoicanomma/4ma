@@ -121,7 +121,10 @@ function maskWhatsapp(value: string) {
 
 function fighterInitials(name: string) {
   return name
-    .split(" ")
+    .replace(/["']/g, " ")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
     .slice(0, 2)
     .map((chunk) => chunk[0] ?? "")
     .join("")
@@ -135,24 +138,35 @@ function looksLikeUuid(value: string) {
 }
 
 function FighterPortrait({
+  cornerTone,
   imageUrl,
   name,
   selected
 }: Readonly<{
+  cornerTone: "red" | "blue";
   imageUrl: string;
   name: string;
   selected: boolean;
 }>) {
+  const portraitClassName = [
+    styles.portrait,
+    cornerTone === "blue" ? styles.portraitBlue : null,
+    selected && cornerTone === "red" ? styles.portraitSelected : null,
+    selected && cornerTone === "blue" ? styles.portraitSelectedBlue : null
+  ]
+    .filter(Boolean)
+    .join(" ");
+
   if (imageUrl) {
     return (
-      <span className={selected ? `${styles.portrait} ${styles.portraitSelected}` : styles.portrait}>
+      <span className={portraitClassName}>
         <img alt="" src={imageUrl} />
       </span>
     );
   }
 
   return (
-    <span className={selected ? `${styles.portrait} ${styles.portraitSelected}` : styles.portrait}>
+    <span className={portraitClassName}>
       <span className={styles.portraitFallback}>{fighterInitials(name)}</span>
     </span>
   );
@@ -424,15 +438,20 @@ export function FantasyExperience({
                 <div className={styles.fighterGrid}>
                   {[fight.redCorner, fight.blueCorner].map((fighter, fighterIndex) => {
                     const isSelected = selectedWinner === fighter.id;
+                    const cornerTone = fighterIndex === 0 ? "red" : "blue";
+                    const fighterButtonClassName = [
+                      styles.fighterButton,
+                      cornerTone === "blue" ? styles.fighterButtonBlue : null,
+                      isSelected && cornerTone === "red" ? styles.fighterButtonSelected : null,
+                      isSelected && cornerTone === "blue" ? styles.fighterButtonSelectedBlue : null
+                    ]
+                      .filter(Boolean)
+                      .join(" ");
 
                     return (
                       <button
                         aria-pressed={isSelected}
-                        className={
-                          isSelected
-                            ? `${styles.fighterButton} ${styles.fighterButtonSelected}`
-                            : styles.fighterButton
-                        }
+                        className={fighterButtonClassName}
                         key={fighter.id}
                         type="button"
                         onClick={() => {
@@ -445,6 +464,7 @@ export function FantasyExperience({
                           {fighterIndex === 0 ? "Corner vermelho" : "Corner azul"}
                         </span>
                         <FighterPortrait
+                          cornerTone={cornerTone}
                           imageUrl={fighter.imageUrl}
                           name={fighter.name}
                           selected={isSelected}
