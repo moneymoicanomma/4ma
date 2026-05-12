@@ -32,10 +32,12 @@ type AdminTopbarProps = {
 };
 
 export function AdminTopbar({ active, role = "admin" }: Readonly<AdminTopbarProps>) {
-  const isDatabaseOnlyRole = role === "auditor" || role === "public_relations";
+  const isDatabaseOnlyRole = role === "auditor";
   const navigationItems =
     role === "editor"
       ? adminNavigationItems.filter((item) => item.id === "blog")
+      : role === "public_relations"
+        ? adminNavigationItems.filter((item) => item.id === "blog" || item.id === "database")
       : isDatabaseOnlyRole
         ? adminNavigationItems.filter((item) => item.id === "database")
         : role === "operator"

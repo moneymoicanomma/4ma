@@ -44,7 +44,7 @@ export function canAccessFantasyAdmin(role: AdminBackofficeRole) {
 }
 
 export function canAccessBlogAdmin(role: AdminBackofficeRole) {
-  return role === "admin" || role === "editor";
+  return role === "admin" || role === "editor" || role === "public_relations";
 }
 
 export function canAccessAnyDatabase(role: AdminBackofficeRole) {

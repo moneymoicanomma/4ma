@@ -20,8 +20,8 @@ if (canAccessFantasyAdmin(publicRelationsRole)) {
   throw new Error("public_relations should not access Fantasy admin.");
 }
 
-if (canAccessBlogAdmin(publicRelationsRole)) {
-  throw new Error("public_relations should not access Blog admin.");
+if (!canAccessBlogAdmin(publicRelationsRole)) {
+  throw new Error("public_relations should access Blog admin.");
 }
 
 if (!shouldLimitEventFighterIntakesToCurrentEvent(publicRelationsRole)) {
