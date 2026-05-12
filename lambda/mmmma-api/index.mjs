@@ -20,6 +20,11 @@ const EVENT_FIGHTER_ACCESS_PATH = "/v1/event-fighter-access/session";
 const ADMIN_DATABASE_OVERVIEW_PATH = "/v1/admin/database-overview";
 const ADMIN_DATABASE_ROUTE_BASE = "/v1/admin/database";
 const ADMIN_FIGHTER_APPLICATION_INTEREST_ROUTE_BASE = "/v1/admin/fighter-applications";
+const BLOG_POSTS_PATH = "/v1/blog/posts";
+const BLOG_TAGS_PATH = "/v1/blog/tags";
+const ADMIN_BLOG_POSTS_PATH = "/v1/admin/blog/posts";
+const ADMIN_BLOG_TAGS_PATH = "/v1/admin/blog/tags";
+const ADMIN_BLOG_UPLOADS_PATH = "/v1/admin/blog/uploads";
 const EVENT_FIGHTER_INTAKE_PATH = "/v1/event-fighter-intakes";
 const NEWSLETTER_SUBSCRIBE_PATH = "/v1/newsletter/subscriptions";
 const CONTACT_MESSAGES_PATH = "/v1/contact-messages";
@@ -1380,6 +1385,741 @@ async function handleAdminDatabaseOverview(event) {
       ok: false,
       message: "Serviço temporariamente indisponível."
     });
+  }
+}
+
+function mapBlogPostSummary(row) {
+  return {
+    id: row.id,
+    title: row.title,
+    slug: row.slug,
+    description: row.description,
+    status: row.status,
+    isFeatured: row.isFeatured,
+    authorName: row.authorName,
+    coverUrl: row.coverUrl ?? null,
+    coverAltText: row.coverAltText ?? null,
+    tags: Array.isArray(row.tags) ? row.tags : [],
+    publishedAt: row.publishedAt ? new Date(row.publishedAt).toISOString() : null,
+    updatedAt: new Date(row.updatedAt).toISOString(),
+    readingTimeMinutes: Math.max(1, Number(row.readingTimeMinutes) || 1)
+  };
+}
+
+function mapBlogPostDetail(row) {
+  return {
+    ...mapBlogPostSummary(row),
+    coverMediaId: row.coverMediaId ?? null,
+    coverCaption: row.coverCaption ?? null,
+    contentBlocks: Array.isArray(row.contentBlocks) ? row.contentBlocks : [],
+    seoTitle: row.seoTitle ?? null,
+    seoDescription: row.seoDescription ?? null,
+    canonicalUrlOverride: row.canonicalUrlOverride ?? null,
+    noindex: Boolean(row.noindex),
+    internalKeywords: Array.isArray(row.internalKeywords) ? row.internalKeywords : [],
+    socialTitle: row.socialTitle ?? null,
+    socialDescription: row.socialDescription ?? null,
+    socialMediaId: row.socialMediaId ?? null,
+    markdown: ""
+  };
+}
+
+function getBlogPostSelect(whereClause) {
+  return `
+    select
+      p.id::text as id,
+      p.title,
+      p.slug,
+      p.description,
+      p.status::text as status,
+      p.is_featured as "isFeatured",
+      p.author_name as "authorName",
+      p.cover_media_id::text as "coverMediaId",
+      m.public_url as "coverUrl",
+      p.cover_alt_text as "coverAltText",
+      p.cover_caption as "coverCaption",
+      p.content_blocks as "contentBlocks",
+      p.seo_title as "seoTitle",
+      p.seo_description as "seoDescription",
+      p.canonical_url_override as "canonicalUrlOverride",
+      p.noindex,
+      p.internal_keywords as "internalKeywords",
+      p.social_title as "socialTitle",
+      p.social_description as "socialDescription",
+      p.social_media_id::text as "socialMediaId",
+      p.published_at as "publishedAt",
+      p.updated_at as "updatedAt",
+      p.reading_time_minutes as "readingTimeMinutes",
+      coalesce(
+        jsonb_agg(jsonb_build_object('name', t.name, 'slug', t.slug) order by t.name)
+          filter (where t.id is not null),
+        '[]'::jsonb
+      ) as tags
+    from app.blog_posts p
+    left join app.blog_media m on m.id = p.cover_media_id
+    left join app.blog_post_tags pt on pt.post_id = p.id
+    left join app.blog_tags t on t.id = pt.tag_id
+    ${whereClause}
+    group by p.id, m.public_url
+  `;
+}
+
+function normalizeBlogSlug(value, fallback = "") {
+  return normalizeFantasyAdminSlug(value, fallback);
+}
+
+function normalizeBlogTagName(value) {
+  return normalizeFantasyAdminText(value).slice(0, 80);
+}
+
+function normalizeBlogTags(input) {
+  if (!Array.isArray(input)) {
+    return [];
+  }
+
+  const tags = [];
+  const seen = new Set();
+
+  for (const item of input) {
+    const name = normalizeBlogTagName(item);
+    const slug = normalizeBlogSlug(name);
+
+    if (!name || !slug || seen.has(slug)) {
+      continue;
+    }
+
+    seen.add(slug);
+    tags.push(name);
+
+    if (tags.length >= 12) {
+      break;
+    }
+  }
+
+  return tags;
+}
+
+function blogBlockText(block) {
+  if (!block || typeof block !== "object") {
+    return "";
+  }
+
+  if (typeof block.text === "string") {
+    return block.text;
+  }
+
+  if (Array.isArray(block.items)) {
+    return block.items.filter((item) => typeof item === "string").join(" ");
+  }
+
+  if (typeof block.altText === "string") {
+    return block.altText;
+  }
+
+  return "";
+}
+
+function calculateBlogReadingMetrics(contentBlocks) {
+  const text = (Array.isArray(contentBlocks) ? contentBlocks : []).map(blogBlockText).join(" ");
+  const wordCount = text.trim().match(/\S+/g)?.length ?? 0;
+
+  return {
+    wordCount,
+    readingTimeMinutes: Math.max(1, Math.ceil(wordCount / 220))
+  };
+}
+
+function normalizeBlogPostPayload(payload) {
+  const title = normalizeFantasyAdminText(payload?.title);
+  const slug = normalizeBlogSlug(payload?.slug, title);
+  const description = normalizeFantasyAdminText(payload?.description);
+  const contentBlocks = Array.isArray(payload?.contentBlocks) ? payload.contentBlocks : [];
+
+  if (title.length < 1 || title.length > 140) {
+    throw new FantasyAdminEventSaveValidationError("Título inválido.");
+  }
+
+  if (!slug) {
+    throw new FantasyAdminEventSaveValidationError("Slug inválido.");
+  }
+
+  if (description.length > 260) {
+    throw new FantasyAdminEventSaveValidationError("Descrição grande demais.");
+  }
+
+  return {
+    title,
+    slug,
+    description,
+    authorName:
+      normalizeFantasyAdminText(payload?.authorName).slice(0, 120) ||
+      "Equipe Money Moicano MMA",
+    coverMediaId: isUuid(payload?.coverMediaId) ? payload.coverMediaId : null,
+    coverAltText: normalizeNullableText(payload?.coverAltText),
+    coverCaption: normalizeNullableText(payload?.coverCaption),
+    isFeatured: Boolean(payload?.isFeatured),
+    contentBlocks,
+    tags: normalizeBlogTags(payload?.tags),
+    seoTitle: normalizeNullableText(payload?.seoTitle),
+    seoDescription: normalizeNullableText(payload?.seoDescription),
+    canonicalUrlOverride: normalizeNullableText(payload?.canonicalUrlOverride),
+    noindex: Boolean(payload?.noindex),
+    internalKeywords: Array.isArray(payload?.internalKeywords)
+      ? payload.internalKeywords.map(normalizeFantasyAdminText).filter(Boolean).slice(0, 30)
+      : [],
+    socialTitle: normalizeNullableText(payload?.socialTitle),
+    socialDescription: normalizeNullableText(payload?.socialDescription),
+    socialMediaId: isUuid(payload?.socialMediaId) ? payload.socialMediaId : null
+  };
+}
+
+function buildBlogRequestContext(actor, requestContext) {
+  const actorRole = ["admin", "operator", "editor", "public_relations", "auditor"].includes(
+    actor?.role
+  )
+    ? actor.role
+    : "admin";
+
+  return {
+    actorId: isUuid(actor?.accountId) ? actor.accountId : null,
+    actorRole,
+    actorEmail: normalizeEmail(actor?.email) || null,
+    requestId: normalizeText(requestContext?.requestId) || randomUUID(),
+    clientIp: normalizeNullableText(requestContext?.clientIp),
+    origin: normalizeNullableText(requestContext?.requestOrigin),
+    userAgent: normalizeNullableText(requestContext?.userAgent)
+  };
+}
+
+async function queryBlogPostById(client, postId, publicOnly = false) {
+  if (!isUuid(postId)) {
+    return null;
+  }
+
+  const result = await client.query(
+    `
+      ${getBlogPostSelect(
+        publicOnly
+          ? "where p.id = $1::uuid and p.status = 'published'"
+          : "where p.id = $1::uuid"
+      )}
+      limit 1
+    `,
+    [postId]
+  );
+
+  return result.rows[0] ? mapBlogPostDetail(result.rows[0]) : null;
+}
+
+async function queryBlogPostBySlug(client, slug) {
+  const result = await client.query(
+    `
+      ${getBlogPostSelect("where p.slug = $1 and p.status = 'published'")}
+      limit 1
+    `,
+    [slug]
+  );
+
+  return result.rows[0] ? mapBlogPostDetail(result.rows[0]) : null;
+}
+
+async function replaceBlogPostTags(client, postId, tags) {
+  await client.query("delete from app.blog_post_tags where post_id = $1::uuid", [postId]);
+
+  for (const tagName of tags) {
+    const name = normalizeBlogTagName(tagName);
+    const slug = normalizeBlogSlug(name);
+
+    if (!name || !slug) {
+      continue;
+    }
+
+    const tagResult = await client.query(
+      `
+        insert into app.blog_tags (name, slug)
+        values ($1, $2)
+        on conflict (slug) do update
+        set name = excluded.name
+        returning id::text as id
+      `,
+      [name, slug]
+    );
+
+    await client.query(
+      `
+        insert into app.blog_post_tags (post_id, tag_id)
+        values ($1::uuid, $2::uuid)
+        on conflict do nothing
+      `,
+      [postId, tagResult.rows[0].id]
+    );
+  }
+}
+
+async function clearOtherFeaturedBlogPosts(client, postId) {
+  await client.query(
+    `
+      update app.blog_posts
+      set is_featured = false
+      where id <> $1::uuid
+        and status = 'published'
+        and is_featured = true
+    `,
+    [postId]
+  );
+}
+
+async function loadAdminBlogPostsPayload(client = getDatabasePool()) {
+  const result = await client.query(`
+    ${getBlogPostSelect("")}
+    order by p.updated_at desc, p.created_at desc
+  `);
+
+  return {
+    posts: result.rows.map(mapBlogPostSummary)
+  };
+}
+
+async function loadBlogTagsPayload(client = getDatabasePool(), publicOnly = false) {
+  const result = await client.query(`
+    select
+      t.name,
+      t.slug,
+      count(distinct pt.post_id)::int as count
+    from app.blog_tags t
+    ${publicOnly ? "join" : "left join"} app.blog_post_tags pt on pt.tag_id = t.id
+    ${publicOnly ? "join" : "left join"} app.blog_posts p on p.id = pt.post_id
+    ${publicOnly ? "where p.status = 'published'" : ""}
+    group by t.id
+    order by count desc, t.name asc
+  `);
+
+  return {
+    tags: result.rows.map((row) => ({
+      name: row.name,
+      slug: row.slug,
+      count: Number(row.count) || 0
+    }))
+  };
+}
+
+async function loadPublicBlogPostsPayload() {
+  const [postsResult, tagsPayload] = await Promise.all([
+    getDatabasePool().query(`
+      ${getBlogPostSelect("where p.status = 'published'")}
+      order by p.published_at desc nulls last, p.updated_at desc
+    `),
+    loadBlogTagsPayload(getDatabasePool(), true)
+  ]);
+  const summaries = postsResult.rows.map(mapBlogPostSummary);
+  const featured = summaries.find((post) => post.isFeatured) ?? null;
+
+  return {
+    featured,
+    posts: featured ? summaries.filter((post) => post.id !== featured.id) : summaries,
+    tags: tagsPayload.tags
+  };
+}
+
+async function createBlogDraftPayload(actor, requestContext) {
+  const draftId = randomUUID();
+  const draftSlug = `rascunho-${draftId.slice(0, 8)}`;
+
+  await withDatabaseTransaction(buildBlogRequestContext(actor, requestContext), async (client) => {
+    await client.query(
+      `
+        insert into app.blog_posts (
+          id,
+          title,
+          slug,
+          description,
+          author_name,
+          status,
+          content_blocks,
+          word_count,
+          reading_time_minutes,
+          created_by_account_id,
+          updated_by_account_id
+        )
+        values (
+          $1::uuid,
+          'Novo post',
+          $2,
+          'Rascunho criado pela redacao.',
+          'Equipe Money Moicano MMA',
+          'draft',
+          '[]'::jsonb,
+          0,
+          1,
+          $3::uuid,
+          $3::uuid
+        )
+      `,
+      [draftId, draftSlug, isUuid(actor?.accountId) ? actor.accountId : null]
+    );
+  });
+
+  return {
+    ok: true,
+    postId: draftId
+  };
+}
+
+async function saveBlogPostPayload(postId, payload, actor, requestContext) {
+  if (!isUuid(postId)) {
+    return { ok: false, message: "ID de post inválido." };
+  }
+
+  const normalized = normalizeBlogPostPayload(payload);
+  const metrics = calculateBlogReadingMetrics(normalized.contentBlocks);
+
+  return withDatabaseTransaction(buildBlogRequestContext(actor, requestContext), async (client) => {
+    const existingResult = await client.query(
+      `
+        select slug, status::text as status
+        from app.blog_posts
+        where id = $1::uuid
+        limit 1
+      `,
+      [postId]
+    );
+    const existing = existingResult.rows[0];
+
+    if (!existing) {
+      return { ok: false, message: "Post nao encontrado." };
+    }
+
+    const slugResult = await client.query(
+      `
+        select id::text as id
+        from app.blog_posts
+        where slug = $1
+          and id <> $2::uuid
+        limit 1
+      `,
+      [normalized.slug, postId]
+    );
+
+    if (slugResult.rowCount) {
+      return { ok: false, message: "Ja existe um post com esse slug." };
+    }
+
+    if (existing.status === "published" && existing.slug !== normalized.slug) {
+      await client.query(
+        `
+          insert into app.blog_slug_redirects (old_slug, post_id)
+          values ($1, $2::uuid)
+          on conflict (old_slug) do update
+          set post_id = excluded.post_id, created_at = now()
+        `,
+        [existing.slug, postId]
+      );
+    }
+
+    if (normalized.isFeatured && existing.status === "published") {
+      await clearOtherFeaturedBlogPosts(client, postId);
+    }
+
+    await client.query(
+      `
+        update app.blog_posts
+        set
+          title = $2,
+          slug = $3,
+          description = $4,
+          cover_media_id = $5::uuid,
+          cover_alt_text = $6,
+          cover_caption = $7,
+          author_name = $8,
+          is_featured = $9,
+          content_blocks = $10::jsonb,
+          seo_title = $11,
+          seo_description = $12,
+          canonical_url_override = $13,
+          noindex = $14,
+          internal_keywords = $15::text[],
+          social_title = $16,
+          social_description = $17,
+          social_media_id = $18::uuid,
+          word_count = $19,
+          reading_time_minutes = $20,
+          updated_by_account_id = $21::uuid
+        where id = $1::uuid
+      `,
+      [
+        postId,
+        normalized.title,
+        normalized.slug,
+        normalized.description,
+        normalized.coverMediaId,
+        normalized.coverAltText,
+        normalized.coverCaption,
+        normalized.authorName,
+        normalized.isFeatured,
+        JSON.stringify(normalized.contentBlocks),
+        normalized.seoTitle,
+        normalized.seoDescription,
+        normalized.canonicalUrlOverride,
+        normalized.noindex,
+        normalized.internalKeywords,
+        normalized.socialTitle,
+        normalized.socialDescription,
+        normalized.socialMediaId,
+        metrics.wordCount,
+        metrics.readingTimeMinutes,
+        isUuid(actor?.accountId) ? actor.accountId : null
+      ]
+    );
+
+    await replaceBlogPostTags(client, postId, normalized.tags);
+
+    const post = await queryBlogPostById(client, postId);
+
+    return post ? { ok: true, post } : { ok: false, message: "Post nao encontrado." };
+  });
+}
+
+async function publishBlogPostPayload(postId, actor, requestContext) {
+  if (!isUuid(postId)) {
+    return { ok: false, message: "ID de post inválido." };
+  }
+
+  return withDatabaseTransaction(buildBlogRequestContext(actor, requestContext), async (client) => {
+    const post = await queryBlogPostById(client, postId);
+
+    if (!post) {
+      return { ok: false, message: "Post nao encontrado." };
+    }
+
+    if (
+      post.title.length < 3 ||
+      post.description.length < 40 ||
+      !post.coverMediaId ||
+      !post.coverAltText
+    ) {
+      return {
+        ok: false,
+        message: "Preencha titulo, descricao, imagem e texto alternativo antes de publicar."
+      };
+    }
+
+    if (post.isFeatured) {
+      await clearOtherFeaturedBlogPosts(client, postId);
+    }
+
+    await client.query(
+      `
+        update app.blog_posts
+        set
+          status = 'published',
+          published_at = coalesce(published_at, now()),
+          updated_by_account_id = $2::uuid
+        where id = $1::uuid
+      `,
+      [postId, isUuid(actor?.accountId) ? actor.accountId : null]
+    );
+
+    const publishedPost = await queryBlogPostById(client, postId);
+
+    return publishedPost
+      ? { ok: true, post: publishedPost }
+      : { ok: false, message: "Post nao encontrado." };
+  });
+}
+
+async function unpublishBlogPostPayload(postId, actor, requestContext) {
+  if (!isUuid(postId)) {
+    return { ok: false, message: "ID de post inválido." };
+  }
+
+  return withDatabaseTransaction(buildBlogRequestContext(actor, requestContext), async (client) => {
+    await client.query(
+      `
+        update app.blog_posts
+        set
+          status = 'draft',
+          is_featured = false,
+          published_at = null,
+          updated_by_account_id = $2::uuid
+        where id = $1::uuid
+      `,
+      [postId, isUuid(actor?.accountId) ? actor.accountId : null]
+    );
+
+    const post = await queryBlogPostById(client, postId);
+
+    return post ? { ok: true, post } : { ok: false, message: "Post nao encontrado." };
+  });
+}
+
+async function createBlogMediaPayload(input, actor, requestContext) {
+  const mediaId = await withDatabaseTransaction(
+    buildBlogRequestContext(actor, requestContext),
+    async (client) => {
+      const result = await client.query(
+        `
+          insert into app.blog_media (
+            storage_provider,
+            storage_bucket,
+            object_key,
+            public_url,
+            original_file_name,
+            content_type,
+            byte_size,
+            created_by_account_id
+          )
+          values ($1, $2, $3, $4, $5, $6, $7, $8::uuid)
+          returning id::text as id
+        `,
+        [
+          normalizeFantasyAdminText(input?.storageProvider) || "s3",
+          normalizeFantasyAdminText(input?.bucket),
+          normalizeFantasyAdminText(input?.objectKey),
+          normalizeNullableText(input?.publicUrl),
+          normalizeFantasyAdminText(input?.fileName),
+          normalizeFantasyAdminText(input?.contentType),
+          Number(input?.byteSize) || 0,
+          isUuid(actor?.accountId) ? actor.accountId : null
+        ]
+      );
+
+      return result.rows[0].id;
+    }
+  );
+
+  return {
+    ok: true,
+    mediaId
+  };
+}
+
+async function handleAdminBlogPosts(event) {
+  if (!assertBearerForScope(event, event.requestContext.http.method === "GET" ? "admin_read" : "admin_write")) {
+    return buildJsonResponse(401, { ok: false, message: "Unauthorized." });
+  }
+
+  try {
+    if (event.requestContext.http.method === "GET") {
+      return buildJsonResponse(200, await loadAdminBlogPostsPayload());
+    }
+
+    const body = parseJsonBody(event);
+    return buildJsonResponse(
+      200,
+      await createBlogDraftPayload(body?.actor ?? {}, body?.requestContext ?? {})
+    );
+  } catch (error) {
+    console.error("admin blog posts failed", { error });
+    return buildJsonResponse(503, { ok: false, message: "Serviço temporariamente indisponível." });
+  }
+}
+
+async function handleAdminBlogPost(event, postId) {
+  if (!assertBearerForScope(event, event.requestContext.http.method === "GET" ? "admin_read" : "admin_write")) {
+    return buildJsonResponse(401, { ok: false, message: "Unauthorized." });
+  }
+
+  try {
+    if (event.requestContext.http.method === "GET") {
+      const post = await queryBlogPostById(getDatabasePool(), postId);
+      return post
+        ? buildJsonResponse(200, { ok: true, post })
+        : buildJsonResponse(200, { ok: false, post: null, message: "Post nao encontrado." });
+    }
+
+    const body = parseJsonBody(event);
+    const actor = body?.actor ?? {};
+    const requestContext = body?.requestContext ?? {};
+    const action = body?.action;
+    const responsePayload =
+      action === "save"
+        ? await saveBlogPostPayload(postId, getPayloadBody(body), actor, requestContext)
+        : action === "publish"
+          ? await publishBlogPostPayload(postId, actor, requestContext)
+          : action === "unpublish"
+            ? await unpublishBlogPostPayload(postId, actor, requestContext)
+            : { ok: false, message: "Acao invalida." };
+
+    return buildJsonResponse(200, responsePayload);
+  } catch (error) {
+    if (error instanceof FantasyAdminEventSaveValidationError) {
+      return buildJsonResponse(400, { ok: false, message: error.message });
+    }
+
+    console.error("admin blog post failed", { error, postId });
+    return buildJsonResponse(503, { ok: false, message: "Serviço temporariamente indisponível." });
+  }
+}
+
+async function handleAdminBlogTags(event) {
+  if (!assertBearerForScope(event, "admin_read")) {
+    return buildJsonResponse(401, { ok: false, message: "Unauthorized." });
+  }
+
+  try {
+    return buildJsonResponse(200, await loadBlogTagsPayload());
+  } catch (error) {
+    console.error("admin blog tags failed", { error });
+    return buildJsonResponse(503, { ok: false, message: "Serviço temporariamente indisponível." });
+  }
+}
+
+async function handleAdminBlogUploads(event) {
+  if (!assertBearerForScope(event, "admin_write")) {
+    return buildJsonResponse(401, { ok: false, message: "Unauthorized." });
+  }
+
+  try {
+    const body = parseJsonBody(event);
+    return buildJsonResponse(
+      200,
+      await createBlogMediaPayload(getPayloadBody(body), body?.actor ?? {}, body?.requestContext ?? {})
+    );
+  } catch (error) {
+    console.error("admin blog upload failed", { error });
+    return buildJsonResponse(503, { ok: false, message: "Serviço temporariamente indisponível." });
+  }
+}
+
+async function handlePublicBlogPosts(event) {
+  if (!assertBearerForScope(event, "admin_read")) {
+    return buildJsonResponse(401, { ok: false, message: "Unauthorized." });
+  }
+
+  try {
+    return buildJsonResponse(200, await loadPublicBlogPostsPayload());
+  } catch (error) {
+    console.error("public blog posts failed", { error });
+    return buildJsonResponse(503, { ok: false, message: "Serviço temporariamente indisponível." });
+  }
+}
+
+async function handlePublicBlogPost(event, slug) {
+  if (!assertBearerForScope(event, "admin_read")) {
+    return buildJsonResponse(401, { ok: false, message: "Unauthorized." });
+  }
+
+  try {
+    const post = await queryBlogPostBySlug(getDatabasePool(), normalizeBlogSlug(slug));
+    return post
+      ? buildJsonResponse(200, { ok: true, post })
+      : buildJsonResponse(200, { ok: false, post: null, message: "Post nao encontrado." });
+  } catch (error) {
+    console.error("public blog post failed", { error, slug });
+    return buildJsonResponse(503, { ok: false, message: "Serviço temporariamente indisponível." });
+  }
+}
+
+async function handlePublicBlogTags(event) {
+  if (!assertBearerForScope(event, "admin_read")) {
+    return buildJsonResponse(401, { ok: false, message: "Unauthorized." });
+  }
+
+  try {
+    return buildJsonResponse(200, await loadBlogTagsPayload(getDatabasePool(), true));
+  } catch (error) {
+    console.error("public blog tags failed", { error });
+    return buildJsonResponse(503, { ok: false, message: "Serviço temporariamente indisponível." });
   }
 }
 
@@ -4973,6 +5713,42 @@ export const handler = async (event) => {
 
     if (method === "GET" && rawPath === ADMIN_DATABASE_OVERVIEW_PATH) {
       return await handleAdminDatabaseOverview(event);
+    }
+
+    if ((method === "GET" || method === "POST") && rawPath === ADMIN_BLOG_POSTS_PATH) {
+      return await handleAdminBlogPosts(event);
+    }
+
+    if ((method === "GET" || method === "POST") && rawPath.startsWith(`${ADMIN_BLOG_POSTS_PATH}/`)) {
+      const postId = rawPath.slice(ADMIN_BLOG_POSTS_PATH.length + 1).trim();
+
+      if (postId) {
+        return await handleAdminBlogPost(event, decodeURIComponent(postId));
+      }
+    }
+
+    if (method === "GET" && rawPath === ADMIN_BLOG_TAGS_PATH) {
+      return await handleAdminBlogTags(event);
+    }
+
+    if (method === "POST" && rawPath === ADMIN_BLOG_UPLOADS_PATH) {
+      return await handleAdminBlogUploads(event);
+    }
+
+    if (method === "GET" && rawPath === BLOG_POSTS_PATH) {
+      return await handlePublicBlogPosts(event);
+    }
+
+    if (method === "GET" && rawPath.startsWith(`${BLOG_POSTS_PATH}/`)) {
+      const slug = rawPath.slice(BLOG_POSTS_PATH.length + 1).trim();
+
+      if (slug) {
+        return await handlePublicBlogPost(event, decodeURIComponent(slug));
+      }
+    }
+
+    if (method === "GET" && rawPath === BLOG_TAGS_PATH) {
+      return await handlePublicBlogTags(event);
     }
 
     if (method === "GET" && rawPath === FANTASY_EVENTS_PATH) {

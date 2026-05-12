@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { canAccessBlogAdmin } from "@/lib/server/admin-access";
 import { getCurrentAdminSessionIdentity, type AdminSessionIdentity } from "@/lib/server/admin-session";
-import { createBlogDraft, listAdminBlogPosts } from "@/lib/server/blog";
+import { canReadBlogAdminData, canWriteBlogAdminData, createBlogDraft, listAdminBlogPosts } from "@/lib/server/blog";
 import { getServerEnv } from "@/lib/server/env";
 import { buildRequestAuditContext } from "@/lib/server/request-context";
 import { isSameOriginRequest } from "@/lib/server/request-guards";
@@ -19,6 +19,16 @@ function buildJsonResponse(payload: object, status = 200) {
       "X-Content-Type-Options": "nosniff"
     }
   });
+}
+
+function buildBlogDataUnavailableResponse() {
+  return buildJsonResponse(
+    {
+      ok: false,
+      message: "Upstream administrativo do blog nao configurado."
+    },
+    503
+  );
 }
 
 async function requireBlogIdentity(): Promise<
@@ -57,8 +67,14 @@ export async function GET() {
     return identity.response;
   }
 
+  const env = getServerEnv();
+
+  if (!canReadBlogAdminData(env)) {
+    return buildBlogDataUnavailableResponse();
+  }
+
   try {
-    return buildJsonResponse({ ok: true, posts: await listAdminBlogPosts() });
+    return buildJsonResponse({ ok: true, posts: await listAdminBlogPosts(env) });
   } catch (error) {
     console.error("[admin blog] list posts failed", error);
 
@@ -80,8 +96,14 @@ export async function POST(request: NextRequest) {
     return identity.response;
   }
 
+  const env = getServerEnv();
+
+  if (!canWriteBlogAdminData(env)) {
+    return buildBlogDataUnavailableResponse();
+  }
+
   try {
-    const postId = await createBlogDraft(identity.identity, buildRequestAuditContext(request));
+    const postId = await createBlogDraft(identity.identity, buildRequestAuditContext(request), env);
 
     return buildJsonResponse({ ok: true, postId });
   } catch (error) {

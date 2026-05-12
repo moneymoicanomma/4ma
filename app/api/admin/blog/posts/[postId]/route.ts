@@ -3,6 +3,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { canAccessBlogAdmin } from "@/lib/server/admin-access";
 import { getCurrentAdminSessionIdentity, type AdminSessionIdentity } from "@/lib/server/admin-session";
 import {
+  canReadBlogAdminData,
+  canWriteBlogAdminData,
   getAdminBlogPost,
   publishAdminBlogPost,
   saveAdminBlogPost,
@@ -32,6 +34,16 @@ function buildJsonResponse(payload: object, status = 200) {
       "X-Content-Type-Options": "nosniff"
     }
   });
+}
+
+function buildBlogDataUnavailableResponse() {
+  return buildJsonResponse(
+    {
+      ok: false,
+      message: "Upstream administrativo do blog nao configurado."
+    },
+    503
+  );
 }
 
 async function requireBlogIdentity(): Promise<
@@ -79,6 +91,12 @@ export async function GET(
     return identity.response;
   }
 
+  const env = getServerEnv();
+
+  if (!canReadBlogAdminData(env)) {
+    return buildBlogDataUnavailableResponse();
+  }
+
   try {
     const postId = await resolvePostId(context.params);
 
@@ -86,7 +104,7 @@ export async function GET(
       return buildJsonResponse({ ok: false, message: "ID de post invalido." }, 400);
     }
 
-    const post = await getAdminBlogPost(postId);
+    const post = await getAdminBlogPost(postId, env);
 
     if (!post) {
       return buildJsonResponse({ ok: false, message: "Post nao encontrado." }, 404);
@@ -117,6 +135,12 @@ export async function PATCH(
     return identity.response;
   }
 
+  const env = getServerEnv();
+
+  if (!canWriteBlogAdminData(env)) {
+    return buildBlogDataUnavailableResponse();
+  }
+
   const requestBody = await readJsonRequestBody<unknown>(request, {
     maxBytes: MAX_BLOG_SAVE_BODY_BYTES
   });
@@ -136,7 +160,8 @@ export async function PATCH(
       postId,
       requestBody.data,
       identity.identity,
-      buildRequestAuditContext(request)
+      buildRequestAuditContext(request),
+      env
     );
 
     return result.ok
@@ -166,6 +191,12 @@ export async function POST(
     return identity.response;
   }
 
+  const env = getServerEnv();
+
+  if (!canWriteBlogAdminData(env)) {
+    return buildBlogDataUnavailableResponse();
+  }
+
   const requestBody = await readJsonRequestBody<BlogPostActionBody>(request, {
     maxBytes: MAX_BLOG_ACTION_BODY_BYTES
   });
@@ -184,9 +215,9 @@ export async function POST(
     const requestContext = buildRequestAuditContext(request);
     const result =
       requestBody.data?.action === "publish"
-        ? await publishAdminBlogPost(postId, identity.identity, requestContext)
+        ? await publishAdminBlogPost(postId, identity.identity, requestContext, env)
         : requestBody.data?.action === "unpublish"
-          ? await unpublishAdminBlogPost(postId, identity.identity, requestContext)
+          ? await unpublishAdminBlogPost(postId, identity.identity, requestContext, env)
           : null;
 
     if (!result) {

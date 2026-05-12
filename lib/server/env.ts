@@ -25,6 +25,11 @@ export type ServerEnv = {
   upstreamAdminWriteBearerToken: string | null;
   eventFighterAccessPath: string;
   adminDatabaseOverviewPath: string;
+  blogPostsPath: string;
+  blogTagsPath: string;
+  adminBlogPostsPath: string;
+  adminBlogTagsPath: string;
+  adminBlogUploadsPath: string;
   fantasyEventsPath: string;
   adminFantasyEventsPath: string;
   newsletterSubscribePath: string;
@@ -102,6 +107,20 @@ function createServerEnv(): ServerEnv {
     adminDatabaseOverviewPath: normalizePath(
       process.env.UPSTREAM_ADMIN_DATABASE_OVERVIEW_PATH ?? "",
       "/v1/admin/database-overview"
+    ),
+    blogPostsPath: normalizePath(process.env.UPSTREAM_BLOG_POSTS_PATH ?? "", "/v1/blog/posts"),
+    blogTagsPath: normalizePath(process.env.UPSTREAM_BLOG_TAGS_PATH ?? "", "/v1/blog/tags"),
+    adminBlogPostsPath: normalizePath(
+      process.env.UPSTREAM_ADMIN_BLOG_POSTS_PATH ?? "",
+      "/v1/admin/blog/posts"
+    ),
+    adminBlogTagsPath: normalizePath(
+      process.env.UPSTREAM_ADMIN_BLOG_TAGS_PATH ?? "",
+      "/v1/admin/blog/tags"
+    ),
+    adminBlogUploadsPath: normalizePath(
+      process.env.UPSTREAM_ADMIN_BLOG_UPLOADS_PATH ?? "",
+      "/v1/admin/blog/uploads"
     ),
     fantasyEventsPath: normalizePath(
       process.env.UPSTREAM_FANTASY_EVENTS_PATH ?? "",

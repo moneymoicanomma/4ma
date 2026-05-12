@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { BLOG_UPLOAD_IMAGE_CONTENT_TYPES } from "@/lib/contracts/blog";
 import { canAccessBlogAdmin } from "@/lib/server/admin-access";
 import { getCurrentAdminSessionIdentity, type AdminSessionIdentity } from "@/lib/server/admin-session";
-import { createBlogMediaRecord } from "@/lib/server/blog";
+import { canWriteBlogAdminData, createBlogMediaRecord } from "@/lib/server/blog";
 import { createBlogMediaUploadTarget } from "@/lib/server/blog-media-storage";
 import { getServerEnv } from "@/lib/server/env";
 import { buildRequestAuditContext } from "@/lib/server/request-context";
@@ -32,6 +32,16 @@ function buildJsonResponse(payload: object, status = 200) {
       "X-Content-Type-Options": "nosniff"
     }
   });
+}
+
+function buildBlogDataUnavailableResponse() {
+  return buildJsonResponse(
+    {
+      ok: false,
+      message: "Upstream administrativo do blog nao configurado."
+    },
+    503
+  );
 }
 
 async function requireBlogIdentity(): Promise<
@@ -117,6 +127,12 @@ export async function POST(request: NextRequest) {
     return identity.response;
   }
 
+  const env = getServerEnv();
+
+  if (!canWriteBlogAdminData(env)) {
+    return buildBlogDataUnavailableResponse();
+  }
+
   const requestBody = await readJsonRequestBody<BlogUploadRequestBody>(request, {
     maxBytes: MAX_BLOG_UPLOAD_BODY_BYTES
   });
@@ -144,7 +160,8 @@ export async function POST(request: NextRequest) {
         byteSize: target.byteSize
       },
       identity.identity,
-      buildRequestAuditContext(request)
+      buildRequestAuditContext(request),
+      env
     );
 
     return buildJsonResponse({

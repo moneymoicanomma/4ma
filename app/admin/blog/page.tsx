@@ -6,7 +6,8 @@ import { BlogAdminDashboard } from "@/app/components/blog-admin-dashboard";
 import { LandingMotionController } from "@/app/components/landing-motion-controller";
 import { canAccessBlogAdmin, getAdminDefaultRedirectPathForRole } from "@/lib/server/admin-access";
 import { requireAdminSessionIdentity } from "@/lib/server/admin-session";
-import { listAdminBlogPosts, listBlogTagSuggestions } from "@/lib/server/blog";
+import { canReadBlogAdminData, listAdminBlogPosts, listBlogTagSuggestions } from "@/lib/server/blog";
+import { getServerEnv } from "@/lib/server/env";
 
 import styles from "./page.module.css";
 
@@ -19,13 +20,52 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function AdminBlogPage() {
-  const identity = await requireAdminSessionIdentity("/admin/blog");
+  const env = getServerEnv();
+  const identity = await requireAdminSessionIdentity("/admin/blog", env);
 
   if (!canAccessBlogAdmin(identity.role)) {
     redirect(getAdminDefaultRedirectPathForRole(identity.role));
   }
 
-  const [posts, tags] = await Promise.all([listAdminBlogPosts(), listBlogTagSuggestions()]);
+  if (!canReadBlogAdminData(env)) {
+    return (
+      <main className={styles.page}>
+        <LandingMotionController />
+        <AdminTopbar active="blog" role={identity.role} />
+
+        <section className={styles.hero}>
+          <div className={styles.heroGrid}>
+            <div className={styles.heroCopy} data-reveal>
+              <p className={styles.eyebrow}>Redacao</p>
+              <h1 className={styles.title}>
+                Admin do
+                <span className={styles.titleAccent}>Blog</span>
+              </h1>
+              <p className={styles.heroBody}>
+                O painel editorial esta instalado, mas precisa da Lambda administrativa configurada
+                em producao para criar, listar e publicar posts.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section className={styles.dashboardSection}>
+          <div className={styles.dashboardShell} data-reveal>
+            <div className={styles.unavailableCard}>
+              <span className={styles.unavailableEyebrow}>Dados indisponiveis</span>
+              <h2>Configure o upstream administrativo para habilitar as postagens.</h2>
+              <p>
+                Defina UPSTREAM_API_BASE_URL e os bearer tokens de admin no deploy. A Lambda deve
+                estar com a migration db/migrations/0013_blog_editorial_cms.sql aplicada.
+              </p>
+            </div>
+          </div>
+        </section>
+      </main>
+    );
+  }
+
+  const [posts, tags] = await Promise.all([listAdminBlogPosts(env), listBlogTagSuggestions(env)]);
   const publishedCount = posts.filter((post) => post.status === "published").length;
   const draftCount = posts.length - publishedCount;
 

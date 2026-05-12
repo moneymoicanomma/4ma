@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 
 import { canAccessBlogAdmin } from "@/lib/server/admin-access";
 import { getCurrentAdminSessionIdentity } from "@/lib/server/admin-session";
-import { listBlogTagSuggestions } from "@/lib/server/blog";
+import { canReadBlogAdminData, listBlogTagSuggestions } from "@/lib/server/blog";
 import { getServerEnv } from "@/lib/server/env";
 
 export const runtime = "nodejs";
@@ -19,6 +19,16 @@ function buildJsonResponse(payload: object, status = 200) {
   });
 }
 
+function buildBlogDataUnavailableResponse() {
+  return buildJsonResponse(
+    {
+      ok: false,
+      message: "Upstream administrativo do blog nao configurado."
+    },
+    503
+  );
+}
+
 export async function GET() {
   const identity = await getCurrentAdminSessionIdentity(getServerEnv());
 
@@ -30,8 +40,14 @@ export async function GET() {
     return buildJsonResponse({ ok: false, message: "Sem permissao para acessar tags." }, 403);
   }
 
+  const env = getServerEnv();
+
+  if (!canReadBlogAdminData(env)) {
+    return buildBlogDataUnavailableResponse();
+  }
+
   try {
-    return buildJsonResponse({ ok: true, tags: await listBlogTagSuggestions() });
+    return buildJsonResponse({ ok: true, tags: await listBlogTagSuggestions(env) });
   } catch (error) {
     console.error("[admin blog] list tags failed", error);
 

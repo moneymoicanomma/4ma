@@ -14,6 +14,15 @@ Este starter responde:
 
 - `GET /health`
 - `GET /v1/admin/database-overview`
+- `GET /v1/blog/posts`
+- `GET /v1/blog/posts/:slug`
+- `GET /v1/blog/tags`
+- `GET /v1/admin/blog/posts`
+- `POST /v1/admin/blog/posts`
+- `GET /v1/admin/blog/posts/:postId`
+- `POST /v1/admin/blog/posts/:postId`
+- `GET /v1/admin/blog/tags`
+- `POST /v1/admin/blog/uploads`
 - `GET /v1/google-sheets/exports/:tableKey`
 - `POST /v1/admin/fighter-applications/:applicationId/interest`
 - `POST /v1/newsletter/subscriptions`
@@ -137,6 +146,11 @@ UPSTREAM_PORTAL_BEARER_TOKEN=<mesmo-valor-de-PORTAL_API_BEARER_TOKEN>
 UPSTREAM_ADMIN_READ_BEARER_TOKEN=<mesmo-valor-de-ADMIN_READ_API_BEARER_TOKEN>
 UPSTREAM_ADMIN_WRITE_BEARER_TOKEN=<mesmo-valor-de-ADMIN_WRITE_API_BEARER_TOKEN>
 UPSTREAM_ADMIN_DATABASE_OVERVIEW_PATH=/v1/admin/database-overview
+UPSTREAM_BLOG_POSTS_PATH=/v1/blog/posts
+UPSTREAM_BLOG_TAGS_PATH=/v1/blog/tags
+UPSTREAM_ADMIN_BLOG_POSTS_PATH=/v1/admin/blog/posts
+UPSTREAM_ADMIN_BLOG_TAGS_PATH=/v1/admin/blog/tags
+UPSTREAM_ADMIN_BLOG_UPLOADS_PATH=/v1/admin/blog/uploads
 EVENT_FIGHTER_PORTAL_ENABLED=true
 EVENT_FIGHTER_ACCESS_AUTH_MODE=shared_password
 ATHLETE_FORM_PASSWORD=<senha-compartilhada>

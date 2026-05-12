@@ -123,6 +123,53 @@
   padding: 0 32px 88px;
 }
 
+.unavailableCard {
+  display: grid;
+  gap: 16px;
+  max-width: 760px;
+  padding: 28px;
+  border: 1px solid rgba(232, 24, 26, 0.28);
+  background:
+    linear-gradient(180deg, rgba(232, 24, 26, 0.08), rgba(255, 255, 255, 0.015)),
+    rgba(7, 7, 7, 0.94);
+}
+
+.unavailableEyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1.6px;
+  text-transform: uppercase;
+}
+
+.unavailableEyebrow::before {
+  content: "";
+  width: 44px;
+  height: 1px;
+  background: var(--accent);
+}
+
+.unavailableCard h2 {
+  margin: 0;
+  color: #ffffff;
+  font-family: var(--font-title);
+  font-size: clamp(34px, 4vw, 58px);
+  font-weight: 700;
+  line-height: 0.94;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.unavailableCard p {
+  margin: 0;
+  color: rgba(227, 226, 225, 0.72);
+  font-size: 16px;
+  line-height: 1.65;
+}
+
 @media (max-width: 1040px) {
   .heroGrid,
   .heroAside {
@@ -143,5 +190,9 @@
 
   .heroAside {
     grid-template-columns: 1fr;
+  }
+
+  .unavailableCard {
+    padding: 22px;
   }
 }

@@ -5,7 +5,8 @@ import { AdminTopbar } from "@/app/components/admin-topbar";
 import { BlogPostEditor } from "@/app/components/blog-post-editor";
 import { canAccessBlogAdmin, getAdminDefaultRedirectPathForRole } from "@/lib/server/admin-access";
 import { requireAdminSessionIdentity } from "@/lib/server/admin-session";
-import { getAdminBlogPost, listBlogTagSuggestions } from "@/lib/server/blog";
+import { canReadBlogAdminData, getAdminBlogPost, listBlogTagSuggestions } from "@/lib/server/blog";
+import { getServerEnv } from "@/lib/server/env";
 
 import styles from "./page.module.css";
 
@@ -22,13 +23,18 @@ export default async function AdminBlogPostPage({
   params: Promise<{ postId: string }>;
 }>) {
   const { postId } = await params;
-  const identity = await requireAdminSessionIdentity(`/admin/blog/${postId}`);
+  const env = getServerEnv();
+  const identity = await requireAdminSessionIdentity(`/admin/blog/${postId}`, env);
 
   if (!canAccessBlogAdmin(identity.role)) {
     redirect(getAdminDefaultRedirectPathForRole(identity.role));
   }
 
-  const [post, tags] = await Promise.all([getAdminBlogPost(postId), listBlogTagSuggestions()]);
+  if (!canReadBlogAdminData(env)) {
+    redirect("/admin/blog");
+  }
+
+  const [post, tags] = await Promise.all([getAdminBlogPost(postId, env), listBlogTagSuggestions(env)]);
 
   if (!post) {
     notFound();

@@ -25,7 +25,16 @@ import {
   withDatabaseTransaction,
   type DatabaseTransaction
 } from "@/lib/server/database";
-import { getServerEnv, isDatabaseConfigured } from "@/lib/server/env";
+import {
+  getAdminReadUpstreamBearerToken,
+  getAdminWriteUpstreamBearerToken,
+  getServerEnv,
+  isAdminReadUpstreamConfigured,
+  isAdminWriteUpstreamConfigured,
+  isDatabaseConfigured,
+  type ServerEnv
+} from "@/lib/server/env";
+import { getJsonFromUpstream, postJsonToUpstream } from "@/lib/server/http";
 import { verifyBlogMediaUpload } from "@/lib/server/blog-media-storage";
 import type { RequestAuditContext } from "@/lib/server/request-context";
 
@@ -91,6 +100,14 @@ function isBlogDatabaseReadable() {
   return isDatabaseConfigured(getServerEnv());
 }
 
+export function canReadBlogAdminData(env: ServerEnv = getServerEnv()) {
+  return isDatabaseConfigured(env) || isAdminReadUpstreamConfigured(env);
+}
+
+export function canWriteBlogAdminData(env: ServerEnv = getServerEnv()) {
+  return isDatabaseConfigured(env) || isAdminWriteUpstreamConfigured(env);
+}
+
 function createEmptyPublicBlogIndex(): {
   featured: BlogPostSummary | null;
   posts: BlogPostSummary[];
@@ -122,6 +139,31 @@ function buildDatabaseRequestContext(
     origin: requestContext.requestOrigin,
     userAgent: requestContext.userAgent
   };
+}
+
+function buildUpstreamActor(identity: AdminSessionIdentity) {
+  return {
+    accountId: identity.kind === "account" ? identity.accountId : null,
+    email: identity.username,
+    role: identity.role
+  };
+}
+
+async function readJsonFromPostResponse<TPayload>(response: Response) {
+  return (await response.json().catch(() => null)) as TPayload | null;
+}
+
+async function postAdminBlogUpstream<TPayload>(
+  env: ServerEnv,
+  path: string,
+  payload: unknown
+) {
+  const response = await postJsonToUpstream(`${env.upstreamApiBaseUrl}${path}`, payload, {
+    bearerToken: getAdminWriteUpstreamBearerToken(env)!,
+    timeoutMs: env.upstreamRequestTimeoutMs
+  });
+
+  return readJsonFromPostResponse<TPayload>(response);
 }
 
 function toIsoString(value: Date | string | null) {
@@ -449,7 +491,23 @@ async function validatePostMediaUploads(transaction: DatabaseTransaction, post: 
   };
 }
 
-export async function listAdminBlogPosts(): Promise<BlogPostSummary[]> {
+export async function listAdminBlogPosts(env: ServerEnv = getServerEnv()): Promise<BlogPostSummary[]> {
+  if (!isDatabaseConfigured(env)) {
+    if (!isAdminReadUpstreamConfigured(env)) {
+      return [];
+    }
+
+    const payload = await getJsonFromUpstream<{ posts: BlogPostSummary[] }>(
+      `${env.upstreamApiBaseUrl}${env.adminBlogPostsPath}`,
+      {
+        bearerToken: getAdminReadUpstreamBearerToken(env)!,
+        timeoutMs: env.upstreamRequestTimeoutMs
+      }
+    );
+
+    return Array.isArray(payload.posts) ? payload.posts : [];
+  }
+
   const result = await queryDatabase<BlogPostRow>(
     `
       ${getBlogPostSelect("")}
@@ -462,8 +520,30 @@ export async function listAdminBlogPosts(): Promise<BlogPostSummary[]> {
 
 export async function createBlogDraft(
   identity: AdminSessionIdentity,
-  requestContext: RequestAuditContext
+  requestContext: RequestAuditContext,
+  env: ServerEnv = getServerEnv()
 ): Promise<string> {
+  if (!isDatabaseConfigured(env)) {
+    if (!isAdminWriteUpstreamConfigured(env)) {
+      throw new Error("Blog admin upstream is not configured.");
+    }
+
+    const payload = await postAdminBlogUpstream<{ ok: boolean; postId?: string }>(
+      env,
+      env.adminBlogPostsPath,
+      {
+        actor: buildUpstreamActor(identity),
+        requestContext
+      }
+    );
+
+    if (!payload?.ok || !payload.postId) {
+      throw new Error("Blog draft upstream response was invalid.");
+    }
+
+    return payload.postId;
+  }
+
   const draftId = randomUUID();
   const draftSlug = `rascunho-${draftId.slice(0, 8)}`;
 
@@ -514,7 +594,26 @@ export async function createBlogDraft(
   return draftId;
 }
 
-export async function getAdminBlogPost(postId: string): Promise<BlogPostDetail | null> {
+export async function getAdminBlogPost(
+  postId: string,
+  env: ServerEnv = getServerEnv()
+): Promise<BlogPostDetail | null> {
+  if (!isDatabaseConfigured(env)) {
+    if (!isAdminReadUpstreamConfigured(env) || !isUuid(postId)) {
+      return null;
+    }
+
+    const payload = await getJsonFromUpstream<{ post: BlogPostDetail | null }>(
+      `${env.upstreamApiBaseUrl}${env.adminBlogPostsPath}/${postId}`,
+      {
+        bearerToken: getAdminReadUpstreamBearerToken(env)!,
+        timeoutMs: env.upstreamRequestTimeoutMs
+      }
+    );
+
+    return payload.post ?? null;
+  }
+
   return queryBlogPostById(publicQueryExecutor, postId);
 }
 
@@ -522,7 +621,8 @@ export async function saveAdminBlogPost(
   postId: string,
   input: unknown,
   identity: AdminSessionIdentity,
-  requestContext: RequestAuditContext
+  requestContext: RequestAuditContext,
+  env: ServerEnv = getServerEnv()
 ): Promise<{ ok: true; post: BlogPostDetail } | { ok: false; message: string }> {
   if (!isUuid(postId)) {
     return {
@@ -538,6 +638,30 @@ export async function saveAdminBlogPost(
   }
 
   const payload = parsed.data;
+
+  if (!isDatabaseConfigured(env)) {
+    if (!isAdminWriteUpstreamConfigured(env)) {
+      return {
+        ok: false,
+        message: "Upstream administrativo do blog nao configurado."
+      };
+    }
+
+    const upstreamPayload = await postAdminBlogUpstream<
+      { ok: true; post: BlogPostDetail } | { ok: false; message: string }
+    >(env, `${env.adminBlogPostsPath}/${postId}`, {
+      action: "save",
+      payload,
+      actor: buildUpstreamActor(identity),
+      requestContext
+    });
+
+    return upstreamPayload ?? {
+      ok: false,
+      message: "Resposta invalida do upstream administrativo do blog."
+    };
+  }
+
   const contentBlocks = normalizeBlogBlocks(payload.contentBlocks);
   const metrics = calculateBlogReadingMetrics(contentBlocks);
 
@@ -660,12 +784,35 @@ export async function saveAdminBlogPost(
 export async function publishAdminBlogPost(
   postId: string,
   identity: AdminSessionIdentity,
-  requestContext: RequestAuditContext
+  requestContext: RequestAuditContext,
+  env: ServerEnv = getServerEnv()
 ): Promise<{ ok: true; post: BlogPostDetail } | { ok: false; message: string }> {
   if (!isUuid(postId)) {
     return {
       ok: false,
       message: "ID de post inválido."
+    };
+  }
+
+  if (!isDatabaseConfigured(env)) {
+    if (!isAdminWriteUpstreamConfigured(env)) {
+      return {
+        ok: false,
+        message: "Upstream administrativo do blog nao configurado."
+      };
+    }
+
+    const upstreamPayload = await postAdminBlogUpstream<
+      { ok: true; post: BlogPostDetail } | { ok: false; message: string }
+    >(env, `${env.adminBlogPostsPath}/${postId}`, {
+      action: "publish",
+      actor: buildUpstreamActor(identity),
+      requestContext
+    });
+
+    return upstreamPayload ?? {
+      ok: false,
+      message: "Resposta invalida do upstream administrativo do blog."
     };
   }
 
@@ -733,12 +880,35 @@ export async function publishAdminBlogPost(
 export async function unpublishAdminBlogPost(
   postId: string,
   identity: AdminSessionIdentity,
-  requestContext: RequestAuditContext
+  requestContext: RequestAuditContext,
+  env: ServerEnv = getServerEnv()
 ): Promise<{ ok: true; post: BlogPostDetail } | { ok: false; message: string }> {
   if (!isUuid(postId)) {
     return {
       ok: false,
       message: "ID de post inválido."
+    };
+  }
+
+  if (!isDatabaseConfigured(env)) {
+    if (!isAdminWriteUpstreamConfigured(env)) {
+      return {
+        ok: false,
+        message: "Upstream administrativo do blog nao configurado."
+      };
+    }
+
+    const upstreamPayload = await postAdminBlogUpstream<
+      { ok: true; post: BlogPostDetail } | { ok: false; message: string }
+    >(env, `${env.adminBlogPostsPath}/${postId}`, {
+      action: "unpublish",
+      actor: buildUpstreamActor(identity),
+      requestContext
+    });
+
+    return upstreamPayload ?? {
+      ok: false,
+      message: "Resposta invalida do upstream administrativo do blog."
     };
   }
 
@@ -775,6 +945,23 @@ export async function listPublicBlogPosts(): Promise<{
   posts: BlogPostSummary[];
   tags: Array<{ name: string; slug: string; count: number }>;
 }> {
+  const env = getServerEnv();
+
+  if (!isDatabaseConfigured(env)) {
+    if (!isAdminReadUpstreamConfigured(env)) {
+      return createEmptyPublicBlogIndex();
+    }
+
+    return getJsonFromUpstream<{
+      featured: BlogPostSummary | null;
+      posts: BlogPostSummary[];
+      tags: Array<{ name: string; slug: string; count: number }>;
+    }>(`${env.upstreamApiBaseUrl}${env.blogPostsPath}`, {
+      bearerToken: getAdminReadUpstreamBearerToken(env)!,
+      timeoutMs: env.upstreamRequestTimeoutMs
+    }).catch(() => createEmptyPublicBlogIndex());
+  }
+
   if (!isBlogDatabaseReadable()) {
     return createEmptyPublicBlogIndex();
   }
@@ -814,9 +1001,29 @@ export async function listPublicBlogPosts(): Promise<{
 export async function getPublicBlogPostBySlug(slug: string): Promise<BlogPostDetail | null> {
   const normalizedSlug = normalizeBlogSlug(slug);
 
-  return normalizedSlug && isBlogDatabaseReadable()
-    ? queryBlogPostBySlug(publicQueryExecutor, normalizedSlug)
-    : null;
+  if (!normalizedSlug) {
+    return null;
+  }
+
+  const env = getServerEnv();
+
+  if (!isDatabaseConfigured(env)) {
+    if (!isAdminReadUpstreamConfigured(env)) {
+      return null;
+    }
+
+    const payload = await getJsonFromUpstream<{ post: BlogPostDetail | null }>(
+      `${env.upstreamApiBaseUrl}${env.blogPostsPath}/${normalizedSlug}`,
+      {
+        bearerToken: getAdminReadUpstreamBearerToken(env)!,
+        timeoutMs: env.upstreamRequestTimeoutMs
+      }
+    ).catch(() => ({ post: null }));
+
+    return payload.post;
+  }
+
+  return isBlogDatabaseReadable() ? queryBlogPostBySlug(publicQueryExecutor, normalizedSlug) : null;
 }
 
 export async function getBlogRedirectForSlug(slug: string): Promise<string | null> {
@@ -855,7 +1062,14 @@ export async function listPublicBlogPostsByTag(
   }
 
   if (!isBlogDatabaseReadable()) {
-    return null;
+    const index = await listPublicBlogPosts();
+    const posts = [
+      ...(index.featured ? [index.featured] : []),
+      ...index.posts
+    ].filter((post) => post.tags.some((tag) => tag.slug === normalizedSlug));
+    const tag = index.tags.find((currentTag) => currentTag.slug === normalizedSlug);
+
+    return tag && posts.length ? { tag, posts } : null;
   }
 
   const tagResult = await queryDatabase<{ name: string; slug: string }>(
@@ -901,9 +1115,24 @@ export async function listPublicBlogPostsByTag(
   };
 }
 
-export async function listBlogTagSuggestions(): Promise<
+export async function listBlogTagSuggestions(env: ServerEnv = getServerEnv()): Promise<
   Array<{ name: string; slug: string; count: number }>
 > {
+  if (!isDatabaseConfigured(env)) {
+    if (!isAdminReadUpstreamConfigured(env)) {
+      return [];
+    }
+
+    const payload = await getJsonFromUpstream<{
+      tags: Array<{ name: string; slug: string; count: number }>;
+    }>(`${env.upstreamApiBaseUrl}${env.adminBlogTagsPath}`, {
+      bearerToken: getAdminReadUpstreamBearerToken(env)!,
+      timeoutMs: env.upstreamRequestTimeoutMs
+    });
+
+    return Array.isArray(payload.tags) ? payload.tags : [];
+  }
+
   const result = await queryDatabase<BlogTagCountRow>(
     `
       select
@@ -921,6 +1150,31 @@ export async function listBlogTagSuggestions(): Promise<
 }
 
 export async function listBlogSitemapEntries(): Promise<Array<{ href: string; updatedAt: Date }>> {
+  const env = getServerEnv();
+
+  if (!isDatabaseConfigured(env)) {
+    const index = await listPublicBlogPosts();
+    const posts = [
+      ...(index.featured ? [index.featured] : []),
+      ...index.posts
+    ];
+
+    return [
+      {
+        href: "/blog",
+        updatedAt: new Date()
+      },
+      ...posts.map((post) => ({
+        href: `/blog/${post.slug}`,
+        updatedAt: new Date(post.updatedAt)
+      })),
+      ...index.tags.map((tag) => ({
+        href: `/blog/tags/${tag.slug}`,
+        updatedAt: new Date()
+      }))
+    ];
+  }
+
   if (!isBlogDatabaseReadable()) {
     return [];
   }
@@ -955,6 +1209,32 @@ export async function listBlogSitemapEntries(): Promise<Array<{ href: string; up
 }
 
 export async function getBlogLlmsIndex(): Promise<string> {
+  const env = getServerEnv();
+
+  if (!isDatabaseConfigured(env)) {
+    const index = await listPublicBlogPosts();
+    const posts = [...(index.featured ? [index.featured] : []), ...index.posts];
+
+    if (!posts.length) {
+      return [
+        "# Money Moicano MMA Blog",
+        "",
+        "Indice textual dos posts publicados do Money Moicano MMA.",
+        "",
+        "Nenhum post publicado no momento.",
+        ""
+      ].join("\n");
+    }
+
+    return `${[
+      "# Money Moicano MMA Blog",
+      "",
+      "Indice textual dos posts publicados do Money Moicano MMA.",
+      "",
+      ...posts.map((post) => `- [${post.title}](/blog/${post.slug}.md) - ${post.description}`)
+    ].join("\n")}\n`;
+  }
+
   if (!isBlogDatabaseReadable()) {
     return [
       "# Money Moicano MMA Blog",
@@ -1009,8 +1289,31 @@ export async function createBlogMediaRecord(
     byteSize: number;
   },
   identity: AdminSessionIdentity,
-  requestContext: RequestAuditContext
+  requestContext: RequestAuditContext,
+  env: ServerEnv = getServerEnv()
 ) {
+  if (!isDatabaseConfigured(env)) {
+    if (!isAdminWriteUpstreamConfigured(env)) {
+      throw new Error("Blog admin upstream is not configured.");
+    }
+
+    const payload = await postAdminBlogUpstream<{ ok: boolean; mediaId?: string }>(
+      env,
+      env.adminBlogUploadsPath,
+      {
+        payload: input,
+        actor: buildUpstreamActor(identity),
+        requestContext
+      }
+    );
+
+    if (!payload?.ok || !payload.mediaId) {
+      throw new Error("Blog media upstream response was invalid.");
+    }
+
+    return payload.mediaId;
+  }
+
   return withDatabaseTransaction(
     buildDatabaseRequestContext(identity, requestContext),
     async (transaction) => {
