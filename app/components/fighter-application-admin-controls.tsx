@@ -81,6 +81,8 @@ function emptyFilters(): FighterApplicationFilters {
     state: "",
     weightClass: "",
     editorialInterest: "",
+    minAge: "",
+    maxAge: "",
     minRecord: "",
     maxRecord: "",
   };
@@ -418,6 +420,34 @@ export function FighterApplicationsAdminTable({
                 </option>
               ))}
             </select>
+          </label>
+
+          <label className={styles.filterField}>
+            <span>Idade mínima</span>
+            <input
+              className={styles.filterInput}
+              inputMode="numeric"
+              min="0"
+              max="120"
+              placeholder="18"
+              type="number"
+              value={filters.minAge}
+              onChange={(event) => updateFilter("minAge", event.target.value)}
+            />
+          </label>
+
+          <label className={styles.filterField}>
+            <span>Idade máxima</span>
+            <input
+              className={styles.filterInput}
+              inputMode="numeric"
+              min="0"
+              max="120"
+              placeholder="35"
+              type="number"
+              value={filters.maxAge}
+              onChange={(event) => updateFilter("maxAge", event.target.value)}
+            />
           </label>
 
           <label className={styles.filterField}>

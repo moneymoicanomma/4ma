@@ -108,6 +108,8 @@ describe("fighter application admin list helpers", () => {
         state: "SP",
         weightClass: "",
         editorialInterest: "",
+        minAge: "",
+        maxAge: "",
         minRecord: "",
         maxRecord: "",
       }).map((row) => row.id),
@@ -123,6 +125,8 @@ describe("fighter application admin list helpers", () => {
         state: "",
         weightClass: "",
         editorialInterest: "",
+        minAge: "",
+        maxAge: "",
         minRecord: "0-3",
         maxRecord: "12-0",
       }).map((row) => row.id),
@@ -138,10 +142,29 @@ describe("fighter application admin list helpers", () => {
         state: "",
         weightClass: "galo",
         editorialInterest: "bizarro",
+        minAge: "",
+        maxAge: "",
         minRecord: "",
         maxRecord: "",
       }).map((row) => row.id),
       ["bia"],
+    );
+  });
+
+  it("filters rows by minimum and maximum age", () => {
+    assert.deepEqual(
+      filterFighterApplicationRows(rows, {
+        name: "",
+        city: "",
+        state: "",
+        weightClass: "",
+        editorialInterest: "",
+        minAge: "23",
+        maxAge: "30",
+        minRecord: "",
+        maxRecord: "",
+      }).map((row) => row.id),
+      ["ana"],
     );
   });
 

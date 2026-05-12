@@ -40,6 +40,8 @@ export type FighterApplicationFilters = {
   state: string;
   weightClass: string;
   editorialInterest: string;
+  minAge: string;
+  maxAge: string;
   minRecord: string;
   maxRecord: string;
 };
@@ -214,6 +216,10 @@ function getFighterInterestSearchValue(row: FighterApplicationAdminListRow) {
   );
 }
 
+function getFighterAgeValue(row: FighterApplicationAdminListRow) {
+  return parseNumberFromText(getRowText(row, "age"));
+}
+
 function parseNumberFromText(value: string | null | undefined) {
   const match = (value ?? "").match(/\d+/);
 
@@ -281,6 +287,8 @@ export function filterFighterApplicationRows<Row extends FighterApplicationAdmin
   const stateFilter = filters.state.trim().toUpperCase();
   const weightClassFilter = filters.weightClass.trim();
   const interestFilter = filters.editorialInterest.trim();
+  const minAge = parseNumberFromText(filters.minAge);
+  const maxAge = parseNumberFromText(filters.maxAge);
   const minRecord = parseFighterRecordFromText(filters.minRecord);
   const maxRecord = parseFighterRecordFromText(filters.maxRecord);
 
@@ -309,6 +317,22 @@ export function filterFighterApplicationRows<Row extends FighterApplicationAdmin
           return false;
         }
       } else if (rowInterest !== interestFilter) {
+        return false;
+      }
+    }
+
+    if (minAge !== null || maxAge !== null) {
+      const rowAge = getFighterAgeValue(row);
+
+      if (rowAge === null) {
+        return false;
+      }
+
+      if (minAge !== null && rowAge < minAge) {
+        return false;
+      }
+
+      if (maxAge !== null && rowAge > maxAge) {
         return false;
       }
     }
