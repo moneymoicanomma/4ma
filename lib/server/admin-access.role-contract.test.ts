@@ -30,6 +30,7 @@ if (!shouldLimitEventFighterIntakesToCurrentEvent(publicRelationsRole)) {
 
 for (const tableId of [
   "newsletter-subscriptions",
+  "press-credentials",
   "fighter-applications",
   "event-fighter-intakes",
 ] as const) {

@@ -125,5 +125,6 @@ export const homepageSectionLinks = [
 export const restrictedAreaNotes = [
   "A área privada dos atletas confirmados fica fora do índice público.",
   "As rotas administrativas do fantasy não entram em sitemap nem navegação aberta.",
+  "O credenciamento de imprensa é uma rota operacional no mapa interno e permanece fora da indexação.",
   "Endpoints de API, sessões operacionais e o mapa interno do site ficam bloqueados para indexação.",
 ] as const;

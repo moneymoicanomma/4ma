@@ -6,6 +6,7 @@ import {
   FANTASY_ENTRY_SOURCE,
   FANTASY_VICTORY_METHODS,
   findBrazilianStateSuggestions,
+  normalizeFantasyRoundForMethod,
   parseFantasyEntry,
   type FantasyEntryPublicResponse,
   type FantasyPickPayload,
@@ -172,6 +173,26 @@ function FighterPortrait({
   );
 }
 
+function normalizeDraftPick(pickPayload: Partial<FantasyPickPayload>) {
+  if (!pickPayload.victoryMethod) {
+    return pickPayload;
+  }
+
+  const normalizedRound = normalizeFantasyRoundForMethod(
+    pickPayload.victoryMethod,
+    pickPayload.round
+  );
+
+  if (normalizedRound === null) {
+    return pickPayload;
+  }
+
+  return {
+    ...pickPayload,
+    round: normalizedRound
+  };
+}
+
 export function FantasyExperience({
   currentEvent,
   leaderboardEvent,
@@ -193,7 +214,11 @@ export function FantasyExperience({
   const completedFightCount = currentEvent.fights.filter((fight) => {
     const pickPayload = pickMap[fight.id];
 
-    return Boolean(pickPayload?.fighterId && pickPayload?.victoryMethod && pickPayload?.round);
+    return Boolean(
+      pickPayload?.fighterId &&
+        pickPayload?.victoryMethod &&
+        normalizeFantasyRoundForMethod(pickPayload.victoryMethod, pickPayload.round) !== null
+    );
   }).length;
 
   const picksOpen = currentEvent.status === "published";
@@ -219,11 +244,11 @@ export function FantasyExperience({
   function updateFightPick(fightId: string, patch: Partial<FantasyPickPayload>) {
     setPickMap((current) => ({
       ...current,
-      [fightId]: {
+      [fightId]: normalizeDraftPick({
         ...current[fightId],
         ...patch,
         fightId
-      }
+      })
     }));
 
     if (submissionState.status !== "idle") {
@@ -251,7 +276,16 @@ export function FantasyExperience({
       .map((fight) => {
         const pickPayload = pickMap[fight.id];
 
-        if (!pickPayload?.fighterId || !pickPayload?.victoryMethod || !pickPayload?.round) {
+        if (!pickPayload?.fighterId || !pickPayload?.victoryMethod) {
+          return null;
+        }
+
+        const round = normalizeFantasyRoundForMethod(
+          pickPayload.victoryMethod,
+          pickPayload.round
+        );
+
+        if (round === null) {
           return null;
         }
 
@@ -259,7 +293,7 @@ export function FantasyExperience({
           fightId: fight.id,
           fighterId: pickPayload.fighterId,
           victoryMethod: pickPayload.victoryMethod,
-          round: pickPayload.round
+          round
         } satisfies FantasyPickPayload;
       })
       .filter((pickPayload): pickPayload is FantasyPickPayload => pickPayload !== null);
@@ -510,6 +544,7 @@ export function FantasyExperience({
                   <div className={styles.selectorRow}>
                     {Array.from({ length: fight.maxRound }, (_, indexValue) => (indexValue + 1) as FantasyRound).map(
                       (round) => {
+                        const decisionAutoRound = selectedPick?.victoryMethod === "decisao";
                         const selected = selectedPick?.round === round;
 
                         return (
@@ -520,6 +555,7 @@ export function FantasyExperience({
                                 ? `${styles.roundButton} ${styles.selectorButtonSelected}`
                                 : styles.roundButton
                             }
+                            disabled={decisionAutoRound && round !== 3}
                             key={round}
                             type="button"
                             onClick={() => {
@@ -552,7 +588,7 @@ export function FantasyExperience({
             </div>
             <p className={styles.panelCopy}>
               Picks liberados enquanto o evento estiver em status aberto. Depois do lock, só o
-              ranking e a consulta privada continuam disponíveis.
+              ranking e seus picks continuam disponíveis.
             </p>
           </section>
 
@@ -738,10 +774,9 @@ export function FantasyExperience({
         <section className={styles.privatePanel}>
           <div className={styles.privateHeader}>
             <div>
-              <span className={styles.panelKicker}>Consulta privada</span>
-              <h3>Como o usuário vai rever as próprias picks</h3>
+              <span className={styles.panelKicker}>Meus picks</span>
+              <h3>Seus palpites</h3>
             </div>
-            <span className={styles.privateBadge}>cookie + link seguro</span>
           </div>
 
           {submittedEntry ? (
@@ -792,10 +827,7 @@ export function FantasyExperience({
               </div>
             </div>
           ) : (
-            <p className={styles.privateEmpty}>
-              Depois do envio, esta área mostra o resumo privado das picks do participante sem
-              expor nenhum dado sensível no ranking público.
-            </p>
+            <p className={styles.privateEmpty}>Envie seus picks para ver o resumo aqui.</p>
           )}
         </section>
 
@@ -805,31 +837,32 @@ export function FantasyExperience({
               <span className={styles.panelKicker}>Ranking publicado</span>
               <h3>{leaderboardEvent.name}</h3>
             </div>
-            <span className={styles.privateBadge}>{leaderboardRows.length} players</span>
+            {leaderboardRows.length ? (
+              <span className={styles.privateBadge}>{leaderboardRows.length} players</span>
+            ) : null}
           </div>
 
-          <p className={styles.rankingCopy}>
-            Este bloco representa o ranking público oficial: só nome público e pontuação. A
-            pontuação sobe conforme os resultados oficiais entram pelo admin.
-          </p>
-
-          <div className={styles.rankingTable}>
-            {leaderboardRows.map((row) => (
-              <div className={styles.rankingRow} key={row.id}>
-                <div className={styles.rankCell}>
-                  <span className={styles.rankNumber}>#{row.rank}</span>
-                  <div>
-                    <strong>{row.displayName}</strong>
-                    <small>
-                      {row.perfectPicks} pick{row.perfectPicks === 1 ? "" : "s"} perfeita
-                      {row.perfectPicks === 1 ? "" : "s"}
-                    </small>
+          {leaderboardRows.length ? (
+            <div className={styles.rankingTable}>
+              {leaderboardRows.map((row) => (
+                <div className={styles.rankingRow} key={row.id}>
+                  <div className={styles.rankCell}>
+                    <span className={styles.rankNumber}>#{row.rank}</span>
+                    <div>
+                      <strong>{row.displayName}</strong>
+                      <small>
+                        {row.perfectPicks} pick{row.perfectPicks === 1 ? "" : "s"} perfeita
+                        {row.perfectPicks === 1 ? "" : "s"}
+                      </small>
+                    </div>
                   </div>
+                  <span className={styles.rankScore}>{row.score} pts</span>
                 </div>
-                <span className={styles.rankScore}>{row.score} pts</span>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <p className={styles.rankingCopy}>ainda sem resultados</p>
+          )}
         </section>
       </div>
       <FormConfirmationPopup

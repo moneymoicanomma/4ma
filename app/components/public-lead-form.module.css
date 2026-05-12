@@ -22,6 +22,7 @@
 }
 
 .input,
+.select,
 .textarea {
   appearance: none;
   width: 100%;
@@ -36,9 +37,24 @@
     transform 160ms ease;
 }
 
-.input {
+.input,
+.select {
   min-height: 56px;
   padding: 0 16px;
+}
+
+.select {
+  background-image:
+    linear-gradient(45deg, transparent 50%, rgba(255, 255, 255, 0.72) 50%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.72) 50%, transparent 50%);
+  background-position:
+    calc(100% - 20px) 24px,
+    calc(100% - 14px) 24px;
+  background-repeat: no-repeat;
+  background-size:
+    6px 6px,
+    6px 6px;
+  padding-right: 44px;
 }
 
 .textarea {
@@ -48,11 +64,13 @@
 }
 
 .input::placeholder,
+.select:invalid,
 .textarea::placeholder {
   color: rgba(255, 255, 255, 0.36);
 }
 
 .input:focus-visible,
+.select:focus-visible,
 .textarea:focus-visible {
   outline: none;
   border-color: rgba(232, 24, 26, 0.8);

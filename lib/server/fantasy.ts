@@ -5,6 +5,7 @@ import { randomUUID } from "node:crypto";
 import type { FantasyEntryPayload, FantasyPickPayload } from "@/lib/contracts/fantasy";
 import {
   BRAZILIAN_STATES,
+  normalizeFantasyRoundForMethod,
   type FantasyEntryPublicResponse
 } from "@/lib/contracts/fantasy";
 import { getBrazilianStateCode } from "@/lib/contracts/brazilian-states";
@@ -163,15 +164,31 @@ const fantasyVictoryMethodSet = new Set<NonNullable<FantasyMockFight["result"]["
   "finalizacao",
   "nocaute"
 ]);
-const fantasyRoundSet = new Set<NonNullable<FantasyMockFight["result"]["round"]>>([
-  1,
-  2,
-  3,
-  4,
-  5
-]);
 const uuidPattern =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+const DEFAULT_FANTASY_SCORING_RULES: FantasyScoringRules = {
+  winner: 1,
+  method: 1,
+  round: 1,
+  perfectPickBonus: 1
+};
+
+const LEGACY_FANTASY_SCORING_RULES: FantasyScoringRules = {
+  winner: 10,
+  method: 6,
+  round: 4,
+  perfectPickBonus: 3
+};
+
+function isSameScoringRules(first: FantasyScoringRules, second: FantasyScoringRules) {
+  return (
+    first.winner === second.winner &&
+    first.method === second.method &&
+    first.round === second.round &&
+    first.perfectPickBonus === second.perfectPickBonus
+  );
+}
 
 function normalizeShortText(input: unknown) {
   return typeof input === "string" ? input.trim().replace(/\s+/g, " ") : "";
@@ -228,15 +245,28 @@ function normalizeScoringRules(input: FantasyMockEvent["scoringRules"] | undefin
   const round = Number(input?.round);
   const perfectPickBonus = Number(input?.perfectPickBonus);
 
-  return {
-    winner: Number.isFinite(winner) && winner >= 0 ? Math.trunc(winner) : 10,
-    method: Number.isFinite(method) && method >= 0 ? Math.trunc(method) : 6,
-    round: Number.isFinite(round) && round >= 0 ? Math.trunc(round) : 4,
+  const normalizedRules = {
+    winner:
+      Number.isFinite(winner) && winner >= 0
+        ? Math.trunc(winner)
+        : DEFAULT_FANTASY_SCORING_RULES.winner,
+    method:
+      Number.isFinite(method) && method >= 0
+        ? Math.trunc(method)
+        : DEFAULT_FANTASY_SCORING_RULES.method,
+    round:
+      Number.isFinite(round) && round >= 0 ? Math.trunc(round) : DEFAULT_FANTASY_SCORING_RULES.round,
     perfectPickBonus:
       Number.isFinite(perfectPickBonus) && perfectPickBonus >= 0
         ? Math.trunc(perfectPickBonus)
-        : 3
+        : DEFAULT_FANTASY_SCORING_RULES.perfectPickBonus
   };
+
+  if (isSameScoringRules(normalizedRules, LEGACY_FANTASY_SCORING_RULES)) {
+    return { ...DEFAULT_FANTASY_SCORING_RULES };
+  }
+
+  return normalizedRules;
 }
 
 function normalizeFightCorner(
@@ -260,13 +290,13 @@ function normalizeFightResult(
 ) {
   const winnerId = normalizeShortText(fight.result.winnerId);
   const victoryMethod = normalizeShortText(fight.result.victoryMethod);
-  const round = Number(fight.result.round);
+  const round = normalizeFantasyRoundForMethod(victoryMethod, fight.result.round);
 
   if (!winnerId && !victoryMethod && !fight.result.round) {
     return null;
   }
 
-  if (!winnerId || !fantasyVictoryMethodSet.has(victoryMethod as NonNullable<FantasyMockFight["result"]["victoryMethod"]>) || !fantasyRoundSet.has(round as NonNullable<FantasyMockFight["result"]["round"]>)) {
+  if (!winnerId || !fantasyVictoryMethodSet.has(victoryMethod as NonNullable<FantasyMockFight["result"]["victoryMethod"]>) || round === null) {
     throw new FantasyAdminEventSaveValidationError(
       "O resultado oficial precisa ter vencedor, método e round válidos."
     );
@@ -290,7 +320,7 @@ function normalizeFightResult(
   return {
     winnerSide,
     victoryMethod: victoryMethod as NonNullable<FantasyMockFight["result"]["victoryMethod"]>,
-    round: round as NonNullable<FantasyMockFight["result"]["round"]>
+    round
   };
 }
 
@@ -873,14 +903,21 @@ function buildEventSkeleton(row: EventRow): FantasyMockEvent {
     heroLabel: row.heroLabel,
     broadcastLabel: row.broadcastLabel,
     statusText: row.statusText,
-    scoringRules: {
+    scoringRules: normalizeScoringRules({
       winner: row.winnerPoints,
       method: row.methodPoints,
       round: row.roundPoints,
       perfectPickBonus: row.perfectPickBonus
-    },
+    }),
     fights: [],
     entries: []
+  };
+}
+
+function normalizeLoadedFantasyEvent(event: FantasyMockEvent): FantasyMockEvent {
+  return {
+    ...event,
+    scoringRules: normalizeScoringRules(event.scoringRules)
   };
 }
 
@@ -890,13 +927,17 @@ async function loadFantasyEventsFromUpstream(env: ServerEnv) {
   }
 
   try {
-    return await getJsonFromUpstream<{ events: FantasyMockEvent[] }>(
+    const upstreamPayload = await getJsonFromUpstream<{ events: FantasyMockEvent[] }>(
       `${env.upstreamApiBaseUrl}${env.fantasyEventsPath}`,
       {
         bearerToken: getAdminReadUpstreamBearerToken(env)!,
         timeoutMs: env.upstreamRequestTimeoutMs
       }
     );
+
+    return {
+      events: upstreamPayload.events.map(normalizeLoadedFantasyEvent)
+    };
   } catch (error) {
     console.error("[fantasy] failed to load events from upstream", error);
     return null;

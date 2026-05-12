@@ -58,6 +58,7 @@ const sourceLabels: Record<string, string> = {
   fighter_application: "Cadastro de lutador",
   newsletter_signup: "Newsletter",
   partner_inquiry: "Parceria",
+  press_credential: "Cadastro imprensa",
   press_newsletter: "Newsletter imprensa",
 };
 
@@ -67,6 +68,7 @@ export type AdminDatabaseTableId =
   | "partner-inquiries"
   | "fighter-applications"
   | "event-fighter-intakes"
+  | "press-credentials"
   | "fantasy-entries";
 
 export type AdminDatabaseTableMeta = {
@@ -112,6 +114,13 @@ const adminDatabaseTables: Record<AdminDatabaseTableId, AdminDatabaseTableMeta> 
     tableName: "app.event_fighter_intakes",
     description: "Fichas operacionais enviadas pelos lutadores para cada edição.",
     previewLabel: "Últimos intakes"
+  },
+  "press-credentials": {
+    id: "press-credentials",
+    label: "Cadastro Imprensa",
+    tableName: "app.press_credentials",
+    description: "Solicitações de credenciamento enviadas pela imprensa para o evento.",
+    previewLabel: "Últimos cadastros"
   },
   "fantasy-entries": {
     id: "fantasy-entries",
@@ -397,6 +406,16 @@ type EventFighterIntakePreviewRow = {
   phoneWhatsapp: string;
   intakeStatus: string;
   photoCount: number | string;
+};
+
+type PressCredentialPreviewRow = {
+  id: string;
+  createdAt: DateValue;
+  fullName: string;
+  email: string;
+  mediaOutlet: string;
+  coverageType: string;
+  status: string;
 };
 
 type FantasyEntryPreviewRow = {
@@ -1270,6 +1289,76 @@ async function loadEventFighterIntakesTable(intakeScope: EventFighterIntakeScope
   });
 }
 
+async function loadPressCredentialsTable() {
+  const config: TableFallbackConfig = {
+    id: "press-credentials",
+    label: "Cadastro Imprensa",
+    tableName: "app.press_credentials",
+    description: "Solicitações de credenciamento enviadas pela imprensa para o evento.",
+    previewLabel: "Últimos cadastros",
+    columns: [
+      { key: "createdAt", label: "Data" },
+      { key: "fullName", label: "Nome" },
+      { key: "email", label: "Email" },
+      { key: "coverageType", label: "Cobertura" },
+      { key: "status", label: "Status" },
+    ],
+  };
+
+  return withTableFallback(config, async () => {
+    const [summary, statusCounts, result] = await Promise.all([
+      loadTableSummary(
+        `
+          select
+            count(*)::int as "totalRows",
+            max(updated_at) as "lastActivityAt"
+          from app.press_credentials
+        `,
+      ),
+      loadStatusCounts(
+        `
+          select
+            status,
+            count(*)::int as total
+          from app.press_credentials
+          group by status
+          order by count(*) desc, status asc
+        `,
+      ),
+      queryDatabase<PressCredentialPreviewRow>(
+        `
+          select
+            id,
+            created_at as "createdAt",
+            full_name as "fullName",
+            email,
+            media_outlet as "mediaOutlet",
+            coverage_type as "coverageType",
+            status
+          from app.press_credentials
+          order by created_at desc
+          limit ${TABLE_PREVIEW_LIMIT}
+        `,
+      ),
+    ]);
+
+    return {
+      ...config,
+      ...summary,
+      statusCounts,
+      rows: result.rows.map((row) =>
+        createRow(row.id, {
+          createdAt: formatDateTime(row.createdAt),
+          fullName: formatText(row.fullName),
+          email: formatText(row.email),
+          coverageType: formatText(row.coverageType),
+          status: formatStatus(row.status),
+        }),
+      ),
+    };
+  });
+}
+
 async function loadFantasyEntriesTable() {
   const config: TableFallbackConfig = {
     id: "fantasy-entries",
@@ -1412,6 +1501,8 @@ export async function loadAdminDatabaseOverview(
           return loadFighterApplicationsTable();
         case "event-fighter-intakes":
           return loadEventFighterIntakesTable(intakeScope);
+        case "press-credentials":
+          return loadPressCredentialsTable();
         case "fantasy-entries":
           return loadFantasyEntriesTable();
         default: {
@@ -1930,6 +2021,62 @@ async function loadEventFighterIntakesTableDataDirect(
   };
 }
 
+async function loadPressCredentialsTableDataDirect(): Promise<AdminDatabaseTableData> {
+  const table = adminDatabaseTables["press-credentials"];
+  const [summary, statusCounts, result] = await Promise.all([
+    loadTableSummary(`
+      select
+        count(*)::int as "totalRows",
+        max(updated_at) as "lastActivityAt"
+      from app.press_credentials
+    `),
+    loadStatusCounts(`
+      select
+        status,
+        count(*)::int as total
+      from app.press_credentials
+      group by status
+      order by count(*) desc, status asc
+    `),
+    queryDatabase<PressCredentialPreviewRow>(`
+      select
+        id,
+        created_at as "createdAt",
+        full_name as "fullName",
+        email,
+        media_outlet as "mediaOutlet",
+        coverage_type as "coverageType",
+        status
+      from app.press_credentials
+      order by created_at desc
+    `),
+  ]);
+
+  return {
+    databaseConfigured: true,
+    table,
+    columns: [
+      { key: "createdAt", label: "Data" },
+      { key: "fullName", label: "Nome" },
+      { key: "email", label: "Email" },
+      { key: "coverageType", label: "Cobertura" },
+      { key: "status", label: "Status" },
+    ],
+    rows: result.rows.map((row) =>
+      createRow(row.id, {
+        createdAt: formatDateTime(row.createdAt),
+        fullName: formatText(row.fullName),
+        email: formatText(row.email),
+        coverageType: formatText(row.coverageType),
+        status: formatStatus(row.status),
+      }),
+    ),
+    statusCounts,
+    totalRows: summary.totalRows,
+    lastActivityAt: summary.lastActivityAt,
+  };
+}
+
 async function loadFantasyEntriesTableDataDirect(): Promise<AdminDatabaseTableData> {
   const table = adminDatabaseTables["fantasy-entries"];
   const [summary, statusCounts, result] = await Promise.all([
@@ -2432,6 +2579,109 @@ async function loadFighterApplicationRecordDirect(
   };
 }
 
+async function loadPressCredentialRecordDirect(
+  rowId: string,
+): Promise<AdminDatabaseRecordData | null> {
+  const table = adminDatabaseTables["press-credentials"];
+  const result = await queryDatabase<{
+    id: string;
+    fullName: string;
+    email: string;
+    mediaOutlet: string;
+    documentNumber: string;
+    coverageType: string;
+    coverageNeeds: string;
+    source: string;
+    status: string;
+    reviewedAt: DateValue;
+    reviewerNotes: string | null;
+    requestId: string | null;
+    requestOrigin: string | null;
+    requestIpHash: string | null;
+    userAgent: string | null;
+    metadata: unknown;
+    createdAt: DateValue;
+    updatedAt: DateValue;
+    assignedDisplayName: string | null;
+    assignedEmail: string | null;
+  }>(
+    `
+      select
+        credential.id,
+        credential.full_name as "fullName",
+        credential.email,
+        credential.media_outlet as "mediaOutlet",
+        credential.document_number as "documentNumber",
+        credential.coverage_type as "coverageType",
+        credential.coverage_needs as "coverageNeeds",
+        credential.source,
+        credential.status,
+        credential.reviewed_at as "reviewedAt",
+        credential.reviewer_notes as "reviewerNotes",
+        credential.request_id as "requestId",
+        credential.request_origin as "requestOrigin",
+        credential.request_ip_hash as "requestIpHash",
+        credential.user_agent as "userAgent",
+        credential.metadata,
+        credential.created_at as "createdAt",
+        credential.updated_at as "updatedAt",
+        assigned.display_name as "assignedDisplayName",
+        assigned.email as "assignedEmail"
+      from app.press_credentials credential
+      left join app.accounts assigned
+        on assigned.id = credential.assigned_account_id
+      where credential.id = $1::uuid
+      limit 1
+    `,
+    [rowId],
+  );
+
+  const row = result.rows[0];
+
+  if (!row) {
+    return null;
+  }
+
+  return {
+    databaseConfigured: true,
+    table,
+    rowId,
+    title: formatText(row.fullName),
+    subtitle: formatText(row.email),
+    sections: [
+      createSection("Credenciado", [
+        { label: "Nome completo", value: formatText(row.fullName) },
+        { label: "Email", value: formatText(row.email) },
+        { label: "Documento", value: formatText(row.documentNumber) },
+      ]),
+      createSection("Cobertura", [
+        { label: "Veículo de mídia e links", value: formatText(row.mediaOutlet) },
+        { label: "Tipo de cobertura", value: formatText(row.coverageType) },
+        { label: "Necessidades para cobertura", value: formatText(row.coverageNeeds) },
+        { label: "Origem", value: formatSource(row.source) },
+        { label: "Status", value: formatStatus(row.status) },
+      ]),
+      createSection("Operação", [
+        {
+          label: "Responsável",
+          value: formatAccountLabel(row.assignedDisplayName, row.assignedEmail),
+        },
+        { label: "Revisado em", value: formatDateTime(row.reviewedAt) },
+        { label: "Notas internas", value: formatText(row.reviewerNotes) },
+      ]),
+      createSection("Rastreamento", [
+        { label: "Criado em", value: formatDateTime(row.createdAt) },
+        { label: "Atualizado em", value: formatDateTime(row.updatedAt) },
+        { label: "Request ID", value: formatText(row.requestId) },
+        { label: "Origem da request", value: formatText(row.requestOrigin) },
+        { label: "Hash do IP", value: formatText(row.requestIpHash) },
+        { label: "User agent", value: formatText(row.userAgent) },
+        { label: "Metadata", value: row.metadata ?? {} },
+      ]),
+    ],
+  };
+}
+
 async function loadFantasyEntryRecordDirect(
   rowId: string,
 ): Promise<AdminDatabaseRecordData | null> {
@@ -2882,6 +3132,8 @@ export async function loadAdminDatabaseTableData(
       const intakeScope = await resolveEventFighterIntakeScope(normalizedOptions);
       return loadEventFighterIntakesTableDataDirect(intakeScope);
     }
+    case "press-credentials":
+      return loadPressCredentialsTableDataDirect();
     case "fantasy-entries":
       return loadFantasyEntriesTableDataDirect();
   }
@@ -2933,6 +3185,8 @@ export async function loadAdminDatabaseRecordData(
       const intakeScope = await resolveEventFighterIntakeScope(normalizedOptions);
       return loadEventFighterIntakeRecordDirect(rowId, intakeScope);
     }
+    case "press-credentials":
+      return loadPressCredentialRecordDirect(rowId);
     case "fantasy-entries":
       return loadFantasyEntryRecordDirect(rowId);
   }

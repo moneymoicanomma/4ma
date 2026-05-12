@@ -2,7 +2,11 @@
 
 import { startTransition, useEffect, useState } from "react";
 
-import type { FantasyRound, FantasyVictoryMethod } from "@/lib/contracts/fantasy";
+import {
+  normalizeFantasyRoundForMethod,
+  type FantasyRound,
+  type FantasyVictoryMethod
+} from "@/lib/contracts/fantasy";
 import {
   FANTASY_SCORING_RULES,
   calculateFantasyLeaderboard,
@@ -340,10 +344,21 @@ export function FantasyAdminDashboard({
   ) {
     updateFight(fightId, (fight) => ({
       ...fight,
-      result: {
-        ...fight.result,
-        ...patch
-      }
+      result: (() => {
+        const nextResult = {
+          ...fight.result,
+          ...patch
+        };
+
+        if (!nextResult.victoryMethod) {
+          return nextResult;
+        }
+
+        return {
+          ...nextResult,
+          round: normalizeFantasyRoundForMethod(nextResult.victoryMethod, nextResult.round)
+        };
+      })()
     }));
   }
 
@@ -864,6 +879,7 @@ export function FantasyAdminDashboard({
                     <div className={styles.roundRow}>
                       {Array.from({ length: fight.maxRound }, (_, index) => (index + 1) as FantasyRound).map(
                         (round) => {
+                          const decisionAutoRound = fight.result.victoryMethod === "decisao";
                           const selected = fight.result.round === round;
 
                           return (
@@ -873,6 +889,7 @@ export function FantasyAdminDashboard({
                                   ? `${styles.roundButton} ${styles.toggleButtonSelected}`
                                   : styles.roundButton
                               }
+                              disabled={decisionAutoRound && round !== 3}
                               key={round}
                               type="button"
                               onClick={() => {

@@ -20,6 +20,7 @@ export const FANTASY_VICTORY_METHODS = ["decisao", "finalizacao", "nocaute"] as 
 export const FANTASY_ROUNDS = [1, 2, 3, 4, 5] as const;
 export type FantasyVictoryMethod = (typeof FANTASY_VICTORY_METHODS)[number];
 export type FantasyRound = (typeof FANTASY_ROUNDS)[number];
+export const FANTASY_DECISION_ROUND: FantasyRound = 3;
 
 export type FantasyPickPayload = {
   fightId: string;
@@ -99,6 +100,16 @@ const MAX_FIGHTER_ID_LENGTH = 120;
 const MAX_PICKS_PER_ENTRY = 24;
 const victoryMethodSet = new Set<string>(FANTASY_VICTORY_METHODS);
 const roundSet = new Set<number>(FANTASY_ROUNDS);
+
+export function normalizeFantasyRoundForMethod(victoryMethod: string, round: unknown) {
+  if (victoryMethod === "decisao") {
+    return FANTASY_DECISION_ROUND;
+  }
+
+  const numericRound = Number(round);
+
+  return roundSet.has(numericRound) ? (numericRound as FantasyRound) : null;
+}
 
 function normalizeShortText(input: unknown) {
   return typeof input === "string" ? input.trim().replace(/\s+/g, " ") : "";
@@ -247,7 +258,7 @@ export function parseFantasyEntry(input: unknown): FantasyEntryParseResult {
     const fightId = normalizeShortText(recordPick.fightId);
     const fighterId = normalizeShortText(recordPick.fighterId);
     const victoryMethod = normalizeShortText(recordPick.victoryMethod).toLowerCase();
-    const round = Number(recordPick.round);
+    const round = normalizeFantasyRoundForMethod(victoryMethod, recordPick.round);
 
     const pickError =
       validateRequiredText(fightId, {
@@ -280,7 +291,7 @@ export function parseFantasyEntry(input: unknown): FantasyEntryParseResult {
       };
     }
 
-    if (!roundSet.has(round)) {
+    if (round === null) {
       return {
         ok: false,
         message: "Selecione um round válido em todas as lutas."
@@ -292,7 +303,7 @@ export function parseFantasyEntry(input: unknown): FantasyEntryParseResult {
       fightId,
       fighterId,
       victoryMethod: victoryMethod as FantasyVictoryMethod,
-      round: round as FantasyRound
+      round
     });
   }
 

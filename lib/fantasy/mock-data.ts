@@ -58,10 +58,10 @@ export type FantasyLeaderboardRow = {
 };
 
 export const FANTASY_SCORING_RULES: FantasyScoringRules = {
-  winner: 10,
-  method: 6,
-  round: 4,
-  perfectPickBonus: 3
+  winner: 1,
+  method: 1,
+  round: 1,
+  perfectPickBonus: 1
 };
 
 function pick(
@@ -457,11 +457,16 @@ function getFightResultScore(
     };
   }
 
-  let score = 0;
+  const winnerCorrect = pickPayload.fighterId === result.winnerId;
 
-  if (pickPayload.fighterId === result.winnerId) {
-    score += scoringRules.winner;
+  if (!winnerCorrect) {
+    return {
+      score: 0,
+      perfect: false
+    };
   }
+
+  let score = scoringRules.winner;
 
   if (pickPayload.victoryMethod === result.victoryMethod) {
     score += scoringRules.method;
@@ -472,7 +477,7 @@ function getFightResultScore(
   }
 
   const perfect =
-    pickPayload.fighterId === result.winnerId &&
+    winnerCorrect &&
     pickPayload.victoryMethod === result.victoryMethod &&
     pickPayload.round === result.round;
 

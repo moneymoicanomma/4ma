@@ -8,7 +8,14 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: "*",
         allow: "/",
-        disallow: ["/admin", "/atletas-da-edicao", "/api", "/mapa-do-site", "/blog-md"]
+        disallow: [
+          "/admin",
+          "/atletas-da-edicao",
+          "/api",
+          "/mapa-do-site",
+          "/blog-md",
+          "/credenciamento-imprensa",
+        ]
       },
       {
         userAgent: "GPTBot",

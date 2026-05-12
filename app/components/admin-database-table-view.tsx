@@ -1,5 +1,9 @@
 import Link from "next/link";
 
+import {
+  AdminDatabaseEmailCopyActions,
+  AdminDatabaseEmailCopyButton,
+} from "@/app/components/admin-database-email-copy-actions";
 import { FighterApplicationsAdminTable } from "@/app/components/fighter-application-admin-controls";
 import type { AdminDatabaseTableData } from "@/lib/server/admin-database";
 
@@ -23,6 +27,8 @@ function getRowDetailColumnKey(tableId: AdminDatabaseTableData["table"]["id"]) {
       return "fighter";
     case "event-fighter-intakes":
       return "fighter";
+    case "press-credentials":
+      return "fullName";
     case "fantasy-entries":
       return "displayName";
   }
@@ -31,6 +37,10 @@ function getRowDetailColumnKey(tableId: AdminDatabaseTableData["table"]["id"]) {
 function getDetailLinkLabel(tableId: AdminDatabaseTableData["table"]["id"]) {
   if (tableId === "fighter-applications" || tableId === "event-fighter-intakes") {
     return "Ver perfil";
+  }
+
+  if (tableId === "press-credentials") {
+    return "Ver cadastro";
   }
 
   return "Ver emitente";
@@ -44,6 +54,10 @@ export function AdminDatabaseTableView({
   data,
 }: Readonly<AdminDatabaseTableViewProps>) {
   const detailColumnKey = getRowDetailColumnKey(data.table.id);
+  const shouldRenderEmailCopyActions = data.table.id === "press-credentials";
+  const tableEmails = shouldRenderEmailCopyActions
+    ? data.rows.map((row) => row.cells.email ?? "")
+    : [];
 
   if (!data.databaseConfigured) {
     return (
@@ -86,6 +100,10 @@ export function AdminDatabaseTableView({
         </div>
       ) : null}
 
+      {shouldRenderEmailCopyActions ? (
+        <AdminDatabaseEmailCopyActions emails={tableEmails} />
+      ) : null}
+
       {data.table.id === "fighter-applications" ? (
         <FighterApplicationsAdminTable
           columns={data.columns}
@@ -118,6 +136,11 @@ export function AdminDatabaseTableView({
                           <Link className={styles.primaryCellLink} href={detailHref}>
                             {cellValue}
                           </Link>
+                        ) : shouldRenderEmailCopyActions && column.key === "email" ? (
+                          <span className={styles.emailCell}>
+                            <span>{cellValue}</span>
+                            <AdminDatabaseEmailCopyButton email={cellValue} />
+                          </span>
                         ) : (
                           cellValue
                         )}

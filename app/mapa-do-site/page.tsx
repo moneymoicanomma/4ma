@@ -18,6 +18,14 @@ const heroImage = siteAsset("hero-main-v5.webp");
 const publicEntryPoints = publicSiteRoutes.filter(
   (route) => route.href !== "/mapa-do-site",
 );
+const operationalEntryPoints = [
+  {
+    href: "/credenciamento-imprensa",
+    title: "Credenciamento de imprensa",
+    description:
+      "Rota não-pública para cadastro operacional de veículos e profissionais de imprensa.",
+  },
+] as const;
 
 export const metadata: Metadata = {
   title: "Mapa Interno do Site | Money Moicano MMA",
@@ -109,8 +117,8 @@ export default function SiteMapPage() {
                 <dd>2</dd>
               </div>
               <div className={styles.statCard}>
-                <dt>Domínio canônico</dt>
-                <dd>1</dd>
+                <dt>Rotas operacionais</dt>
+                <dd>{operationalEntryPoints.length}</dd>
               </div>
             </dl>
 
@@ -168,6 +176,33 @@ export default function SiteMapPage() {
                 </li>
               ))}
             </ul>
+          </div>
+
+          <div className={styles.catalogColumn} data-reveal>
+            <p className={styles.sectionKicker}>Acessos restritos</p>
+            <h2 className={styles.sectionTitle}>Rotas operacionais</h2>
+
+            <ol className={styles.routeList}>
+              {operationalEntryPoints.map((route, index) => (
+                <li className={styles.routeItem} key={route.href}>
+                  <span className={styles.routeIndex}>
+                    {String(index + 1).padStart(2, "0")}
+                  </span>
+
+                  <div className={styles.routeBody}>
+                    <div className={styles.routeHeader}>
+                      <h3>{route.title}</h3>
+                      <span>{route.href}</span>
+                    </div>
+                    <p>{route.description}</p>
+                  </div>
+
+                  <Link className={styles.routeLink} href={route.href}>
+                    Abrir
+                  </Link>
+                </li>
+              ))}
+            </ol>
           </div>
         </div>
       </section>

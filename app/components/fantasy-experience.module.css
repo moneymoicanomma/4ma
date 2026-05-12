@@ -327,6 +327,12 @@
   color: #ffffff;
 }
 
+.roundButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.38;
+  transform: none;
+}
+
 .sidebar {
   position: sticky;
   top: 92px;

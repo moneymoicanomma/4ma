@@ -68,4 +68,14 @@ describe("fantasy public page", () => {
     assert.ok(fantasyExperienceCssSource.includes(".fighterButtonSelectedBlue"));
     assert.ok(fantasyExperienceCssSource.includes(".portraitSelectedBlue"));
   });
+
+  it("keeps the private picks and empty ranking copy simple", () => {
+    assert.ok(fantasyExperienceSource.includes("Meus picks"));
+    assert.ok(fantasyExperienceSource.includes("ainda sem resultados"));
+    assert.equal(fantasyExperienceSource.includes("Consulta privada"), false);
+    assert.equal(fantasyExperienceSource.includes("consulta privada"), false);
+    assert.equal(fantasyExperienceSource.includes("cookie + link seguro"), false);
+    assert.equal(fantasyExperienceSource.includes("Como o usuário vai rever"), false);
+    assert.equal(fantasyExperienceSource.includes("Este bloco representa o ranking público"), false);
+  });
 });

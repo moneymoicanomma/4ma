@@ -14,6 +14,7 @@ const AUDITOR_DATABASE_TABLE_IDS: readonly AdminDatabaseTableId[] = [
 
 const PUBLIC_RELATIONS_DATABASE_TABLE_IDS: readonly AdminDatabaseTableId[] = [
   "newsletter-subscriptions",
+  "press-credentials",
   "fighter-applications",
   "event-fighter-intakes",
 ];
@@ -24,6 +25,7 @@ const FULL_DATABASE_TABLE_IDS: readonly AdminDatabaseTableId[] = [
   "partner-inquiries",
   "fighter-applications",
   "event-fighter-intakes",
+  "press-credentials",
   "fantasy-entries",
 ];
 
