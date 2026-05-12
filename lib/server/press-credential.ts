@@ -3,10 +3,13 @@ import "server-only";
 import type { PressCredentialPayload } from "@/lib/contracts/press-credential";
 import { withDatabaseTransaction } from "@/lib/server/database";
 import {
+  getPublicWriteUpstreamBearerToken,
   getServerEnv,
   isDatabaseConfigured,
+  isPublicUpstreamConfigured,
   type ServerEnv,
 } from "@/lib/server/env";
+import { postJsonToUpstream } from "@/lib/server/http";
 import type { RequestAuditContext } from "@/lib/server/request-context";
 
 type PressCredentialSubmitResult =
@@ -21,7 +24,88 @@ export async function submitPressCredential(
   requestContext: RequestAuditContext,
   env: ServerEnv = getServerEnv(),
 ): Promise<PressCredentialSubmitResult> {
-  if (!isDatabaseConfigured(env)) {
+  if (isDatabaseConfigured(env)) {
+    try {
+      await withDatabaseTransaction(
+        {
+          actorRole: "public",
+          actorEmail: payload.email,
+          requestId: requestContext.requestId,
+          clientIp: requestContext.clientIp,
+          origin: requestContext.requestOrigin,
+          userAgent: requestContext.userAgent,
+        },
+        async (transaction) => {
+          await transaction.query(
+            `
+              insert into app.press_credentials (
+                full_name,
+                email,
+                media_outlet,
+                document_number,
+                coverage_type,
+                coverage_needs,
+                source,
+                request_id,
+                request_origin,
+                request_ip_hash,
+                user_agent,
+                metadata
+              )
+              values (
+                $1,
+                $2,
+                $3,
+                $4,
+                $5,
+                $6,
+                $7,
+                $8,
+                $9,
+                $10,
+                $11,
+                $12::jsonb
+              )
+            `,
+            [
+              payload.fullName,
+              payload.email,
+              payload.mediaOutlet,
+              payload.documentNumber,
+              payload.coverageType,
+              payload.coverageNeeds,
+              payload.source,
+              requestContext.requestId,
+              requestContext.requestOrigin,
+              requestContext.requestIpHash,
+              requestContext.userAgent,
+              JSON.stringify({
+                surface: "press-credential",
+                eventName: "Money Moicano MMA 1",
+              }),
+            ],
+          );
+        },
+      );
+
+      return { ok: true };
+    } catch (error) {
+      console.error("press credential database insert failed", {
+        error,
+        email: payload.email,
+        requestId: requestContext.requestId,
+      });
+
+      if (!isPublicUpstreamConfigured(env)) {
+        return {
+          ok: false,
+          reason: "database_error",
+        };
+      }
+    }
+  }
+
+  if (!isPublicUpstreamConfigured(env)) {
     return {
       ok: false,
       reason: "not_configured",
@@ -29,71 +113,21 @@ export async function submitPressCredential(
   }
 
   try {
-    await withDatabaseTransaction(
+    await postJsonToUpstream(
+      `${env.upstreamApiBaseUrl}${env.pressCredentialSubmitPath}`,
       {
-        actorRole: "public",
-        actorEmail: payload.email,
-        requestId: requestContext.requestId,
-        clientIp: requestContext.clientIp,
-        origin: requestContext.requestOrigin,
-        userAgent: requestContext.userAgent,
+        payload,
+        requestContext,
       },
-      async (transaction) => {
-        await transaction.query(
-          `
-            insert into app.press_credentials (
-              full_name,
-              email,
-              media_outlet,
-              document_number,
-              coverage_type,
-              coverage_needs,
-              source,
-              request_id,
-              request_origin,
-              request_ip_hash,
-              user_agent,
-              metadata
-            )
-            values (
-              $1,
-              $2,
-              $3,
-              $4,
-              $5,
-              $6,
-              $7,
-              $8,
-              $9,
-              $10,
-              $11,
-              $12::jsonb
-            )
-          `,
-          [
-            payload.fullName,
-            payload.email,
-            payload.mediaOutlet,
-            payload.documentNumber,
-            payload.coverageType,
-            payload.coverageNeeds,
-            payload.source,
-            requestContext.requestId,
-            requestContext.requestOrigin,
-            requestContext.requestIpHash,
-            requestContext.userAgent,
-            JSON.stringify({
-              surface: "press-credential",
-              eventName: "Money Moicano MMA 1",
-            }),
-          ],
-        );
+      {
+        bearerToken: getPublicWriteUpstreamBearerToken(env)!,
+        timeoutMs: env.upstreamRequestTimeoutMs,
       },
     );
 
     return { ok: true };
   } catch (error) {
-    console.error("press credential database insert failed", {
+    console.error("press credential upstream request failed", {
       error,
       email: payload.email,
       requestId: requestContext.requestId,

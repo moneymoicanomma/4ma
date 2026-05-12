@@ -30,6 +30,7 @@ const NEWSLETTER_SUBSCRIBE_PATH = "/v1/newsletter/subscriptions";
 const CONTACT_MESSAGES_PATH = "/v1/contact-messages";
 const FIGHTER_APPLICATIONS_PATH = "/v1/fighter-applications";
 const PARTNER_INQUIRIES_PATH = "/v1/partner-inquiries";
+const PRESS_CREDENTIALS_PATH = "/v1/press-credentials";
 const FANTASY_EVENTS_PATH = "/v1/fantasy/events";
 const ADMIN_FANTASY_EVENTS_PATH = "/v1/admin/fantasy/events";
 const FANTASY_ENTRIES_PATH = "/v1/fantasy/entries";
@@ -123,6 +124,7 @@ const ADMIN_SOURCE_LABELS = {
   fighter_application: "Cadastro de lutador",
   newsletter_signup: "Newsletter",
   partner_inquiry: "Parceria",
+  press_credential: "Cadastro imprensa",
   press_newsletter: "Newsletter imprensa"
 };
 const ADMIN_FIGHTER_APPLICATION_EDITORIAL_INTEREST_LABELS = {
@@ -866,6 +868,13 @@ const ADMIN_DATABASE_TABLES = {
     description: "Fichas operacionais enviadas pelos lutadores para cada edição.",
     previewLabel: "Últimos intakes"
   },
+  "press-credentials": {
+    id: "press-credentials",
+    label: "Cadastro Imprensa",
+    tableName: "app.press_credentials",
+    description: "Solicitações de credenciamento enviadas pela imprensa para o evento.",
+    previewLabel: "Últimos cadastros"
+  },
   "fantasy-entries": {
     id: "fantasy-entries",
     label: "Entradas do Fantasy",
@@ -1334,6 +1343,69 @@ async function loadAdminFantasyEntriesTable() {
   });
 }
 
+async function loadAdminPressCredentialsTable() {
+  const config = {
+    id: "press-credentials",
+    label: "Cadastro Imprensa",
+    tableName: "app.press_credentials",
+    description: "Solicitações de credenciamento enviadas pela imprensa para o evento.",
+    previewLabel: "Últimos cadastros",
+    columns: [
+      { key: "createdAt", label: "Data" },
+      { key: "fullName", label: "Nome" },
+      { key: "email", label: "Email" },
+      { key: "coverageType", label: "Cobertura" },
+      { key: "status", label: "Status" }
+    ]
+  };
+
+  return withAdminTableFallback(config, async () => {
+    const [summary, statusCounts, result] = await Promise.all([
+      loadAdminTableSummary(`
+        select
+          count(*)::int as "totalRows",
+          max(updated_at) as "lastActivityAt"
+        from app.press_credentials
+      `),
+      loadAdminStatusCounts(`
+        select
+          status,
+          count(*)::int as total
+        from app.press_credentials
+        group by status
+        order by count(*) desc, status asc
+      `),
+      getDatabasePool().query(`
+        select
+          id,
+          created_at as "createdAt",
+          full_name as "fullName",
+          email,
+          coverage_type as "coverageType",
+          status
+        from app.press_credentials
+        order by created_at desc
+        limit ${ADMIN_TABLE_PREVIEW_LIMIT}
+      `)
+    ]);
+
+    return {
+      ...config,
+      ...summary,
+      statusCounts,
+      rows: result.rows.map((row) =>
+        adminCreateRow(row.id, {
+          createdAt: adminFormatDateTime(row.createdAt),
+          fullName: adminFormatText(row.fullName),
+          email: adminFormatText(row.email),
+          coverageType: adminFormatText(row.coverageType),
+          status: adminFormatStatus(row.status)
+        })
+      )
+    };
+  });
+}
+
 async function loadAdminDatabaseOverviewFromDatabase(options = {}) {
   const intakeScope = await resolveEventFighterIntakeScope(options);
   const tables = await Promise.all([
@@ -1342,6 +1414,7 @@ async function loadAdminDatabaseOverviewFromDatabase(options = {}) {
     loadAdminPartnerInquiriesTable(),
     loadAdminFighterApplicationsTable(),
     loadAdminEventFighterIntakesTable(intakeScope),
+    loadAdminPressCredentialsTable(),
     loadAdminFantasyEntriesTable()
   ]);
 
@@ -3412,6 +3485,61 @@ async function loadAdminEventFighterIntakesTableData(intakeScope) {
   };
 }
 
+async function loadAdminPressCredentialsTableData() {
+  const table = ADMIN_DATABASE_TABLES["press-credentials"];
+  const [summary, statusCounts, result] = await Promise.all([
+    loadAdminTableSummary(`
+      select
+        count(*)::int as "totalRows",
+        max(updated_at) as "lastActivityAt"
+      from app.press_credentials
+    `),
+    loadAdminStatusCounts(`
+      select
+        status,
+        count(*)::int as total
+      from app.press_credentials
+      group by status
+      order by count(*) desc, status asc
+    `),
+    getDatabasePool().query(`
+      select
+        id,
+        created_at as "createdAt",
+        full_name as "fullName",
+        email,
+        coverage_type as "coverageType",
+        status
+      from app.press_credentials
+      order by created_at desc
+    `)
+  ]);
+
+  return {
+    databaseConfigured: true,
+    table,
+    columns: [
+      { key: "createdAt", label: "Data" },
+      { key: "fullName", label: "Nome" },
+      { key: "email", label: "Email" },
+      { key: "coverageType", label: "Cobertura" },
+      { key: "status", label: "Status" }
+    ],
+    rows: result.rows.map((row) =>
+      adminCreateRow(row.id, {
+        createdAt: adminFormatDateTime(row.createdAt),
+        fullName: adminFormatText(row.fullName),
+        email: adminFormatText(row.email),
+        coverageType: adminFormatText(row.coverageType),
+        status: adminFormatStatus(row.status)
+      })
+    ),
+    statusCounts,
+    totalRows: summary.totalRows,
+    lastActivityAt: summary.lastActivityAt
+  };
+}
+
 async function loadAdminFantasyEntriesTableData() {
   const table = ADMIN_DATABASE_TABLES["fantasy-entries"];
   const [summary, statusCounts, result] = await Promise.all([
@@ -3821,6 +3949,86 @@ async function loadAdminFighterApplicationRecord(rowId) {
   };
 }
 
+async function loadAdminPressCredentialRecord(rowId) {
+  const table = ADMIN_DATABASE_TABLES["press-credentials"];
+  const result = await getDatabasePool().query(
+    `
+      select
+        credential.id,
+        credential.full_name as "fullName",
+        credential.email,
+        credential.media_outlet as "mediaOutlet",
+        credential.document_number as "documentNumber",
+        credential.coverage_type as "coverageType",
+        credential.coverage_needs as "coverageNeeds",
+        credential.source,
+        credential.status,
+        credential.reviewed_at as "reviewedAt",
+        credential.reviewer_notes as "reviewerNotes",
+        credential.request_id as "requestId",
+        credential.request_origin as "requestOrigin",
+        credential.request_ip_hash as "requestIpHash",
+        credential.user_agent as "userAgent",
+        credential.metadata,
+        credential.created_at as "createdAt",
+        credential.updated_at as "updatedAt",
+        assigned.display_name as "assignedDisplayName",
+        assigned.email as "assignedEmail"
+      from app.press_credentials credential
+      left join app.accounts assigned
+        on assigned.id = credential.assigned_account_id
+      where credential.id = $1::uuid
+      limit 1
+    `,
+    [rowId]
+  );
+
+  const row = result.rows[0];
+
+  if (!row) {
+    return null;
+  }
+
+  return {
+    databaseConfigured: true,
+    table,
+    rowId,
+    title: adminFormatText(row.fullName),
+    subtitle: adminFormatText(row.email),
+    sections: [
+      adminCreateSection("Credenciado", [
+        { label: "Nome completo", value: adminFormatText(row.fullName) },
+        { label: "Email", value: adminFormatText(row.email) },
+        { label: "Documento", value: adminFormatText(row.documentNumber) }
+      ]),
+      adminCreateSection("Cobertura", [
+        { label: "Veículo de mídia e links", value: adminFormatText(row.mediaOutlet) },
+        { label: "Tipo de cobertura", value: adminFormatText(row.coverageType) },
+        { label: "Necessidades para cobertura", value: adminFormatText(row.coverageNeeds) },
+        { label: "Origem", value: adminFormatSource(row.source) },
+        { label: "Status", value: adminFormatStatus(row.status) }
+      ]),
+      adminCreateSection("Operação", [
+        {
+          label: "Responsável",
+          value: adminFormatAccountLabel(row.assignedDisplayName, row.assignedEmail)
+        },
+        { label: "Revisado em", value: adminFormatDateTime(row.reviewedAt) },
+        { label: "Notas internas", value: adminFormatText(row.reviewerNotes) }
+      ]),
+      adminCreateSection("Rastreamento", [
+        { label: "Criado em", value: adminFormatDateTime(row.createdAt) },
+        { label: "Atualizado em", value: adminFormatDateTime(row.updatedAt) },
+        { label: "Request ID", value: adminFormatText(row.requestId) },
+        { label: "Origem da request", value: adminFormatText(row.requestOrigin) },
+        { label: "Hash do IP", value: adminFormatText(row.requestIpHash) },
+        { label: "User agent", value: adminFormatText(row.userAgent) },
+        { label: "Metadata", value: row.metadata ?? {} }
+      ])
+    ]
+  };
+}
+
 async function loadAdminFantasyEntryRecord(rowId) {
   const table = ADMIN_DATABASE_TABLES["fantasy-entries"];
   const result = await getDatabasePool().query(
@@ -4185,6 +4393,8 @@ async function loadAdminDatabaseTableData(tableId, options = {}) {
       return loadAdminFighterApplicationsTableData();
     case "event-fighter-intakes":
       return loadAdminEventFighterIntakesTableData(intakeScope);
+    case "press-credentials":
+      return loadAdminPressCredentialsTableData();
     case "fantasy-entries":
       return loadAdminFantasyEntriesTableData();
     default:
@@ -4206,6 +4416,8 @@ async function loadAdminDatabaseRecordData(tableId, rowId, options = {}) {
       return loadAdminFighterApplicationRecord(rowId);
     case "event-fighter-intakes":
       return loadAdminEventFighterIntakeRecord(rowId, intakeScope);
+    case "press-credentials":
+      return loadAdminPressCredentialRecord(rowId);
     case "fantasy-entries":
       return loadAdminFantasyEntryRecord(rowId);
     default:
@@ -5006,6 +5218,91 @@ async function handlePartnerInquiries(event) {
       error,
       email,
       companyName: normalizeText(payload?.companyName)
+    });
+
+    return buildJsonResponse(503, {
+      ok: false,
+      message: "Serviço temporariamente indisponível."
+    });
+  }
+}
+
+async function handlePressCredentials(event) {
+  if (!assertBearerForScope(event, "public_write")) {
+    return buildJsonResponse(401, { ok: false, message: "Unauthorized." });
+  }
+
+  let body;
+
+  try {
+    body = parseJsonBody(event);
+  } catch {
+    return buildJsonResponse(400, { ok: false, message: "Invalid JSON body." });
+  }
+
+  const payload = getPayloadBody(body);
+  const email = normalizeEmail(payload?.email);
+  const requestContext = buildSerializableRequestContext(getRequestContextBody(body), email);
+
+  try {
+    await withDatabaseTransaction(requestContext, async (client) => {
+      await client.query(
+        `
+          insert into app.press_credentials (
+            full_name,
+            email,
+            media_outlet,
+            document_number,
+            coverage_type,
+            coverage_needs,
+            source,
+            request_id,
+            request_origin,
+            request_ip_hash,
+            user_agent,
+            metadata
+          )
+          values (
+            $1,
+            $2,
+            $3,
+            $4,
+            $5,
+            $6,
+            $7,
+            $8,
+            $9,
+            $10,
+            $11,
+            $12::jsonb
+          )
+        `,
+        [
+          normalizeText(payload?.fullName),
+          email,
+          normalizeText(payload?.mediaOutlet),
+          normalizeText(payload?.documentNumber),
+          normalizeText(payload?.coverageType),
+          normalizeText(payload?.coverageNeeds),
+          normalizeText(payload?.source),
+          requestContext.requestId,
+          requestContext.origin,
+          requestContext.requestIpHash,
+          requestContext.userAgent,
+          JSON.stringify({
+            surface: "press-credential",
+            eventName: "Money Moicano MMA 1"
+          })
+        ]
+      );
+    });
+
+    return buildJsonResponse(200, { ok: true });
+  } catch (error) {
+    console.error("press credential failed", {
+      error,
+      email,
+      fullName: normalizeText(payload?.fullName)
     });
 
     return buildJsonResponse(503, {
@@ -5826,6 +6123,10 @@ export const handler = async (event) => {
 
     if (method === "POST" && rawPath === PARTNER_INQUIRIES_PATH) {
       return await handlePartnerInquiries(event);
+    }
+
+    if (method === "POST" && rawPath === PRESS_CREDENTIALS_PATH) {
+      return await handlePressCredentials(event);
     }
 
     if (method === "POST" && rawPath === ADMIN_FANTASY_EVENTS_PATH) {

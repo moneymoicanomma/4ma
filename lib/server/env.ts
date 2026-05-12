@@ -37,6 +37,7 @@ export type ServerEnv = {
   fighterApplicationSubmitPath: string;
   eventFighterIntakeSubmitPath: string;
   partnerInquirySubmitPath: string;
+  pressCredentialSubmitPath: string;
   fantasyEntrySubmitPath: string;
   upstreamRequestTimeoutMs: number;
   allowedFormOrigins: ReadonlySet<string>;
@@ -149,6 +150,10 @@ function createServerEnv(): ServerEnv {
     partnerInquirySubmitPath: normalizePath(
       process.env.UPSTREAM_PARTNER_INQUIRY_PATH ?? "",
       "/v1/partner-inquiries"
+    ),
+    pressCredentialSubmitPath: normalizePath(
+      process.env.UPSTREAM_PRESS_CREDENTIAL_PATH ?? "",
+      "/v1/press-credentials"
     ),
     fantasyEntrySubmitPath: normalizePath(
       process.env.UPSTREAM_FANTASY_ENTRY_PATH ?? "",

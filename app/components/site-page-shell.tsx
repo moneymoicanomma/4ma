@@ -52,6 +52,7 @@ export function SitePageShell({
   accent,
   description,
   actions,
+  showActions = true,
   heroAside,
   contentId = "conteudo",
   sidebar,
@@ -62,6 +63,7 @@ export function SitePageShell({
   accent?: string;
   description: string;
   actions?: readonly PageAction[];
+  showActions?: boolean;
   heroAside?: HeroAside;
   contentId?: string;
   sidebar?: ReactNode;
@@ -91,12 +93,14 @@ export function SitePageShell({
           <img alt="Money Moicano MMA" src={brandLogoWide} />
         </Link>
 
-        <div className={styles.topbarActions}>
-          <Link className={styles.secondaryLink} href="/">
-            Voltar ao evento
-          </Link>
-          <ActionLink action={ctaAction} className={styles.primaryLink} />
-        </div>
+        {showActions ? (
+          <div className={styles.topbarActions}>
+            <Link className={styles.secondaryLink} href="/">
+              Voltar ao evento
+            </Link>
+            <ActionLink action={ctaAction} className={styles.primaryLink} />
+          </div>
+        ) : null}
       </header>
 
       <section className={styles.hero}>
@@ -123,16 +127,18 @@ export function SitePageShell({
             </h1>
             <p className={styles.heroBody}>{description}</p>
 
-            <div className={styles.heroActions}>
-              <ActionLink action={ctaAction} className={styles.primaryLink} />
-              {secondaryActions.map((action) => (
-                <ActionLink
-                  action={action}
-                  className={styles.secondaryLink}
-                  key={`${action.href}-${action.label}`}
-                />
-              ))}
-            </div>
+            {showActions ? (
+              <div className={styles.heroActions}>
+                <ActionLink action={ctaAction} className={styles.primaryLink} />
+                {secondaryActions.map((action) => (
+                  <ActionLink
+                    action={action}
+                    className={styles.secondaryLink}
+                    key={`${action.href}-${action.label}`}
+                  />
+                ))}
+              </div>
+            ) : null}
           </div>
 
           {heroAside ? (

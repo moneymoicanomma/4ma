@@ -21,18 +21,6 @@ export const metadata: Metadata = {
 export default function CredenciamentoImprensaPage() {
   return (
     <SitePageShell
-      actions={[
-        {
-          href: "#cadastro",
-          label: "Enviar cadastro",
-          variant: "primary",
-        },
-        {
-          href: "/imprensa",
-          label: "Canal de imprensa",
-          variant: "secondary",
-        },
-      ]}
       accent="Imprensa"
       contentId="cadastro"
       description="Cadastro operacional para profissionais e veículos que querem cobrir o Money Moicano MMA 1. A equipe usa essas informações para revisar demanda, acesso e necessidades de cobertura."
@@ -48,6 +36,7 @@ export default function CredenciamentoImprensaPage() {
         ],
       }}
       sidebar={<PressCredentialForm />}
+      showActions={false}
       title="Cadastro"
     >
       <section>
