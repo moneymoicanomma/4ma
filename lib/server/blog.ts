@@ -940,6 +940,61 @@ export async function unpublishAdminBlogPost(
   );
 }
 
+export async function deleteAdminBlogPost(
+  postId: string,
+  identity: AdminSessionIdentity,
+  requestContext: RequestAuditContext,
+  env: ServerEnv = getServerEnv()
+): Promise<{ ok: true } | { ok: false; message: string }> {
+  if (!isUuid(postId)) {
+    return {
+      ok: false,
+      message: "ID de post inválido."
+    };
+  }
+
+  if (!isDatabaseConfigured(env)) {
+    if (!isAdminWriteUpstreamConfigured(env)) {
+      return {
+        ok: false,
+        message: "Upstream administrativo do blog nao configurado."
+      };
+    }
+
+    const upstreamPayload = await postAdminBlogUpstream<{ ok: true } | { ok: false; message: string }>(
+      env,
+      `${env.adminBlogPostsPath}/${postId}`,
+      {
+        action: "delete",
+        actor: buildUpstreamActor(identity),
+        requestContext
+      }
+    );
+
+    return upstreamPayload ?? {
+      ok: false,
+      message: "Resposta invalida do upstream administrativo do blog."
+    };
+  }
+
+  return withDatabaseTransaction(
+    buildDatabaseRequestContext(identity, requestContext),
+    async (transaction) => {
+      const result = await transaction.query(
+        `
+          delete from app.blog_posts
+          where id = $1::uuid
+        `,
+        [postId]
+      );
+
+      return result.rowCount
+        ? { ok: true as const }
+        : { ok: false as const, message: "Post nao encontrado." };
+    }
+  );
+}
+
 export async function listPublicBlogPosts(): Promise<{
   featured: BlogPostSummary | null;
   posts: BlogPostSummary[];

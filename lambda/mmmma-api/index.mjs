@@ -1952,6 +1952,26 @@ async function unpublishBlogPostPayload(postId, actor, requestContext) {
   });
 }
 
+async function deleteBlogPostPayload(postId, actor, requestContext) {
+  if (!isUuid(postId)) {
+    return { ok: false, message: "ID de post inválido." };
+  }
+
+  return withDatabaseTransaction(buildBlogRequestContext(actor, requestContext), async (client) => {
+    const result = await client.query(
+      `
+        delete from app.blog_posts
+        where id = $1::uuid
+      `,
+      [postId]
+    );
+
+    return result.rowCount
+      ? { ok: true }
+      : { ok: false, message: "Post nao encontrado." };
+  });
+}
+
 async function createBlogMediaPayload(input, actor, requestContext) {
   const mediaId = await withDatabaseTransaction(
     buildBlogRequestContext(actor, requestContext),
@@ -2038,7 +2058,9 @@ async function handleAdminBlogPost(event, postId) {
           ? await publishBlogPostPayload(postId, actor, requestContext)
           : action === "unpublish"
             ? await unpublishBlogPostPayload(postId, actor, requestContext)
-            : { ok: false, message: "Acao invalida." };
+            : action === "delete"
+              ? await deleteBlogPostPayload(postId, actor, requestContext)
+              : { ok: false, message: "Acao invalida." };
 
     return buildJsonResponse(200, responsePayload);
   } catch (error) {

@@ -95,6 +95,7 @@
 
 .primaryButton,
 .secondaryButton,
+.dangerButton,
 .ghostButton {
   position: relative;
   display: inline-flex;
@@ -123,10 +124,18 @@
   color: #ffffff;
 }
 
+.dangerButton {
+  border-color: rgba(248, 113, 113, 0.46);
+  color: rgba(254, 226, 226, 0.94);
+  background: rgba(127, 29, 29, 0.18);
+}
+
 .primaryButton:hover,
 .primaryButton:focus-visible,
 .secondaryButton:hover,
 .secondaryButton:focus-visible,
+.dangerButton:hover,
+.dangerButton:focus-visible,
 .ghostButton:hover,
 .ghostButton:focus-visible {
   transform: translateY(-1px);
@@ -135,6 +144,7 @@
 
 .primaryButton:disabled,
 .secondaryButton:disabled,
+.dangerButton:disabled,
 .ghostButton:disabled {
   cursor: wait;
   opacity: 0.68;

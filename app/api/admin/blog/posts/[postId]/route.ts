@@ -5,6 +5,7 @@ import { getCurrentAdminSessionIdentity, type AdminSessionIdentity } from "@/lib
 import {
   canReadBlogAdminData,
   canWriteBlogAdminData,
+  deleteAdminBlogPost,
   getAdminBlogPost,
   publishAdminBlogPost,
   saveAdminBlogPost,
@@ -232,6 +233,53 @@ export async function POST(
 
     return buildJsonResponse(
       { ok: false, message: "Nao foi possivel atualizar o post agora." },
+      503
+    );
+  }
+}
+
+export async function DELETE(
+  request: NextRequest,
+  context: { params: Promise<{ postId: string }> }
+) {
+  if (!isSameOriginRequest(request)) {
+    return buildJsonResponse({ ok: false, message: "Origem nao permitida." }, 403);
+  }
+
+  const identity = await requireBlogIdentity();
+
+  if (!identity.ok) {
+    return identity.response;
+  }
+
+  const env = getServerEnv();
+
+  if (!canWriteBlogAdminData(env)) {
+    return buildBlogDataUnavailableResponse();
+  }
+
+  try {
+    const postId = await resolvePostId(context.params);
+
+    if (!postId) {
+      return buildJsonResponse({ ok: false, message: "ID de post invalido." }, 400);
+    }
+
+    const result = await deleteAdminBlogPost(
+      postId,
+      identity.identity,
+      buildRequestAuditContext(request),
+      env
+    );
+
+    return result.ok
+      ? buildJsonResponse({ ok: true })
+      : buildJsonResponse({ ok: false, message: result.message }, 400);
+  } catch (error) {
+    console.error("[admin blog] delete post failed", error);
+
+    return buildJsonResponse(
+      { ok: false, message: "Nao foi possivel excluir o post agora." },
       503
     );
   }

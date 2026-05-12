@@ -23,6 +23,15 @@ type BlogPostCreateResponse =
       message: string;
     };
 
+type BlogPostDeleteResponse =
+  | {
+      ok: true;
+    }
+  | {
+      ok: false;
+      message: string;
+    };
+
 type FilterState = {
   query: string;
   status: "all" | BlogPostStatus;
@@ -65,6 +74,7 @@ export function BlogAdminDashboard({
   });
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
+  const [deletingPostId, setDeletingPostId] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const authors = useMemo(
     () => Array.from(new Set(initialPosts.map((post) => post.authorName))).sort(),
@@ -138,6 +148,53 @@ export function BlogAdminDashboard({
       setNotice("Nao foi possivel criar o rascunho.");
     } finally {
       setIsCreating(false);
+    }
+  }
+
+  async function deletePost(post: BlogPostSummary) {
+    if (deletingPostId) {
+      return;
+    }
+
+    const confirmed = window.confirm(
+      post.status === "published"
+        ? `Excluir o post publicado "${post.title}"? Ele sairá do blog imediatamente.`
+        : `Excluir o rascunho "${post.title}"?`
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setDeletingPostId(post.id);
+    setNotice("Excluindo post...");
+
+    try {
+      const response = await fetch(`/api/admin/blog/posts/${post.id}`, {
+        method: "DELETE",
+        headers: {
+          Accept: "application/json"
+        },
+        cache: "no-store"
+      });
+      const payload = (await response.json().catch(() => null)) as BlogPostDeleteResponse | null;
+
+      if (!response.ok || !payload) {
+        setNotice("Nao foi possivel excluir o post.");
+        return;
+      }
+
+      if (!payload.ok) {
+        setNotice(payload.message);
+        return;
+      }
+
+      setNotice("Post excluido.");
+      refreshPosts();
+    } catch {
+      setNotice("Nao foi possivel excluir o post.");
+    } finally {
+      setDeletingPostId(null);
     }
   }
 
@@ -263,6 +320,14 @@ export function BlogAdminDashboard({
                         Publico
                       </Link>
                     ) : null}
+                    <button
+                      className={styles.dangerButton}
+                      disabled={deletingPostId === post.id}
+                      onClick={() => deletePost(post)}
+                      type="button"
+                    >
+                      {deletingPostId === post.id ? "Excluindo" : "Excluir"}
+                    </button>
                   </div>
                 </div>
               </article>

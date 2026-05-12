@@ -50,6 +50,7 @@
 .backLink,
 .primaryButton,
 .secondaryButton,
+.dangerButton,
 .ghostButton,
 .fileField,
 .blockToolbar button,
@@ -88,12 +89,20 @@
   color: #ffffff;
 }
 
+.dangerButton {
+  border-color: rgba(248, 113, 113, 0.46);
+  color: rgba(254, 226, 226, 0.94);
+  background: rgba(127, 29, 29, 0.18);
+}
+
 .backLink:hover,
 .backLink:focus-visible,
 .primaryButton:hover,
 .primaryButton:focus-visible,
 .secondaryButton:hover,
 .secondaryButton:focus-visible,
+.dangerButton:hover,
+.dangerButton:focus-visible,
 .ghostButton:hover,
 .ghostButton:focus-visible,
 .fileField:hover,
@@ -122,6 +131,7 @@
 
 .primaryButton:disabled,
 .secondaryButton:disabled,
+.dangerButton:disabled,
 .ghostButton:disabled,
 .blockActions button:disabled,
 .fileField:has(input:disabled) {
@@ -681,6 +691,7 @@
   .backLink,
   .primaryButton,
   .secondaryButton,
+  .dangerButton,
   .ghostButton,
   .headerActions button,
   .headerActions a,

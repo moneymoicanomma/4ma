@@ -36,6 +36,15 @@ type BlogPostMutationResponse =
       message: string;
     };
 
+type BlogPostDeleteResponse =
+  | {
+      ok: true;
+    }
+  | {
+      ok: false;
+      message: string;
+    };
+
 type BlogUploadResponse =
   | {
       ok: true;
@@ -633,6 +642,56 @@ export function BlogPostEditor({
     }
   }
 
+  async function deletePost() {
+    if (isSaving) {
+      return;
+    }
+
+    const confirmed = window.confirm(
+      currentPost.status === "published"
+        ? "Excluir este post publicado? Ele sairá do blog imediatamente."
+        : "Excluir este rascunho?"
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setIsSaving(true);
+    setNotice({ tone: "neutral", message: "Excluindo post..." });
+
+    try {
+      const response = await fetch(`/api/admin/blog/posts/${initialPost.id}`, {
+        method: "DELETE",
+        headers: {
+          Accept: "application/json"
+        },
+        cache: "no-store"
+      });
+      const payload = await readJsonResponse<BlogPostDeleteResponse>(response);
+
+      if (!response.ok || !payload) {
+        throw new Error("Nao foi possivel excluir o post.");
+      }
+
+      if (!payload.ok) {
+        throw new Error(payload.message);
+      }
+
+      window.localStorage.removeItem(autosaveKey);
+      router.push("/admin/blog");
+      startTransition(() => {
+        router.refresh();
+      });
+    } catch (error) {
+      setNotice({
+        tone: "error",
+        message: error instanceof Error ? error.message : "Nao foi possivel excluir o post."
+      });
+      setIsSaving(false);
+    }
+  }
+
   function renderBlockEditor(block: BlogContentBlock, index: number) {
     return (
       <article className={styles.block} key={block.id}>
@@ -1023,6 +1082,9 @@ export function BlogPostEditor({
               Publicar
             </button>
           )}
+          <button className={styles.dangerButton} disabled={isSaving} onClick={deletePost} type="button">
+            Excluir
+          </button>
         </div>
       </div>
 
