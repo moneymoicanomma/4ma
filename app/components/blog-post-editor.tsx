@@ -17,6 +17,7 @@ import type {
   BlogPostSavePayload,
   BlogPostStatus
 } from "@/lib/contracts/blog";
+import { normalizeBlogSlug } from "@/lib/contracts/blog";
 
 import styles from "./blog-post-editor.module.css";
 
@@ -117,6 +118,10 @@ function normalizeKey(value: string) {
     .toLowerCase();
 }
 
+function shouldUseAutomaticSlug(post: Pick<BlogPostDetail, "slug" | "title">) {
+  return post.slug.startsWith("rascunho-") || post.slug === normalizeBlogSlug(post.title);
+}
+
 function getBlockId() {
   return globalThis.crypto?.randomUUID?.() ?? `block-${Date.now()}`;
 }
@@ -196,6 +201,7 @@ export function BlogPostEditor({
   const router = useRouter();
   const [currentPost, setCurrentPost] = useState(initialPost);
   const [draft, setDraft] = useState<BlogPostSavePayload>(() => createDraftFromPost(initialPost));
+  const [isSlugAutomatic, setIsSlugAutomatic] = useState(() => shouldUseAutomaticSlug(initialPost));
   const [tagInput, setTagInput] = useState("");
   const [keywordInput, setKeywordInput] = useState("");
   const [notice, setNotice] = useState<Notice>({
@@ -204,6 +210,7 @@ export function BlogPostEditor({
   });
   const [isSaving, setIsSaving] = useState(false);
   const [isAutosaveReady, setIsAutosaveReady] = useState(false);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [coverPreviewUrl, setCoverPreviewUrl] = useState<string | null>(initialPost.coverUrl);
   const [uploadingBlockId, setUploadingBlockId] = useState<string | null>(null);
   const autosaveKey = getAutosaveKey(initialPost.id);
@@ -248,6 +255,7 @@ export function BlogPostEditor({
           }
 
           setDraft(parsed.draft);
+          setIsSlugAutomatic(shouldUseAutomaticSlug(parsed.draft));
           setNotice({
             tone: "neutral",
             message: `Autosave local recuperado em ${formatDate(new Date(parsed.savedAt ?? Date.now()).toISOString())}.`
@@ -285,6 +293,19 @@ export function BlogPostEditor({
       ...current,
       ...patch
     }));
+  }
+
+  function updateTitle(title: string) {
+    setDraft((current) => ({
+      ...current,
+      title,
+      slug: isSlugAutomatic ? normalizeBlogSlug(title) : current.slug
+    }));
+  }
+
+  function updateSlug(slug: string) {
+    setIsSlugAutomatic(false);
+    updateDraft({ slug: normalizeBlogSlug(slug) });
   }
 
   function setBlocks(updater: (blocks: BlogContentBlock[]) => BlogContentBlock[]) {
@@ -520,6 +541,7 @@ export function BlogPostEditor({
 
     setCurrentPost(payload.post);
     setDraft(createDraftFromPost(payload.post));
+    setIsSlugAutomatic(shouldUseAutomaticSlug(payload.post));
     setCoverPreviewUrl(payload.post.coverUrl);
     window.localStorage.removeItem(autosaveKey);
 
@@ -591,6 +613,7 @@ export function BlogPostEditor({
 
       setCurrentPost(payload.post);
       setDraft(createDraftFromPost(payload.post));
+      setIsSlugAutomatic(shouldUseAutomaticSlug(payload.post));
       setCoverPreviewUrl(payload.post.coverUrl);
       window.localStorage.removeItem(autosaveKey);
       setNotice({
@@ -902,6 +925,59 @@ export function BlogPostEditor({
     );
   }
 
+  function renderPreviewBlock(block: BlogContentBlock) {
+    if (block.type === "paragraph") {
+      return <p key={block.id}>{block.text}</p>;
+    }
+
+    if (block.type === "heading") {
+      return block.level === 3 ? <h3 key={block.id}>{block.text}</h3> : <h2 key={block.id}>{block.text}</h2>;
+    }
+
+    if (block.type === "list") {
+      const items = block.items.map((item, index) => <li key={`${block.id}-${index}`}>{item}</li>);
+
+      return block.style === "ordered" ? <ol key={block.id}>{items}</ol> : <ul key={block.id}>{items}</ul>;
+    }
+
+    if (block.type === "quote") {
+      return (
+        <blockquote key={block.id}>
+          <p>{block.text}</p>
+          {block.cite ? <cite>{block.cite}</cite> : null}
+        </blockquote>
+      );
+    }
+
+    if (block.type === "image") {
+      return (
+        <figure key={block.id}>
+          {block.url ? <img alt={block.altText} src={block.url} /> : null}
+          {block.caption ? <figcaption>{block.caption}</figcaption> : null}
+        </figure>
+      );
+    }
+
+    if (block.type === "embed") {
+      return (
+        <div className={styles.previewEmbed} key={block.id}>
+          <span>{block.provider}</span>
+          <strong>{block.title || block.url || "Embed sem título"}</strong>
+        </div>
+      );
+    }
+
+    if (block.type === "button") {
+      return (
+        <a className={styles.previewLink} href={block.url || "#"} key={block.id}>
+          {block.label || "Abrir link"}
+        </a>
+      );
+    }
+
+    return null;
+  }
+
   return (
     <section className={styles.editorShell}>
       <div className={styles.editorHeader}>
@@ -922,6 +998,9 @@ export function BlogPostEditor({
               Publico
             </Link>
           ) : null}
+          <button className={styles.ghostButton} onClick={() => setIsPreviewOpen(true)} type="button">
+            Preview
+          </button>
           <button className={styles.secondaryButton} disabled={isSaving} onClick={savePost} type="button">
             {isSaving ? "Salvando" : "Salvar"}
           </button>
@@ -956,6 +1035,23 @@ export function BlogPostEditor({
       </p>
 
       <div className={styles.editorLayout}>
+        <aside className={styles.toolPanel} aria-label="Adicionar blocos">
+          <section className={styles.panel}>
+            <div className={styles.panelHeader}>
+              <span className={styles.kicker}>Blocos</span>
+              <span className={styles.counter}>{draft.contentBlocks.length}</span>
+            </div>
+
+            <div className={styles.blockMenu}>
+              {blockAddOptions.map((option) => (
+                <button key={option.type} onClick={() => addBlock(option.type)} type="button">
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          </section>
+        </aside>
+
         <div className={styles.editorMain}>
           <section className={styles.panel}>
             <div className={styles.panelHeader}>
@@ -967,13 +1063,13 @@ export function BlogPostEditor({
               <label className={`${styles.field} ${styles.fieldWide}`}>
                 <span>Titulo</span>
                 <input
-                  onChange={(event) => updateDraft({ title: event.target.value })}
+                  onChange={(event) => updateTitle(event.target.value)}
                   value={draft.title}
                 />
               </label>
               <label className={styles.field}>
                 <span>Slug</span>
-                <input onChange={(event) => updateDraft({ slug: event.target.value })} value={draft.slug} />
+                <input onChange={(event) => updateSlug(event.target.value)} value={draft.slug} />
               </label>
               <label className={styles.field}>
                 <span>Autor</span>
@@ -1071,16 +1167,8 @@ export function BlogPostEditor({
 
           <section className={styles.panel}>
             <div className={styles.panelHeader}>
-              <span className={styles.kicker}>Blocos</span>
+              <span className={styles.kicker}>Corpo</span>
               <span className={styles.counter}>{draft.contentBlocks.length}</span>
-            </div>
-
-            <div className={styles.blockToolbar}>
-              {blockAddOptions.map((option) => (
-                <button key={option.type} onClick={() => addBlock(option.type)} type="button">
-                  {option.label}
-                </button>
-              ))}
             </div>
 
             <div className={styles.blockList}>
@@ -1194,6 +1282,50 @@ export function BlogPostEditor({
           </section>
         </aside>
       </div>
+
+      {isPreviewOpen ? (
+        <div className={styles.previewOverlay} role="dialog" aria-modal="true" aria-label="Preview do post">
+          <div className={styles.previewShell}>
+            <div className={styles.previewTopbar}>
+              <span className={styles.kicker}>Preview</span>
+              <button className={styles.previewClose} onClick={() => setIsPreviewOpen(false)} type="button">
+                Fechar
+              </button>
+            </div>
+
+            <article className={styles.previewArticle}>
+              <header className={styles.previewHero}>
+                <div className={styles.previewTags}>
+                  {draft.tags.map((tag) => (
+                    <span key={tag}>{tag}</span>
+                  ))}
+                </div>
+                <h1>{draft.title || "Novo post"}</h1>
+                <p>{draft.description || "Descrição pendente."}</p>
+                <div className={styles.previewMeta}>
+                  <span>{draft.authorName || "Equipe Money Moicano MMA"}</span>
+                  <span>{wordCount} palavras</span>
+                </div>
+              </header>
+
+              {coverPreviewUrl ? (
+                <figure className={styles.previewCover}>
+                  <img alt={draft.coverAltText || draft.title} src={coverPreviewUrl} />
+                  {draft.coverCaption ? <figcaption>{draft.coverCaption}</figcaption> : null}
+                </figure>
+              ) : null}
+
+              <div className={styles.previewBody}>
+                {draft.contentBlocks.length ? (
+                  draft.contentBlocks.map(renderPreviewBlock)
+                ) : (
+                  <p>O corpo do post ainda está vazio.</p>
+                )}
+              </div>
+            </article>
+          </div>
+        </div>
+      ) : null}
     </section>
   );
 }
