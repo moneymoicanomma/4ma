@@ -1,0 +1,41 @@
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { describe, it } from "node:test";
+
+const fantasyPageSource = readFileSync(
+  new URL("../app/fantasy/page.tsx", import.meta.url),
+  "utf8"
+);
+const normalizedFantasyPageSource = fantasyPageSource.replace(/\s+/g, " ");
+
+describe("fantasy public page", () => {
+  it("uses the public site header instead of exposing admin navigation", () => {
+    assert.ok(fantasyPageSource.includes("LandingTopbar"));
+    assert.equal(fantasyPageSource.includes('href="/admin/fantasy"'), false);
+    assert.equal(fantasyPageSource.includes("Abrir admin"), false);
+  });
+
+  it("matches the landing hero image and public-facing copy", () => {
+    assert.ok(fantasyPageSource.includes('siteAsset("hero-main-v5.webp")'));
+    assert.ok(
+      normalizedFantasyPageSource.includes(
+        "Escolha o vencedor, método e round de cada luta. Acompanhe os resultados em tempo real. Finja entender de MMA."
+      )
+    );
+    assert.equal(fantasyPageSource.includes("Quando o card fechar"), false);
+  });
+
+  it("keeps internal event stats out of the hero", () => {
+    assert.equal(fantasyPageSource.includes("Card atual"), false);
+    assert.equal(fantasyPageSource.includes("Lutas abertas"), false);
+    assert.equal(fantasyPageSource.includes("Ranking publicado"), false);
+    assert.equal(fantasyPageSource.includes("Resultados lançados"), false);
+  });
+
+  it("does not hide the picks interface behind a whole-shell reveal animation", () => {
+    assert.equal(
+      fantasyPageSource.includes('<div className={styles.interfaceShell} data-reveal>'),
+      false
+    );
+  });
+});
