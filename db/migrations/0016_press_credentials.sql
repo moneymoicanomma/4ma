@@ -21,7 +21,7 @@ create table if not exists app.press_credentials (
   media_outlet text not null,
   document_number text not null,
   coverage_type text not null,
-  coverage_needs text not null,
+  coverage_needs text not null default '',
   source text not null,
   status app.press_credential_status_enum not null default 'new',
   assigned_account_id uuid references app.accounts (id) on delete set null,
@@ -40,7 +40,7 @@ create table if not exists app.press_credentials (
   check (char_length(media_outlet) between 3 and 640),
   check (char_length(document_number) between 3 and 180),
   check (char_length(coverage_type) between 3 and 180),
-  check (char_length(coverage_needs) between 10 and 1600),
+  check (coverage_needs = '' or char_length(coverage_needs) between 10 and 1600),
   check (request_ip_hash is null or request_ip_hash ~ '^[0-9a-f]{64}$')
 );
 

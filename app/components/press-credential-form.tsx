@@ -179,10 +179,8 @@ export function PressCredentialForm() {
           <textarea
             className={styles.textarea}
             maxLength={1600}
-            minLength={10}
             name="coverageNeeds"
-            placeholder="Informe equipe, equipamentos, horários, acessos ou qualquer necessidade operacional."
-            required
+            placeholder="Opcional: equipe, equipamentos, horários, acessos ou qualquer necessidade operacional."
           />
         </label>
       </div>

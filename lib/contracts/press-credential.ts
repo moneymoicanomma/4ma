@@ -62,6 +62,21 @@ function validateRequiredText(
   return null;
 }
 
+function validateOptionalText(
+  value: string,
+  options: {
+    label: string;
+    minLength?: number;
+    maxLength: number;
+  },
+) {
+  if (!value) {
+    return null;
+  }
+
+  return validateRequiredText(value, options);
+}
+
 function emptyPayload(): PressCredentialPayload {
   return {
     fullName: "",
@@ -123,7 +138,7 @@ export function parsePressCredentialSubmission(input: unknown): PressCredentialP
       minLength: 3,
       maxLength: MAX_SHORT_TEXT_LENGTH,
     }) ??
-    validateRequiredText(coverageNeeds, {
+    validateOptionalText(coverageNeeds, {
       label: "Necessidades para cobertura",
       minLength: 10,
       maxLength: MAX_LONG_TEXT_LENGTH,

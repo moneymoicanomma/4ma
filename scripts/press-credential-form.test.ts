@@ -38,14 +38,13 @@ describe("press credential form contract", () => {
     });
   });
 
-  it("requires every Google Form field used for credential review", () => {
+  it("requires the identifying fields used for credential review", () => {
     for (const fieldName of [
       "fullName",
       "email",
       "mediaOutlet",
       "documentNumber",
       "coverageType",
-      "coverageNeeds",
     ] as const) {
       const parsed = parsePressCredentialSubmission({
         ...validPayload,
@@ -54,6 +53,21 @@ describe("press credential form contract", () => {
 
       assert.equal(parsed.ok, false, `${fieldName} should be required`);
     }
+  });
+
+  it("accepts a submission without coverage needs", () => {
+    const parsed = parsePressCredentialSubmission({
+      ...validPayload,
+      coverageNeeds: "",
+    });
+
+    assert.equal(parsed.ok, true);
+
+    if (!parsed.ok) {
+      return;
+    }
+
+    assert.equal(parsed.data.coverageNeeds, "");
   });
 
   it("rejects invalid email addresses", () => {
