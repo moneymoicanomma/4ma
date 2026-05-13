@@ -178,7 +178,7 @@ export async function POST(request: NextRequest) {
       {
         ok: false,
         message:
-          "Storage de imagens do blog nao esta configurado. Verifique BLOG_IMAGES_S3_BUCKET, credenciais do R2 e BLOG_IMAGES_PUBLIC_BASE_URL."
+          "Storage de imagens do blog nao esta configurado. Verifique BLOG_IMAGES_S3_BUCKET, credenciais do R2, BLOG_IMAGES_S3_ENDPOINT sem /bucket e BLOG_IMAGES_PUBLIC_BASE_URL publico."
       },
       503
     );

@@ -20,11 +20,13 @@ const defaultConnectSrcOrigins = [
 ] as const;
 
 function resolveOrigin(value: string) {
+  const trimmed = value.trim();
+
   try {
-    return new URL(value).origin;
+    return new URL(trimmed).origin;
   } catch {
     try {
-      return new URL(`https://${value}`).origin;
+      return new URL(`https://${trimmed}`).origin;
     } catch {
       return null;
     }
@@ -32,12 +34,14 @@ function resolveOrigin(value: string) {
 }
 
 function resolveRemotePattern(value: string | undefined): NextImageRemotePattern | null {
-  if (!value) {
+  const trimmed = value?.trim();
+
+  if (!trimmed) {
     return null;
   }
 
   try {
-    const url = new URL(value);
+    const url = new URL(trimmed);
 
     if (url.protocol !== "https:") {
       return null;
@@ -53,7 +57,7 @@ function resolveRemotePattern(value: string | undefined): NextImageRemotePattern
 }
 
 function firstConfiguredValue(values: Array<string | undefined>) {
-  return values.find((value) => value?.trim());
+  return values.find((value) => value?.trim())?.trim();
 }
 
 function getConnectSrcOrigins() {

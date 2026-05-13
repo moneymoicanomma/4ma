@@ -81,6 +81,40 @@ function normalizeUrlBase(value: string | null | undefined) {
   }
 }
 
+function normalizeStorageEndpoint(value: string | null | undefined) {
+  const baseUrl = normalizeUrlBase(value);
+
+  if (!baseUrl) {
+    return null;
+  }
+
+  try {
+    const url = new URL(baseUrl);
+
+    url.pathname = "";
+    url.search = "";
+    url.hash = "";
+
+    return url.toString().replace(/\/+$/, "");
+  } catch {
+    return null;
+  }
+}
+
+function isR2S3ApiEndpoint(value: string | null) {
+  if (!value) {
+    return false;
+  }
+
+  try {
+    const host = new URL(value).hostname.toLowerCase();
+
+    return host === "r2.cloudflarestorage.com" || host.endsWith(".r2.cloudflarestorage.com");
+  } catch {
+    return false;
+  }
+}
+
 function createServerEnv(): ServerEnv {
   const timeout = Number.parseInt(process.env.UPSTREAM_REQUEST_TIMEOUT_MS ?? "10000", 10);
   const poolMaxConnections = Number.parseInt(process.env.DATABASE_POOL_MAX_CONNECTIONS ?? "10", 10);
@@ -116,7 +150,7 @@ function createServerEnv(): ServerEnv {
     fighterPhotosStorageProvider: process.env.FIGHTER_PHOTOS_STORAGE_PROVIDER?.trim() || "s3",
     fighterPhotosStorageBucket: process.env.FIGHTER_PHOTOS_S3_BUCKET?.trim() || null,
     fighterPhotosStorageRegion: process.env.FIGHTER_PHOTOS_S3_REGION?.trim() || "us-east-1",
-    fighterPhotosStorageEndpoint: process.env.FIGHTER_PHOTOS_S3_ENDPOINT?.trim() || null,
+    fighterPhotosStorageEndpoint: normalizeStorageEndpoint(process.env.FIGHTER_PHOTOS_S3_ENDPOINT),
     fighterPhotosStorageAccessKeyId:
       process.env.FIGHTER_PHOTOS_S3_ACCESS_KEY_ID?.trim() || null,
     fighterPhotosStorageSecretAccessKey:
@@ -135,9 +169,9 @@ function createServerEnv(): ServerEnv {
       process.env.FIGHTER_PHOTOS_S3_REGION?.trim() ||
       "auto",
     blogImagesStorageEndpoint:
-      process.env.BLOG_IMAGES_S3_ENDPOINT?.trim() ||
-      process.env.FIGHTER_PHOTOS_S3_ENDPOINT?.trim() ||
-      null,
+      normalizeStorageEndpoint(
+        process.env.BLOG_IMAGES_S3_ENDPOINT || process.env.FIGHTER_PHOTOS_S3_ENDPOINT
+      ),
     blogImagesStorageAccessKeyId:
       process.env.BLOG_IMAGES_S3_ACCESS_KEY_ID?.trim() ||
       process.env.FIGHTER_PHOTOS_S3_ACCESS_KEY_ID?.trim() ||
@@ -283,7 +317,8 @@ export function isBlogImageStorageConfigured(env: ServerEnv) {
     env.blogImagesStorageBucket &&
       env.blogImagesStorageAccessKeyId &&
       env.blogImagesStorageSecretAccessKey &&
-      env.blogImagesPublicBaseUrl
+      env.blogImagesPublicBaseUrl &&
+      !isR2S3ApiEndpoint(env.blogImagesPublicBaseUrl)
   );
 }
 

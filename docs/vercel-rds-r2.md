@@ -66,6 +66,8 @@ BLOG_IMAGES_PUBLIC_BASE_URL=https://pub-yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy.r2.dev
 
 - `NEXT_PUBLIC_SITE_ASSET_BASE_URL` pode usar o `r2.dev` agora para destravar o deploy. Quando o domínio customizado do bucket estiver livre, basta trocar a env.
 - `BLOG_IMAGES_*` configura um bucket próprio para as imagens do blog, separado do bucket de fotos dos atletas. `BLOG_IMAGES_PUBLIC_BASE_URL` deve apontar para o domínio público desse mesmo bucket.
+- `BLOG_IMAGES_S3_ENDPOINT` deve ser o endpoint S3 da conta R2, sem caminho e sem nome de bucket no final. Use `https://<accountid>.r2.cloudflarestorage.com`, não `https://<accountid>.r2.cloudflarestorage.com/mmmma-blog-images`.
+- `BLOG_IMAGES_PUBLIC_BASE_URL` deve ser o domínio público do bucket, como `https://pub-...r2.dev` ou um custom domain. Não use o endpoint S3 `r2.cloudflarestorage.com` nessa env.
 - `DATABASE_SSL_ALLOW_INVALID_CERTIFICATES=false` deve ficar assim em produção. Só mude para `true` temporariamente em ambiente controlado se você estiver preso a um certificado fora da cadeia confiável.
 - Com `EVENT_FIGHTER_ACCESS_AUTH_MODE=shared_password`, o login do portal aceita qualquer email válido junto da senha compartilhada enviada pela equipe. Não exige pré-cadastro do atleta.
 - `ATHLETE_FORM_PASSWORD` precisa ser definido explicitamente. O app não usa mais senha padrão embutida para o portal.
