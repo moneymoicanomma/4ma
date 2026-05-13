@@ -52,11 +52,19 @@ function resolveRemotePattern(value: string | undefined): NextImageRemotePattern
   }
 }
 
+function firstConfiguredValue(values: Array<string | undefined>) {
+  return values.find((value) => value?.trim());
+}
+
 function getConnectSrcOrigins() {
   const origins = new Set<string>(defaultConnectSrcOrigins);
 
   for (const candidate of [
     process.env.NEXT_PUBLIC_SITE_ASSET_BASE_URL,
+    process.env.BLOG_IMAGES_PUBLIC_BASE_URL,
+    process.env.BLOG_MEDIA_PUBLIC_BASE_URL,
+    process.env.FIGHTER_PHOTOS_PUBLIC_BASE_URL,
+    process.env.BLOG_IMAGES_S3_ENDPOINT,
     process.env.FIGHTER_PHOTOS_S3_ENDPOINT
   ]) {
     const origin = candidate ? resolveOrigin(candidate) : null;
@@ -69,7 +77,14 @@ function getConnectSrcOrigins() {
   return Array.from(origins);
 }
 
-const blogMediaRemotePattern = resolveRemotePattern(process.env.NEXT_PUBLIC_SITE_ASSET_BASE_URL);
+const blogMediaRemotePattern = resolveRemotePattern(
+  firstConfiguredValue([
+    process.env.BLOG_IMAGES_PUBLIC_BASE_URL,
+    process.env.BLOG_MEDIA_PUBLIC_BASE_URL,
+    process.env.FIGHTER_PHOTOS_PUBLIC_BASE_URL,
+    process.env.NEXT_PUBLIC_SITE_ASSET_BASE_URL
+  ])
+);
 const imageRemotePatterns: NonNullable<NonNullable<NextConfig["images"]>["remotePatterns"]> = [
   ...siteAssetRemotePatterns,
   {

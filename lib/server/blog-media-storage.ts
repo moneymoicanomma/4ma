@@ -8,7 +8,7 @@ import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 import {
   getServerEnv,
-  isFighterPhotoStorageConfigured,
+  isBlogImageStorageConfigured,
   type ServerEnv
 } from "@/lib/server/env";
 
@@ -38,12 +38,12 @@ declare global {
 function getS3Client(env: ServerEnv) {
   if (!globalThis.__mmmmaBlogMediaS3Client) {
     globalThis.__mmmmaBlogMediaS3Client = new S3Client({
-      region: env.fighterPhotosStorageRegion,
-      endpoint: env.fighterPhotosStorageEndpoint ?? undefined,
-      forcePathStyle: env.fighterPhotosStorageForcePathStyle,
+      region: env.blogImagesStorageRegion,
+      endpoint: env.blogImagesStorageEndpoint ?? undefined,
+      forcePathStyle: env.blogImagesStorageForcePathStyle,
       credentials: {
-        accessKeyId: env.fighterPhotosStorageAccessKeyId!,
-        secretAccessKey: env.fighterPhotosStorageSecretAccessKey!
+        accessKeyId: env.blogImagesStorageAccessKeyId!,
+        secretAccessKey: env.blogImagesStorageSecretAccessKey!
       }
     });
   }
@@ -51,10 +51,8 @@ function getS3Client(env: ServerEnv) {
   return globalThis.__mmmmaBlogMediaS3Client;
 }
 
-function resolvePublicUrl(objectKey: string) {
-  const assetBaseUrl = process.env.NEXT_PUBLIC_SITE_ASSET_BASE_URL?.trim().replace(/\/+$/, "");
-
-  return assetBaseUrl ? `${assetBaseUrl}/${objectKey}` : null;
+function resolvePublicUrl(objectKey: string, env: ServerEnv) {
+  return env.blogImagesPublicBaseUrl ? `${env.blogImagesPublicBaseUrl}/${objectKey}` : null;
 }
 
 function resolveBlogObjectKey(fileName: string, scope: string) {
@@ -73,12 +71,18 @@ export async function createBlogMediaUploadTarget(options: {
 }): Promise<BlogMediaUploadTarget> {
   const env = options.env ?? getServerEnv();
 
-  if (!isFighterPhotoStorageConfigured(env)) {
+  if (!isBlogImageStorageConfigured(env)) {
     throw new Error("Blog media storage is not configured.");
   }
 
-  const bucket = env.fighterPhotosStorageBucket!;
+  const bucket = env.blogImagesStorageBucket!;
   const objectKey = resolveBlogObjectKey(options.fileName, options.scope);
+  const publicUrl = resolvePublicUrl(objectKey, env);
+
+  if (!publicUrl) {
+    throw new Error("Blog media public URL is not configured.");
+  }
+
   const uploadUrl = await getSignedUrl(
     getS3Client(env),
     new PutObjectCommand({
@@ -96,8 +100,8 @@ export async function createBlogMediaUploadTarget(options: {
     objectKey,
     contentType: options.contentType,
     byteSize: options.byteSize,
-    storageProvider: env.fighterPhotosStorageProvider,
-    publicUrl: resolvePublicUrl(objectKey)
+    storageProvider: env.blogImagesStorageProvider,
+    publicUrl
   };
 }
 
@@ -106,13 +110,13 @@ export async function verifyBlogMediaUpload(options: BlogMediaUploadVerification
 }) {
   const env = options.env ?? getServerEnv();
 
-  if (!isFighterPhotoStorageConfigured(env)) {
+  if (!isBlogImageStorageConfigured(env)) {
     throw new Error("Blog media storage is not configured.");
   }
 
   if (
-    options.bucket !== env.fighterPhotosStorageBucket ||
-    options.storageProvider !== env.fighterPhotosStorageProvider ||
+    options.bucket !== env.blogImagesStorageBucket ||
+    options.storageProvider !== env.blogImagesStorageProvider ||
     !options.objectKey.startsWith("blog/")
   ) {
     return false;

@@ -17,6 +17,14 @@ export type ServerEnv = {
   fighterPhotosStorageAccessKeyId: string | null;
   fighterPhotosStorageSecretAccessKey: string | null;
   fighterPhotosStorageForcePathStyle: boolean;
+  blogImagesStorageProvider: string;
+  blogImagesStorageBucket: string | null;
+  blogImagesStorageRegion: string;
+  blogImagesStorageEndpoint: string | null;
+  blogImagesStorageAccessKeyId: string | null;
+  blogImagesStorageSecretAccessKey: string | null;
+  blogImagesStorageForcePathStyle: boolean;
+  blogImagesPublicBaseUrl: string | null;
   upstreamApiBaseUrl: string | null;
   upstreamApiLegacyBearerToken: string | null;
   upstreamPublicWriteBearerToken: string | null;
@@ -55,6 +63,24 @@ function normalizePath(pathname: string, fallback: string) {
   return pathname.startsWith("/") ? pathname : `/${pathname}`;
 }
 
+function normalizeUrlBase(value: string | null | undefined) {
+  const trimmed = value?.trim();
+
+  if (!trimmed) {
+    return null;
+  }
+
+  try {
+    return new URL(trimmed).toString().replace(/\/+$/, "");
+  } catch {
+    try {
+      return new URL(`https://${trimmed}`).toString().replace(/\/+$/, "");
+    } catch {
+      return null;
+    }
+  }
+}
+
 function createServerEnv(): ServerEnv {
   const timeout = Number.parseInt(process.env.UPSTREAM_REQUEST_TIMEOUT_MS ?? "10000", 10);
   const poolMaxConnections = Number.parseInt(process.env.DATABASE_POOL_MAX_CONNECTIONS ?? "10", 10);
@@ -71,6 +97,10 @@ function createServerEnv(): ServerEnv {
       : "account";
   const fighterPhotosStorageForcePathStyle =
     process.env.FIGHTER_PHOTOS_S3_FORCE_PATH_STYLE?.trim().toLowerCase() === "true";
+  const blogImagesStorageForcePathStyle =
+    (process.env.BLOG_IMAGES_S3_FORCE_PATH_STYLE ?? process.env.FIGHTER_PHOTOS_S3_FORCE_PATH_STYLE)
+      ?.trim()
+      .toLowerCase() === "true";
 
   return {
     databaseUrl: process.env.DATABASE_URL?.trim() || null,
@@ -92,6 +122,37 @@ function createServerEnv(): ServerEnv {
     fighterPhotosStorageSecretAccessKey:
       process.env.FIGHTER_PHOTOS_S3_SECRET_ACCESS_KEY?.trim() || null,
     fighterPhotosStorageForcePathStyle,
+    blogImagesStorageProvider:
+      process.env.BLOG_IMAGES_STORAGE_PROVIDER?.trim() ||
+      process.env.FIGHTER_PHOTOS_STORAGE_PROVIDER?.trim() ||
+      "r2",
+    blogImagesStorageBucket:
+      process.env.BLOG_IMAGES_S3_BUCKET?.trim() ||
+      process.env.FIGHTER_PHOTOS_S3_BUCKET?.trim() ||
+      null,
+    blogImagesStorageRegion:
+      process.env.BLOG_IMAGES_S3_REGION?.trim() ||
+      process.env.FIGHTER_PHOTOS_S3_REGION?.trim() ||
+      "auto",
+    blogImagesStorageEndpoint:
+      process.env.BLOG_IMAGES_S3_ENDPOINT?.trim() ||
+      process.env.FIGHTER_PHOTOS_S3_ENDPOINT?.trim() ||
+      null,
+    blogImagesStorageAccessKeyId:
+      process.env.BLOG_IMAGES_S3_ACCESS_KEY_ID?.trim() ||
+      process.env.FIGHTER_PHOTOS_S3_ACCESS_KEY_ID?.trim() ||
+      null,
+    blogImagesStorageSecretAccessKey:
+      process.env.BLOG_IMAGES_S3_SECRET_ACCESS_KEY?.trim() ||
+      process.env.FIGHTER_PHOTOS_S3_SECRET_ACCESS_KEY?.trim() ||
+      null,
+    blogImagesStorageForcePathStyle,
+    blogImagesPublicBaseUrl: normalizeUrlBase(
+      process.env.BLOG_IMAGES_PUBLIC_BASE_URL ||
+        process.env.BLOG_MEDIA_PUBLIC_BASE_URL ||
+        process.env.FIGHTER_PHOTOS_PUBLIC_BASE_URL ||
+        process.env.NEXT_PUBLIC_SITE_ASSET_BASE_URL
+    ),
     upstreamApiBaseUrl: process.env.UPSTREAM_API_BASE_URL?.trim().replace(/\/+$/, "") ?? null,
     upstreamApiLegacyBearerToken: process.env.UPSTREAM_API_BEARER_TOKEN?.trim() || null,
     upstreamPublicWriteBearerToken:
@@ -214,6 +275,15 @@ export function isFighterPhotoStorageConfigured(env: ServerEnv) {
     env.fighterPhotosStorageBucket &&
       env.fighterPhotosStorageAccessKeyId &&
       env.fighterPhotosStorageSecretAccessKey
+  );
+}
+
+export function isBlogImageStorageConfigured(env: ServerEnv) {
+  return Boolean(
+    env.blogImagesStorageBucket &&
+      env.blogImagesStorageAccessKeyId &&
+      env.blogImagesStorageSecretAccessKey &&
+      env.blogImagesPublicBaseUrl
   );
 }
 

@@ -5,7 +5,7 @@
       <driver-ref>postgresql</driver-ref>
       <synchronize>true</synchronize>
       <jdbc-driver>org.postgresql.Driver</jdbc-driver>
-      <jdbc-url>jdbc:postgresql://[64:ff9b::313:e937]:5432/postgres?sslmode=require</jdbc-url>
+      <jdbc-url>jdbc:postgresql://fourxm-db.cfs6ie4s22u2.us-east-2.rds.amazonaws.com:5432/postgres</jdbc-url>
       <working-dir>$ProjectFileDir$</working-dir>
     </data-source>
   </component>

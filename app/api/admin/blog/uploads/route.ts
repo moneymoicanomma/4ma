@@ -175,7 +175,11 @@ export async function POST(request: NextRequest) {
     console.error("[admin blog] create upload failed", error);
 
     return buildJsonResponse(
-      { ok: false, message: "Storage de imagens do blog nao esta configurado." },
+      {
+        ok: false,
+        message:
+          "Storage de imagens do blog nao esta configurado. Verifique BLOG_IMAGES_S3_BUCKET, credenciais do R2 e BLOG_IMAGES_PUBLIC_BASE_URL."
+      },
       503
     );
   }

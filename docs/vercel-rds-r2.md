@@ -22,7 +22,7 @@ NEXT_PUBLIC_TURNSTILE_SITE_KEY=<turnstile-site-key>
 TURNSTILE_SECRET_KEY=<turnstile-secret-key>
 ```
 
-Somente quando o portal privado dos atletas for religado:
+Para admin do blog com uploads via R2 e, quando aplicável, portal privado dos atletas:
 
 ```bash
 EVENT_FIGHTER_PORTAL_ENABLED=true
@@ -52,15 +52,25 @@ FIGHTER_PHOTOS_S3_ENDPOINT=https://<accountid>.r2.cloudflarestorage.com
 FIGHTER_PHOTOS_S3_ACCESS_KEY_ID=<access-key-id>
 FIGHTER_PHOTOS_S3_SECRET_ACCESS_KEY=<secret-access-key>
 FIGHTER_PHOTOS_S3_FORCE_PATH_STYLE=false
+BLOG_IMAGES_STORAGE_PROVIDER=r2
+BLOG_IMAGES_S3_BUCKET=mmmma-blog-images
+BLOG_IMAGES_S3_REGION=auto
+BLOG_IMAGES_S3_ENDPOINT=https://<accountid>.r2.cloudflarestorage.com
+BLOG_IMAGES_S3_ACCESS_KEY_ID=<access-key-id>
+BLOG_IMAGES_S3_SECRET_ACCESS_KEY=<secret-access-key>
+BLOG_IMAGES_S3_FORCE_PATH_STYLE=false
+BLOG_IMAGES_PUBLIC_BASE_URL=https://pub-yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy.r2.dev
 ```
 
 ## Notas práticas
 
 - `NEXT_PUBLIC_SITE_ASSET_BASE_URL` pode usar o `r2.dev` agora para destravar o deploy. Quando o domínio customizado do bucket estiver livre, basta trocar a env.
+- `BLOG_IMAGES_*` configura um bucket próprio para as imagens do blog, separado do bucket de fotos dos atletas. `BLOG_IMAGES_PUBLIC_BASE_URL` deve apontar para o domínio público desse mesmo bucket.
 - `DATABASE_SSL_ALLOW_INVALID_CERTIFICATES=false` deve ficar assim em produção. Só mude para `true` temporariamente em ambiente controlado se você estiver preso a um certificado fora da cadeia confiável.
 - Com `EVENT_FIGHTER_ACCESS_AUTH_MODE=shared_password`, o login do portal aceita qualquer email válido junto da senha compartilhada enviada pela equipe. Não exige pré-cadastro do atleta.
 - `ATHLETE_FORM_PASSWORD` precisa ser definido explicitamente. O app não usa mais senha padrão embutida para o portal.
 - `FIGHTER_PHOTOS_S3_ENDPOINT` usa o endpoint S3 compatível do R2.
+- O bucket usado em `BLOG_IMAGES_S3_BUCKET` precisa permitir CORS para `PUT` a partir do domínio do site, senão o upload direto do editor será bloqueado pelo navegador.
 - `DATABASE_POOL_MAX_CONNECTIONS=5` é um ponto de partida mais seguro para ambiente serverless do que deixar o pool alto por instância.
 - O app continua salvando no banco só os metadados das fotos. Os binários seguem no bucket S3 compatível.
 - `UPSTREAM_*` continua sendo usado para enviar formularios publicos, portal do atleta e leituras/escritas administrativas para a Lambda/RDS privada, agora com bearer separado por superficie.

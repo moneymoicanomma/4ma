@@ -447,16 +447,22 @@ export function BlogPostEditor({
       throw new Error(payload.message);
     }
 
-    const uploadResponse = await fetch(payload.upload.uploadUrl, {
-      method: "PUT",
-      headers: {
-        "Content-Type": file.type
-      },
-      body: file
-    });
+    let uploadResponse: Response;
+
+    try {
+      uploadResponse = await fetch(payload.upload.uploadUrl, {
+        method: "PUT",
+        headers: {
+          "Content-Type": file.type
+        },
+        body: file
+      });
+    } catch {
+      throw new Error("Nao foi possivel enviar a imagem para o R2. Verifique o CORS do bucket.");
+    }
 
     if (!uploadResponse.ok) {
-      throw new Error("Nao foi possivel enviar a imagem.");
+      throw new Error("Nao foi possivel enviar a imagem para o R2.");
     }
 
     return payload.upload;
