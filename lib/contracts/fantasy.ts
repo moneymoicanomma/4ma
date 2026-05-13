@@ -17,9 +17,12 @@ export {
 
 export const FANTASY_ENTRY_SOURCE = "money-moicano-fantasy";
 export const FANTASY_VICTORY_METHODS = ["decisao", "finalizacao", "nocaute"] as const;
+export const FANTASY_FIGHT_PICK_STATUSES = ["open", "closed"] as const;
 export const FANTASY_ROUNDS = [1, 2, 3, 4, 5] as const;
 export type FantasyVictoryMethod = (typeof FANTASY_VICTORY_METHODS)[number];
+export type FantasyFightPickStatus = (typeof FANTASY_FIGHT_PICK_STATUSES)[number];
 export type FantasyRound = (typeof FANTASY_ROUNDS)[number];
+export type FantasyEventStatus = "draft" | "published" | "locked" | "finished";
 export const FANTASY_DECISION_ROUND: FantasyRound = 3;
 
 export type FantasyPickPayload = {
@@ -65,11 +68,10 @@ export type FantasyFightCardFight = {
   order: number;
   label: string;
   maxRound: 3 | 5;
+  pickStatus: FantasyFightPickStatus;
   redCorner: FantasyFightCardFighter;
   blueCorner: FantasyFightCardFighter;
 };
-
-export type FantasyEventStatus = "draft" | "published" | "locked" | "finished";
 
 export type FantasyEventCard = {
   id: string;
@@ -80,6 +82,13 @@ export type FantasyEventCard = {
   status: FantasyEventStatus;
   fights: FantasyFightCardFight[];
 };
+
+export function isFantasyFightPickOpen(
+  eventStatus: FantasyEventStatus,
+  fight: Pick<FantasyFightCardFight, "pickStatus">
+) {
+  return eventStatus === "published" && fight.pickStatus === "open";
+}
 
 type FantasyEntryParseResult =
   | {

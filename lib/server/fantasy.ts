@@ -5,6 +5,7 @@ import { randomUUID } from "node:crypto";
 import type { FantasyEntryPayload, FantasyPickPayload } from "@/lib/contracts/fantasy";
 import {
   BRAZILIAN_STATES,
+  FANTASY_FIGHT_PICK_STATUSES,
   normalizeFantasyRoundForMethod,
   type FantasyEntryPublicResponse
 } from "@/lib/contracts/fantasy";
@@ -68,6 +69,7 @@ type FightRow = {
   blueCornerName: string;
   blueCornerCountry: string;
   blueCornerImageUrl: string | null;
+  pickStatus: FantasyMockFight["pickStatus"];
   winnerId: string | null;
   victoryMethod: FantasyMockFight["result"]["victoryMethod"];
   round: FantasyMockFight["result"]["round"];
@@ -112,6 +114,7 @@ type NormalizedFantasyAdminFight = {
   order: number;
   label: string;
   maxRound: 3 | 5;
+  pickStatus: FantasyMockFight["pickStatus"];
   redCorner: NormalizedFantasyAdminCorner;
   blueCorner: NormalizedFantasyAdminCorner;
   result:
@@ -164,6 +167,7 @@ const fantasyVictoryMethodSet = new Set<NonNullable<FantasyMockFight["result"]["
   "finalizacao",
   "nocaute"
 ]);
+const fantasyFightPickStatusSet = new Set<string>(FANTASY_FIGHT_PICK_STATUSES);
 const uuidPattern =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -348,6 +352,7 @@ function normalizeFantasyAdminEvent(event: FantasyMockEvent): NormalizedFantasyA
   const city = parseCityLabel(event.cityLabel);
   const fights = event.fights.map((fight, index) => {
     const maxRound: 3 | 5 = fight.maxRound === 5 ? 5 : 3;
+    const pickStatus = normalizeShortText(fight.pickStatus);
     const redCorner = normalizeFightCorner(fight.redCorner, `red-${index + 1}`);
     const blueCorner = normalizeFightCorner(fight.blueCorner, `blue-${index + 1}`);
 
@@ -375,6 +380,9 @@ function normalizeFantasyAdminEvent(event: FantasyMockEvent): NormalizedFantasyA
       order: index + 1,
       label: ensureRequiredText(normalizeShortText(fight.label), "Categoria da luta", 2),
       maxRound,
+      pickStatus: fantasyFightPickStatusSet.has(pickStatus)
+        ? (pickStatus as FantasyMockFight["pickStatus"])
+        : "open",
       redCorner,
       blueCorner,
       result: normalizeFightResult(normalizedFight, redCorner.originalId, blueCorner.originalId)
@@ -763,6 +771,7 @@ async function persistFantasyEvent(
               display_order,
               label,
               max_rounds,
+              pick_status,
               red_corner_event_fighter_id,
               blue_corner_event_fighter_id
             )
@@ -772,8 +781,9 @@ async function persistFantasyEvent(
               $3,
               $4,
               $5,
-              $6::uuid,
-              $7::uuid
+              $6::app.fight_pick_status_enum,
+              $7::uuid,
+              $8::uuid
             )
             on conflict (id) do update
             set
@@ -781,6 +791,7 @@ async function persistFantasyEvent(
               display_order = excluded.display_order,
               label = excluded.label,
               max_rounds = excluded.max_rounds,
+              pick_status = excluded.pick_status,
               red_corner_event_fighter_id = excluded.red_corner_event_fighter_id,
               blue_corner_event_fighter_id = excluded.blue_corner_event_fighter_id,
               updated_at = now()
@@ -791,6 +802,7 @@ async function persistFantasyEvent(
             fight.order,
             fight.label,
             fight.maxRound,
+            fight.pickStatus,
             redCornerEventFighterId,
             blueCornerEventFighterId
           ]
@@ -917,7 +929,11 @@ function buildEventSkeleton(row: EventRow): FantasyMockEvent {
 function normalizeLoadedFantasyEvent(event: FantasyMockEvent): FantasyMockEvent {
   return {
     ...event,
-    scoringRules: normalizeScoringRules(event.scoringRules)
+    scoringRules: normalizeScoringRules(event.scoringRules),
+    fights: event.fights.map((fight) => ({
+      ...fight,
+      pickStatus: fantasyFightPickStatusSet.has(fight.pickStatus) ? fight.pickStatus : "open"
+    }))
   };
 }
 
@@ -1006,6 +1022,7 @@ export async function loadFantasyEventsFromDatabase(env: ServerEnv = getServerEn
           coalesce(blue_ef.card_name, blue_f.display_name) as "blueCornerName",
           blue_f.country_name as "blueCornerCountry",
           blue_f.image_url as "blueCornerImageUrl",
+          f.pick_status as "pickStatus",
           fr.winner_event_fighter_id as "winnerId",
           fr.victory_method as "victoryMethod",
           fr.official_round as round
@@ -1038,6 +1055,7 @@ export async function loadFantasyEventsFromDatabase(env: ServerEnv = getServerEn
         order: row.order,
         label: row.label,
         maxRound: row.maxRound,
+        pickStatus: row.pickStatus,
         redCorner: {
           id: row.redCornerId,
           name: row.redCornerName,
@@ -1191,6 +1209,60 @@ export async function submitFantasyEntry(
       userAgent: requestContext.userAgent
     },
     async (transaction) => {
+      const fightGateResult = await transaction.query<{
+        id: string;
+        eventStatus: FantasyMockEvent["status"];
+        pickStatus: FantasyMockFight["pickStatus"];
+        isOpen: boolean;
+      }>(
+        `
+          select
+            f.id,
+            e.status as "eventStatus",
+            f.pick_status as "pickStatus",
+            f.pick_status = 'open' as "isOpen"
+          from app.events e
+          join app.fights f
+            on f.event_id = e.id
+          where e.id = $1::uuid
+          order by f.display_order
+        `,
+        [payload.eventId]
+      );
+      const eventStatus = fightGateResult.rows[0]?.eventStatus ?? null;
+      const openFightIds = fightGateResult.rows
+        .filter((fight) => fight.isOpen)
+        .map((fight) => fight.id);
+      const openFightIdSet = new Set(openFightIds);
+
+      if (!eventStatus) {
+        return {
+          ok: false,
+          message: "Evento de fantasy não encontrado."
+        };
+      }
+
+      if (eventStatus !== "published" || !openFightIds.length) {
+        return {
+          ok: false,
+          message: "As picks deste evento já foram travadas."
+        };
+      }
+
+      if (payload.picks.some((pick) => !openFightIdSet.has(pick.fightId))) {
+        return {
+          ok: false,
+          message: "Uma ou mais lutas já fecharam para picks. Atualize a página e tente de novo."
+        };
+      }
+
+      if (payload.picks.length !== openFightIds.length) {
+        return {
+          ok: false,
+          message: "Complete todas as lutas abertas antes de enviar seu fantasy."
+        };
+      }
+
       const entryResult = await transaction.query<{
         id: string;
         referenceCode: string;
@@ -1270,7 +1342,10 @@ export async function submitFantasyEntry(
 
       const entry = entryResult.rows[0]!;
 
-      await transaction.query("delete from app.fantasy_picks where fantasy_entry_id = $1", [entry.id]);
+      await transaction.query(
+        "delete from app.fantasy_picks where fantasy_entry_id = $1 and fight_id = any($2::uuid[])",
+        [entry.id, openFightIds]
+      );
 
       for (const pick of payload.picks) {
         await transaction.query(

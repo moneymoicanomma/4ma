@@ -4,6 +4,7 @@ import { startTransition, useEffect, useState } from "react";
 
 import {
   normalizeFantasyRoundForMethod,
+  type FantasyFightPickStatus,
   type FantasyRound,
   type FantasyVictoryMethod
 } from "@/lib/contracts/fantasy";
@@ -162,6 +163,7 @@ function createDraftFight(seed: number, order: number): FantasyMockFight {
     order,
     label: "Peso leve",
     maxRound: 3,
+    pickStatus: "open",
     redCorner: {
       id: `fighter-red-${seed}-${order}`,
       name: "Corner vermelho",
@@ -360,6 +362,18 @@ export function FantasyAdminDashboard({
         };
       })()
     }));
+  }
+
+  function updateFightPickStatus(fightId: string, pickStatus: FantasyFightPickStatus) {
+    updateFight(fightId, (fight) => ({
+      ...fight,
+      pickStatus
+    }));
+    setNotice(
+      pickStatus === "open"
+        ? "Luta aberta para picks. Salve a estrutura para publicar essa mudança."
+        : "Luta fechada para picks. Salve a estrutura para travar essa luta."
+    );
   }
 
   function clearFightResult(fightId: string) {
@@ -806,16 +820,41 @@ export function FantasyAdminDashboard({
 
                 <div className={styles.resultBlock}>
                   <div className={styles.resultHeader}>
-                    <span className={styles.kicker}>Resultado oficial</span>
-                    <button
-                      className={styles.inlineButton}
-                      type="button"
-                      onClick={() => {
-                        clearFightResult(fight.id);
-                      }}
-                    >
-                      Limpar resultado
-                    </button>
+                    <div>
+                      <span className={styles.kicker}>Resultado oficial</span>
+                      <small
+                        className={
+                          fight.pickStatus === "open"
+                            ? `${styles.pickStatusPill} ${styles.pickStatusPillOpen}`
+                            : styles.pickStatusPill
+                        }
+                      >
+                        {fight.pickStatus === "open" ? "Aberta para picks" : "Fechada para picks"}
+                      </small>
+                    </div>
+                    <div className={styles.resultActions}>
+                      <button
+                        className={styles.inlineButton}
+                        type="button"
+                        onClick={() => {
+                          updateFightPickStatus(
+                            fight.id,
+                            fight.pickStatus === "open" ? "closed" : "open"
+                          );
+                        }}
+                      >
+                        {fight.pickStatus === "open" ? "Fechar picks" : "Abrir picks"}
+                      </button>
+                      <button
+                        className={styles.inlineButton}
+                        type="button"
+                        onClick={() => {
+                          clearFightResult(fight.id);
+                        }}
+                      >
+                        Limpar resultado
+                      </button>
+                    </div>
                   </div>
 
                   <div className={styles.resultRow}>

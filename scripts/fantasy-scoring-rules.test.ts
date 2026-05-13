@@ -33,6 +33,7 @@ function createEvent(entries: FantasyMockEvent["entries"]): FantasyMockEvent {
         order: 1,
         label: "Peso pena",
         maxRound: 3,
+        pickStatus: "open",
         redCorner: {
           id: "fighter-red",
           name: "Lutador Vermelho",

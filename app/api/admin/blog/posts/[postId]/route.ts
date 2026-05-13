@@ -225,9 +225,17 @@ export async function POST(
       return buildJsonResponse({ ok: false, message: "Acao invalida." }, 400);
     }
 
-    return result.ok
-      ? buildJsonResponse({ ok: true, post: result.post })
-      : buildJsonResponse({ ok: false, message: result.message }, 400);
+    if (!result.ok) {
+      console.warn("[admin blog] post action rejected", {
+        action: requestBody.data?.action,
+        postId,
+        message: result.message
+      });
+
+      return buildJsonResponse({ ok: false, message: result.message }, 400);
+    }
+
+    return buildJsonResponse({ ok: true, post: result.post });
   } catch (error) {
     console.error("[admin blog] post action failed", error);
 

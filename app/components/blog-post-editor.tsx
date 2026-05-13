@@ -17,7 +17,7 @@ import type {
   BlogPostSavePayload,
   BlogPostStatus
 } from "@/lib/contracts/blog";
-import { normalizeBlogSlug } from "@/lib/contracts/blog";
+import { normalizeBlogSlug, validateBlogPostForPublish } from "@/lib/contracts/blog";
 
 import styles from "./blog-post-editor.module.css";
 
@@ -201,6 +201,13 @@ function getAutosaveKey(postId: string) {
 
 async function readJsonResponse<TPayload>(response: Response): Promise<TPayload | null> {
   return response.json().catch(() => null) as Promise<TPayload | null>;
+}
+
+function getResponseErrorMessage(
+  payload: { ok: false; message: string } | null,
+  fallback: string
+) {
+  return payload?.message || fallback;
 }
 
 export function BlogPostEditor({
@@ -439,7 +446,16 @@ export function BlogPostEditor({
     });
     const payload = await readJsonResponse<BlogUploadResponse>(response);
 
-    if (!response.ok || !payload) {
+    if (!response.ok) {
+      throw new Error(
+        getResponseErrorMessage(
+          payload && !payload.ok ? payload : null,
+          "Nao foi possivel preparar o upload."
+        )
+      );
+    }
+
+    if (!payload) {
       throw new Error("Nao foi possivel preparar o upload.");
     }
 
@@ -546,7 +562,16 @@ export function BlogPostEditor({
     });
     const payload = await readJsonResponse<BlogPostMutationResponse>(response);
 
-    if (!response.ok || !payload) {
+    if (!response.ok) {
+      throw new Error(
+        getResponseErrorMessage(
+          payload && !payload.ok ? payload : null,
+          "Nao foi possivel salvar o post."
+        )
+      );
+    }
+
+    if (!payload) {
       throw new Error("Nao foi possivel salvar o post.");
     }
 
@@ -604,6 +629,21 @@ export function BlogPostEditor({
 
     try {
       if (action === "publish") {
+        const validation = validateBlogPostForPublish({
+          title: draft.title,
+          slug: draft.slug,
+          description: draft.description,
+          authorName: draft.authorName,
+          coverMediaId: draft.coverMediaId,
+          coverAltText: draft.coverAltText,
+          contentBlocks: draft.contentBlocks,
+          tags: draft.tags
+        });
+
+        if (!validation.ok) {
+          throw new Error(validation.message);
+        }
+
         await persistDraft(true);
       }
 
@@ -618,7 +658,16 @@ export function BlogPostEditor({
       });
       const payload = await readJsonResponse<BlogPostMutationResponse>(response);
 
-      if (!response.ok || !payload) {
+      if (!response.ok) {
+        throw new Error(
+          getResponseErrorMessage(
+            payload && !payload.ok ? payload : null,
+            "Nao foi possivel atualizar o post."
+          )
+        );
+      }
+
+      if (!payload) {
         throw new Error("Nao foi possivel atualizar o post.");
       }
 
@@ -676,7 +725,16 @@ export function BlogPostEditor({
       });
       const payload = await readJsonResponse<BlogPostDeleteResponse>(response);
 
-      if (!response.ok || !payload) {
+      if (!response.ok) {
+        throw new Error(
+          getResponseErrorMessage(
+            payload && !payload.ok ? payload : null,
+            "Nao foi possivel excluir o post."
+          )
+        );
+      }
+
+      if (!payload) {
         throw new Error("Nao foi possivel excluir o post.");
       }
 

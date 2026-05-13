@@ -321,6 +321,33 @@
   gap: 8px;
 }
 
+.resultActions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.pickStatusPill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  margin-top: 8px;
+  padding: 0 10px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.52);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+}
+
+.pickStatusPillOpen {
+  border-color: rgba(80, 180, 112, 0.42);
+  background: rgba(80, 180, 112, 0.08);
+  color: rgba(172, 237, 190, 0.86);
+}
+
 .roundButton {
   min-width: 62px;
 }

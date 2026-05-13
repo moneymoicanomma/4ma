@@ -6,6 +6,7 @@ import {
   FANTASY_ENTRY_SOURCE,
   FANTASY_VICTORY_METHODS,
   findBrazilianStateSuggestions,
+  isFantasyFightPickOpen,
   normalizeFantasyRoundForMethod,
   parseFantasyEntry,
   type FantasyEntryPublicResponse,
@@ -210,8 +211,11 @@ export function FantasyExperience({
 
   const deferredStateQuery = useDeferredValue(leadDraft.state);
   const stateSuggestions = findBrazilianStateSuggestions(deferredStateQuery, 7);
+  const openFights = currentEvent.fights.filter((fight) =>
+    isFantasyFightPickOpen(currentEvent.status, fight)
+  );
 
-  const completedFightCount = currentEvent.fights.filter((fight) => {
+  const completedFightCount = openFights.filter((fight) => {
     const pickPayload = pickMap[fight.id];
 
     return Boolean(
@@ -221,9 +225,9 @@ export function FantasyExperience({
     );
   }).length;
 
-  const picksOpen = currentEvent.status === "published";
+  const picksOpen = openFights.length > 0;
   const progressPercentage = Math.round(
-    (completedFightCount / Math.max(currentEvent.fights.length, 1)) * 100
+    (completedFightCount / Math.max(openFights.length, 1)) * 100
   );
 
   function updateLeadDraft<K extends keyof LeadDraft>(field: K, value: LeadDraft[K]) {
@@ -272,7 +276,7 @@ export function FantasyExperience({
       return;
     }
 
-    const picks = currentEvent.fights
+    const picks = openFights
       .map((fight) => {
         const pickPayload = pickMap[fight.id];
 
@@ -298,10 +302,10 @@ export function FantasyExperience({
       })
       .filter((pickPayload): pickPayload is FantasyPickPayload => pickPayload !== null);
 
-    if (picks.length !== currentEvent.fights.length) {
+    if (picks.length !== openFights.length) {
       setSubmissionState({
         status: "error",
-        message: "Complete todas as lutas antes de enviar seu fantasy."
+        message: "Complete todas as lutas abertas antes de enviar seu fantasy."
       });
       return;
     }
@@ -449,13 +453,18 @@ export function FantasyExperience({
           {currentEvent.fights.map((fight, index) => {
             const selectedPick = pickMap[fight.id];
             const selectedWinner = selectedPick?.fighterId ?? "";
+            const fightPicksOpen = isFantasyFightPickOpen(currentEvent.status, fight);
 
             return (
               <article
                 className={
-                  selectedWinner
-                    ? `${styles.fightCard} ${styles.fightCardComplete}`
-                    : styles.fightCard
+                  [
+                    styles.fightCard,
+                    selectedWinner ? styles.fightCardComplete : null,
+                    !fightPicksOpen ? styles.fightCardClosed : null
+                  ]
+                    .filter(Boolean)
+                    .join(" ")
                 }
                 key={fight.id}
               >
@@ -465,7 +474,11 @@ export function FantasyExperience({
                     <h3 className={styles.fightLabel}>{fight.label}</h3>
                   </div>
                   <span className={styles.fightRounds}>
-                    {fight.maxRound === 5 ? "5 rounds" : "3 rounds"}
+                    {fightPicksOpen
+                      ? fight.maxRound === 5
+                        ? "5 rounds"
+                        : "3 rounds"
+                      : "Picks fechados"}
                   </span>
                 </header>
 
@@ -486,6 +499,7 @@ export function FantasyExperience({
                       <button
                         aria-pressed={isSelected}
                         className={fighterButtonClassName}
+                        disabled={!fightPicksOpen}
                         key={fighter.id}
                         type="button"
                         onClick={() => {
@@ -524,6 +538,7 @@ export function FantasyExperience({
                               ? `${styles.selectorButton} ${styles.selectorButtonSelected}`
                               : styles.selectorButton
                           }
+                          disabled={!fightPicksOpen}
                           key={victoryMethod}
                           type="button"
                           onClick={() => {
@@ -555,7 +570,7 @@ export function FantasyExperience({
                                 ? `${styles.roundButton} ${styles.selectorButtonSelected}`
                                 : styles.roundButton
                             }
-                            disabled={decisionAutoRound && round !== 3}
+                            disabled={!fightPicksOpen || (decisionAutoRound && round !== 3)}
                             key={round}
                             type="button"
                             onClick={() => {
@@ -581,7 +596,11 @@ export function FantasyExperience({
             <span className={styles.panelKicker}>Seu progresso</span>
             <div className={styles.progressHeader}>
               <strong>{completedFightCount}</strong>
-              <span>de {currentEvent.fights.length} lutas preenchidas</span>
+              <span>
+                {picksOpen
+                  ? `de ${openFights.length} lutas abertas preenchidas`
+                  : "nenhuma luta aberta"}
+              </span>
             </div>
             <div className={styles.progressTrack} aria-hidden="true">
               <span className={styles.progressFill} style={{ width: `${progressPercentage}%` }} />

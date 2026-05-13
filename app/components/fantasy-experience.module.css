@@ -112,6 +112,18 @@
   border-color: rgba(232, 24, 26, 0.26);
 }
 
+.fightCardClosed {
+  border-color: rgba(255, 255, 255, 0.05);
+  background:
+    radial-gradient(circle at top left, rgba(255, 255, 255, 0.05), transparent 28%),
+    linear-gradient(180deg, rgba(13, 13, 13, 0.86) 0%, rgba(4, 4, 4, 0.96) 100%);
+}
+
+.fightCardClosed:hover {
+  transform: none;
+  border-color: rgba(255, 255, 255, 0.05);
+}
+
 .fightHeader {
   display: flex;
   align-items: flex-start;
@@ -174,6 +186,12 @@
 .fighterButton:focus-visible {
   transform: translateY(-2px);
   border-color: rgba(232, 24, 26, 0.24);
+}
+
+.fighterButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
+  transform: none;
 }
 
 .fighterButtonBlue:hover,
@@ -327,6 +345,7 @@
   color: #ffffff;
 }
 
+.selectorButton:disabled,
 .roundButton:disabled {
   cursor: not-allowed;
   opacity: 0.38;

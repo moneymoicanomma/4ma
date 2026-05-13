@@ -531,6 +531,9 @@ export default async function Home() {
 
           <div className="hero__actions">
             {/* Reativar o CTA de ingressos no hero quando o link oficial estiver disponível. */}
+            <LandingButton href="/blog" size="large" variant="primary">
+              Blog
+            </LandingButton>
             <LandingButton href="#transmissao" size="large" variant="secondary">
               Saiba mais
             </LandingButton>

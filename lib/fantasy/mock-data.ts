@@ -98,6 +98,7 @@ const fantasyEventsSeed: FantasyMockEvent[] = [
         order: 1,
         label: "Peso meio-médio",
         maxRound: 5,
+        pickStatus: "open",
         redCorner: {
           id: "fighter-igor-lira",
           name: "Igor Lira",
@@ -121,6 +122,7 @@ const fantasyEventsSeed: FantasyMockEvent[] = [
         order: 2,
         label: "Peso leve",
         maxRound: 3,
+        pickStatus: "open",
         redCorner: {
           id: "fighter-matheus-vento",
           name: "Matheus Vento",
@@ -144,6 +146,7 @@ const fantasyEventsSeed: FantasyMockEvent[] = [
         order: 3,
         label: "Peso pena",
         maxRound: 3,
+        pickStatus: "open",
         redCorner: {
           id: "fighter-luca-vale",
           name: "Luca Vale",
@@ -167,6 +170,7 @@ const fantasyEventsSeed: FantasyMockEvent[] = [
         order: 4,
         label: "Peso galo",
         maxRound: 3,
+        pickStatus: "open",
         redCorner: {
           id: "fighter-noel-silva",
           name: "Noel Silva",
@@ -190,6 +194,7 @@ const fantasyEventsSeed: FantasyMockEvent[] = [
         order: 5,
         label: "Peso mosca",
         maxRound: 3,
+        pickStatus: "open",
         redCorner: {
           id: "fighter-julia-bastos",
           name: "Julia Bastos",
@@ -267,6 +272,7 @@ const fantasyEventsSeed: FantasyMockEvent[] = [
         order: 1,
         label: "Peso leve",
         maxRound: 5,
+        pickStatus: "closed",
         redCorner: {
           id: "fighter-leo-ferraz",
           name: "Léo Ferraz",
@@ -290,6 +296,7 @@ const fantasyEventsSeed: FantasyMockEvent[] = [
         order: 2,
         label: "Peso pena",
         maxRound: 3,
+        pickStatus: "closed",
         redCorner: {
           id: "fighter-ana-costa",
           name: "Ana Costa",
@@ -313,6 +320,7 @@ const fantasyEventsSeed: FantasyMockEvent[] = [
         order: 3,
         label: "Peso galo",
         maxRound: 3,
+        pickStatus: "closed",
         redCorner: {
           id: "fighter-caue-moraes",
           name: "Cauê Moraes",
@@ -336,6 +344,7 @@ const fantasyEventsSeed: FantasyMockEvent[] = [
         order: 4,
         label: "Peso médio",
         maxRound: 3,
+        pickStatus: "closed",
         redCorner: {
           id: "fighter-gabriel-diniz",
           name: "Gabriel Diniz",
