@@ -836,7 +836,9 @@ export async function publishAdminBlogPost(
         coverMediaId: post.coverMediaId,
         coverAltText: post.coverAltText,
         contentBlocks: post.contentBlocks,
-        tags: post.tags.map((tag) => tag.name)
+        tags: post.tags.map((tag) => tag.name),
+        seoDescription: post.seoDescription,
+        socialDescription: post.socialDescription
       });
 
       if (!validation.ok) {

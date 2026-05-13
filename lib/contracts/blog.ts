@@ -556,25 +556,27 @@ export function validateBlogPostForPublish(input: {
   coverAltText: string | null;
   contentBlocks: BlogContentBlock[];
   tags: string[];
+  seoDescription?: string | null;
+  socialDescription?: string | null;
 }): BlogPostPublishValidationResult {
   const title = normalizeShortText(input.title);
   const slug = normalizeBlogSlug(input.slug);
   const description = normalizeLongText(input.description);
+  const seoDescription = normalizeLongText(input.seoDescription);
+  const socialDescription = normalizeLongText(input.socialDescription);
   const authorName = normalizeShortText(input.authorName);
   const coverAltText = normalizeShortText(input.coverAltText);
   const { wordCount } = calculateBlogReadingMetrics(input.contentBlocks);
   const tags = normalizeStringList(input.tags, normalizeBlogTagName, normalizeBlogTag, MAX_TAGS);
+  const hasSearchSummary = [description, seoDescription, socialDescription].some(
+    (summary) => summary.length >= 40
+  );
 
   const textError =
     validateRequiredText(title, {
       label: "Título",
       minLength: 3,
       maxLength: MAX_TITLE_LENGTH
-    }) ??
-    validateRequiredText(description, {
-      label: "Descrição",
-      minLength: 40,
-      maxLength: MAX_DESCRIPTION_LENGTH
     }) ??
     validateRequiredText(authorName, {
       label: "Autor",
@@ -586,6 +588,13 @@ export function validateBlogPostForPublish(input: {
     return {
       ok: false,
       message: textError
+    };
+  }
+
+  if (!hasSearchSummary) {
+    return {
+      ok: false,
+      message: "Preencha a descrição, SEO description ou descrição social com pelo menos 40 caracteres."
     };
   }
 

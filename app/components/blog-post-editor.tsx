@@ -637,7 +637,9 @@ export function BlogPostEditor({
           coverMediaId: draft.coverMediaId,
           coverAltText: draft.coverAltText,
           contentBlocks: draft.contentBlocks,
-          tags: draft.tags
+          tags: draft.tags,
+          seoDescription: draft.seoDescription,
+          socialDescription: draft.socialDescription
         });
 
         if (!validation.ok) {

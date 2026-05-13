@@ -1964,15 +1964,15 @@ async function publishBlogPostPayload(postId, actor, requestContext) {
       return { ok: false, message: "Post nao encontrado." };
     }
 
-    if (
-      post.title.length < 3 ||
-      post.description.length < 40 ||
-      !post.coverMediaId ||
-      !post.coverAltText
-    ) {
+    const hasSearchSummary = [post.description, post.seoDescription, post.socialDescription].some(
+      (summary) => typeof summary === "string" && summary.trim().length >= 40
+    );
+
+    if (post.title.length < 3 || !hasSearchSummary || !post.coverMediaId || !post.coverAltText) {
       return {
         ok: false,
-        message: "Preencha titulo, descricao, imagem e texto alternativo antes de publicar."
+        message:
+          "Preencha titulo, imagem, texto alternativo e uma descricao, SEO description ou descricao social antes de publicar."
       };
     }
 
