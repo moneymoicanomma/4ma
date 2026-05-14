@@ -112,23 +112,32 @@ export default async function BlogPostPage({
 
       <article className={styles.article}>
         <header className={styles.hero}>
-          <div className={styles.heroCopy}>
-            <Link className={styles.backLink} href="/blog">
-              Blog
-            </Link>
-            <h1>{post.title}</h1>
-            <p>{post.description}</p>
-            <div className={styles.meta}>
-              <span>{post.authorName}</span>
-              <span>{formatDate(post.publishedAt)}</span>
-              <span>{post.readingTimeMinutes} min</span>
-            </div>
-          </div>
+          {post.coverUrl ? (
+            <img
+              alt=""
+              aria-hidden="true"
+              className={styles.heroImage}
+              src={post.coverUrl}
+            />
+          ) : null}
+          <div className={styles.heroOverlay} />
 
-          <figure className={styles.cover}>
-            {post.coverUrl ? <img alt={post.coverAltText || post.title} src={post.coverUrl} /> : null}
-            {post.coverCaption ? <figcaption>{post.coverCaption}</figcaption> : null}
-          </figure>
+          <div className={styles.heroInner}>
+            <div className={styles.heroCopy}>
+              <Link className={styles.backLink} href="/blog">
+                Blog
+              </Link>
+              <h1>{post.title}</h1>
+              <p>{post.description}</p>
+              <div className={styles.meta}>
+                <span>{post.authorName}</span>
+                <span>{formatDate(post.publishedAt)}</span>
+                <span>{post.readingTimeMinutes} min</span>
+              </div>
+            </div>
+
+            {post.coverCaption ? <p className={styles.heroCaption}>{post.coverCaption}</p> : null}
+          </div>
         </header>
 
         <div className={styles.bodyGrid}>

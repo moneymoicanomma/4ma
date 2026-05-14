@@ -21,8 +21,7 @@ type LandingTopbarProps = {
 };
 
 const globalNavItems = [
-  { href: "/blog", label: "Blog", sectionId: "blog" },
-  { href: "/fantasy", label: "Fantasy", sectionId: "fantasy" }
+  { href: "/blog", label: "Blog", sectionId: "blog" }
 ] as const;
 
 function composeGlobalNavItems(navItems: readonly NavItem[]) {
@@ -54,10 +53,6 @@ function getActiveSectionFromPath(pathname: string, navItems: readonly NavItem[]
 
   if (pathname.startsWith("/blog")) {
     return "blog";
-  }
-
-  if (pathname.startsWith("/fantasy")) {
-    return "fantasy";
   }
 
   return navItems[0]?.sectionId ?? "";
