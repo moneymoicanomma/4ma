@@ -67,7 +67,12 @@ create table if not exists app.blog_posts (
   check (char_length(description) <= 260),
   check (jsonb_typeof(content_blocks) = 'array'),
   check (status = 'draft' or char_length(title) between 3 and 140),
-  check (status = 'draft' or char_length(description) between 40 and 260),
+  check (
+    status = 'draft'
+    or char_length(btrim(description)) between 40 and 260
+    or char_length(btrim(coalesce(seo_description, ''))) between 40 and 260
+    or char_length(btrim(coalesce(social_description, ''))) between 40 and 260
+  ),
   check (cover_alt_text is null or char_length(cover_alt_text) between 3 and 240),
   check (cover_caption is null or char_length(cover_caption) <= 500),
   check (char_length(author_name) between 2 and 120),
