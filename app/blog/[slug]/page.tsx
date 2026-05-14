@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
+import { LandingTopbar } from "@/app/components/landing-topbar";
 import { BlogBlocks } from "@/lib/blog/rendering";
 import {
   createBlogPostJsonLd,
@@ -16,7 +17,17 @@ import styles from "./page.module.css";
 
 export const dynamic = "force-dynamic";
 
-const brandLogoWide = siteAsset("logo money moicano mma extenso.svg");
+const brandLogo = siteAsset("logo money moicano mma.svg");
+const fighterSignupLogo = "https://assets.moneymoicanomma.com.br/rinha-de-inscritos.svg";
+const fighterSignupUrl = "https://mma.moicano.tv/";
+
+const navItems = [
+  { label: "Blog", href: "/blog", sectionId: "blog" },
+  { label: "O Evento", href: "/#evento", sectionId: "evento" },
+  { label: "A Transmissão", href: "/#transmissao", sectionId: "transmissao" },
+  { label: "Lute no MMMMA", href: "/lute-no-mmmma", sectionId: "lute-no-mmmma" },
+  { label: "Ingressos", href: "/#ingressos", sectionId: "ingressos" }
+] as const;
 
 function formatDate(value: string | null) {
   if (!value) {
@@ -85,21 +96,19 @@ export default async function BlogPostPage({
   const jsonLd = createBlogPostJsonLd(post);
 
   return (
-    <main className={styles.page}>
+    <main className={styles.page} data-nav-section="blog">
       <script
         dangerouslySetInnerHTML={{ __html: serializeJsonLdForScript(jsonLd) }}
         type="application/ld+json"
       />
 
-      <header className={styles.topbar}>
-        <Link aria-label="Money Moicano MMA" className={styles.brand} href="/">
-          <img alt="Money Moicano MMA" src={brandLogoWide} />
-        </Link>
-        <nav aria-label="Navegacao do blog" className={styles.nav}>
-          <Link href="/">Evento</Link>
-          <Link href="/blog">Blog</Link>
-        </nav>
-      </header>
+      <LandingTopbar
+        brandLogo={brandLogo}
+        navItems={navItems}
+        ctaHref={fighterSignupUrl}
+        ctaLabel="Lute na Rinha de Inscritos"
+        ctaLogoSrc={fighterSignupLogo}
+      />
 
       <article className={styles.article}>
         <header className={styles.hero}>

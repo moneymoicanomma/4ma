@@ -24,27 +24,27 @@
 .newsroom {
   position: relative;
   z-index: 1;
-  width: min(100%, 1720px);
+  width: min(100%, 1480px);
   margin: 0 auto;
-  padding: clamp(28px, 4vw, 58px) 32px 92px;
+  padding: 36px 32px 80px;
 }
 
 .leadGrid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(360px, 31vw);
+  grid-template-columns: minmax(0, 1fr) minmax(330px, 360px);
   align-items: stretch;
-  gap: clamp(24px, 3vw, 38px);
+  gap: 28px;
 }
 
 .mainStory {
   position: relative;
   min-width: 0;
-  padding-bottom: 48px;
+  padding-bottom: 34px;
 }
 
 .mainMedia {
   display: grid;
-  min-height: clamp(320px, 34vw, 520px);
+  height: 360px;
   overflow: hidden;
   background:
     radial-gradient(circle at 34% 20%, rgba(232, 24, 26, 0.3), transparent 34%),
@@ -64,7 +64,7 @@
   max-width: 10ch;
   color: rgba(255, 255, 255, 0.86);
   font-family: var(--font-title);
-  font-size: clamp(46px, 8vw, 112px);
+  font-size: 72px;
   font-weight: 700;
   line-height: 0.9;
   letter-spacing: 0;
@@ -80,10 +80,10 @@
   position: relative;
   z-index: 2;
   display: grid;
-  gap: 18px;
-  width: min(76%, 720px);
-  margin: -52px 0 0 clamp(28px, 4vw, 74px);
-  padding: clamp(26px, 3vw, 40px);
+  gap: 14px;
+  width: min(84%, 760px);
+  margin: -68px auto 0;
+  padding: 26px;
   border: 1px solid rgba(255, 255, 255, 0.08);
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.034), rgba(255, 255, 255, 0.014)),
@@ -95,9 +95,9 @@
   content: "";
   position: absolute;
   top: 0;
-  left: clamp(28px, 4vw, 58px);
-  width: clamp(140px, 19vw, 230px);
-  height: 9px;
+  left: 26px;
+  width: 154px;
+  height: 7px;
   background: var(--accent);
   transform: translateY(-50%);
 }
@@ -120,12 +120,12 @@
 .storyPanel h1,
 .emptyLead h1 {
   margin: 0;
-  max-width: 16ch;
+  max-width: 20ch;
   color: #ffffff;
   font-family: var(--font-title);
-  font-size: 60px;
+  font-size: 40px;
   font-weight: 700;
-  line-height: 0.94;
+  line-height: 0.96;
   letter-spacing: 0;
   text-transform: uppercase;
 }
@@ -136,15 +136,15 @@
 .sidebarEmpty {
   margin: 0;
   color: rgba(227, 226, 225, 0.72);
-  font-size: clamp(16px, 1.8vw, 21px);
+  font-size: 14px;
   font-weight: 500;
-  line-height: 1.55;
+  line-height: 1.42;
 }
 
 .storyMeta {
   flex-wrap: wrap;
   color: rgba(227, 226, 225, 0.5);
-  font-size: 11px;
+  font-size: 10px;
 }
 
 .storyActions {
@@ -158,11 +158,11 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 54px;
+  min-height: 42px;
   padding: 0 18px;
   border: 2px solid rgba(255, 255, 255, 0.88);
   font-family: var(--font-title);
-  font-size: 19px;
+  font-size: 15px;
   font-weight: 700;
   line-height: 1;
   letter-spacing: 0;
@@ -194,19 +194,19 @@
 .highlights {
   display: grid;
   align-content: start;
-  gap: 28px;
-  min-height: clamp(620px, 64vw, 920px);
-  padding: clamp(30px, 3vw, 52px);
+  gap: 22px;
+  min-height: 790px;
+  padding: 36px;
   background: #17181d;
   color: #ffffff;
 }
 
 .highlights h2 {
   margin: 0;
-  padding-bottom: 28px;
+  padding-bottom: 22px;
   border-bottom: 3px solid var(--accent);
   font-family: var(--font-title);
-  font-size: clamp(40px, 4vw, 64px);
+  font-size: 46px;
   font-weight: 700;
   line-height: 0.9;
   letter-spacing: 0;
@@ -226,35 +226,35 @@
 
 .highlightList a {
   display: grid;
-  grid-template-columns: 54px minmax(0, 1fr);
-  gap: 18px;
+  grid-template-columns: 46px minmax(0, 1fr);
+  gap: 16px;
   align-items: center;
-  padding: 20px 0;
+  padding: 16px 0;
 }
 
 .rank {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 54px;
-  height: 54px;
+  width: 46px;
+  height: 46px;
   background: var(--accent);
   color: #ffffff;
   font-family: var(--font-title);
-  font-size: 34px;
+  font-size: 30px;
   font-weight: 700;
   line-height: 1;
 }
 
 .highlightCopy {
   display: grid;
-  gap: 8px;
+  gap: 6px;
   min-width: 0;
 }
 
 .highlightCopy small {
   color: rgba(255, 255, 255, 0.44);
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
   line-height: 1;
   letter-spacing: 0;
@@ -264,7 +264,7 @@
 .highlightCopy strong {
   color: #f4f4f4;
   font-family: var(--font-title);
-  font-size: clamp(20px, 1.6vw, 26px);
+  font-size: 20px;
   font-weight: 700;
   line-height: 1.05;
   letter-spacing: 0;
@@ -280,8 +280,8 @@
   display: grid;
   align-content: center;
   gap: 22px;
-  min-height: clamp(420px, 48vw, 650px);
-  padding: clamp(28px, 5vw, 70px);
+  min-height: 430px;
+  padding: 42px;
   border: 1px solid rgba(255, 255, 255, 0.08);
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.034), rgba(255, 255, 255, 0.014)),
@@ -293,7 +293,7 @@
 .tagsSection {
   display: grid;
   gap: 22px;
-  margin-top: clamp(48px, 6vw, 88px);
+  margin-top: 58px;
 }
 
 .sectionHeader {
@@ -302,7 +302,7 @@
   border-bottom: 3px solid rgba(255, 255, 255, 0.84);
   color: #ffffff;
   font-family: var(--font-title);
-  font-size: clamp(28px, 3vw, 44px);
+  font-size: 34px;
 }
 
 .sectionHeader a {
@@ -365,7 +365,7 @@
   margin: 0;
   color: #ffffff;
   font-family: var(--font-title);
-  font-size: clamp(28px, 2.8vw, 44px);
+  font-size: 32px;
   font-weight: 700;
   line-height: 0.96;
   letter-spacing: 0;
@@ -427,13 +427,17 @@
     min-height: auto;
   }
 
+  .mainMedia {
+    height: 320px;
+  }
+
   .newsGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .storyPanel h1,
   .emptyLead h1 {
-    font-size: 56px;
+    font-size: 36px;
   }
 }
 
@@ -447,13 +451,13 @@
   }
 
   .mainMedia {
-    min-height: 260px;
+    height: 240px;
   }
 
   .storyPanel {
     width: 100%;
     margin: 0;
-    padding: 26px 20px;
+    padding: 24px 20px;
   }
 
   .storyPanel::before {
@@ -463,8 +467,15 @@
 
   .storyPanel h1,
   .emptyLead h1 {
-    font-size: 42px;
-    line-height: 0.96;
+    font-size: 30px;
+    line-height: 1;
+  }
+
+  .storyPanel p,
+  .emptyLead p,
+  .emptyStrip p,
+  .sidebarEmpty {
+    font-size: 15px;
   }
 
   .storyActions,
@@ -474,6 +485,10 @@
 
   .highlights {
     padding: 24px 20px;
+  }
+
+  .highlights h2 {
+    font-size: 36px;
   }
 
   .highlightList a {
@@ -487,9 +502,15 @@
     font-size: 30px;
   }
 
+  .highlightCopy strong,
+  .newsBody h2 {
+    font-size: 26px;
+  }
+
   .sectionHeader {
     align-items: flex-start;
     flex-direction: column;
+    font-size: 28px;
     gap: 8px;
   }
 }

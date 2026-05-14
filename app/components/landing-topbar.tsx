@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState, startTransition } from "react";
+import { useEffect, useMemo, useState, startTransition } from "react";
+import { usePathname } from "next/navigation";
 
 import { getSiteAssetIntrinsicDimensions } from "@/lib/site-assets";
 
@@ -19,6 +20,49 @@ type LandingTopbarProps = {
   navItems: readonly NavItem[];
 };
 
+const globalNavItems = [
+  { href: "/blog", label: "Blog", sectionId: "blog" },
+  { href: "/fantasy", label: "Fantasy", sectionId: "fantasy" }
+] as const;
+
+function composeGlobalNavItems(navItems: readonly NavItem[]) {
+  const items = navItems.map((item) =>
+    item.sectionId === "blog" || item.href === "/blog"
+      ? { ...item, href: "/blog", label: "Blog", sectionId: "blog" }
+      : item
+  );
+
+  for (const globalItem of globalNavItems) {
+    const hasItem = items.some(
+      (item) => item.sectionId === globalItem.sectionId || item.href === globalItem.href
+    );
+
+    if (!hasItem) {
+      items.push(globalItem);
+    }
+  }
+
+  return items;
+}
+
+function getActiveSectionFromPath(pathname: string, navItems: readonly NavItem[]) {
+  const exactMatch = navItems.find((item) => item.href === pathname);
+
+  if (exactMatch) {
+    return exactMatch.sectionId;
+  }
+
+  if (pathname.startsWith("/blog")) {
+    return "blog";
+  }
+
+  if (pathname.startsWith("/fantasy")) {
+    return "fantasy";
+  }
+
+  return navItems[0]?.sectionId ?? "";
+}
+
 export function LandingTopbar({
   brandLogo,
   ctaHref,
@@ -26,9 +70,14 @@ export function LandingTopbar({
   ctaLogoSrc,
   navItems
 }: Readonly<LandingTopbarProps>) {
-  const [activeSection, setActiveSection] = useState(navItems[0]?.sectionId ?? "");
+  const pathname = usePathname();
+  const globalizedNavItems = useMemo(() => composeGlobalNavItems(navItems), [navItems]);
+  const [activeSection, setActiveSection] = useState(() =>
+    getActiveSectionFromPath(pathname, globalizedNavItems)
+  );
   const [menuOpen, setMenuOpen] = useState(false);
-  const activeItem = navItems.find((item) => item.sectionId === activeSection) ?? navItems[0];
+  const activeItem =
+    globalizedNavItems.find((item) => item.sectionId === activeSection) ?? globalizedNavItems[0];
   const hasCta = Boolean(ctaHref && ctaLabel);
   const hasCtaLogo = Boolean(ctaLogoSrc);
   const ctaIsExternal = Boolean(ctaHref?.startsWith("http"));
@@ -56,19 +105,20 @@ export function LandingTopbar({
   useEffect(() => {
     const sections = Array.from(document.querySelectorAll<HTMLElement>("[data-nav-section]"));
 
-    if (!sections.length || !navItems.length) {
+    if (!sections.length || !globalizedNavItems.length) {
+      setActiveSection(getActiveSectionFromPath(pathname, globalizedNavItems));
       return;
     }
 
     let frame = 0;
     let sectionOffsets = sections.map((section) => ({
-      sectionId: section.dataset.navSection ?? navItems[0].sectionId,
+      sectionId: section.dataset.navSection ?? globalizedNavItems[0].sectionId,
       top: section.getBoundingClientRect().top + window.scrollY
     }));
 
     const syncViewportState = () => {
       const sectionThreshold = window.scrollY + Math.max(120, window.innerHeight * 0.34);
-      let nextActive = navItems[0].sectionId;
+      let nextActive = getActiveSectionFromPath(pathname, globalizedNavItems);
 
       for (const section of sectionOffsets) {
         if (section.top <= sectionThreshold) {
@@ -90,7 +140,7 @@ export function LandingTopbar({
 
     const refreshSectionOffsets = () => {
       sectionOffsets = sections.map((section) => ({
-        sectionId: section.dataset.navSection ?? navItems[0].sectionId,
+        sectionId: section.dataset.navSection ?? globalizedNavItems[0].sectionId,
         top: section.getBoundingClientRect().top + window.scrollY
       }));
 
@@ -129,7 +179,7 @@ export function LandingTopbar({
       window.removeEventListener("resize", requestRefresh);
       window.removeEventListener("load", requestRefresh);
     };
-  }, [navItems]);
+  }, [globalizedNavItems, pathname]);
 
   useEffect(() => {
     document.body.dataset.mobileNavOpen = menuOpen ? "true" : "false";
@@ -193,7 +243,7 @@ export function LandingTopbar({
       </div>
 
       <nav className="topbar__nav" aria-label="Primary">
-        {navItems.map((item) => (
+        {globalizedNavItems.map((item) => (
           <a
             aria-current={activeSection === item.sectionId ? "page" : undefined}
             className={activeSection === item.sectionId ? "topbar__link is-active" : "topbar__link"}
@@ -264,7 +314,7 @@ export function LandingTopbar({
             </div>
 
             <nav className="topbar__sheet-nav" aria-label="Primary Mobile">
-              {navItems.map((item) => (
+              {globalizedNavItems.map((item) => (
                 <a
                   aria-current={activeSection === item.sectionId ? "page" : undefined}
                   className={
