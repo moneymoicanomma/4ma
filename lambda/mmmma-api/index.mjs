@@ -145,6 +145,7 @@ const FIGHTER_APPLICATION_EDITORIAL_INTEREST_LABEL_TO_VALUE = new Map(
 const FANTASY_ADMIN_STATUS_VALUES = new Set(["draft", "published", "locked", "finished"]);
 const FANTASY_ADMIN_VICTORY_METHODS = new Set(["decisao", "finalizacao", "nocaute"]);
 const FANTASY_ADMIN_ROUNDS = new Set([1, 2, 3, 4, 5]);
+const FANTASY_FIGHT_PICK_STATUS_VALUES = new Set(["open", "closed"]);
 const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -2395,6 +2396,7 @@ function normalizeFantasyAdminEventPayload(payload) {
   const city = parseFantasyAdminCityLabel(payload.cityLabel);
   const fights = (Array.isArray(payload.fights) ? payload.fights : []).map((fight, index) => {
     const maxRound = fight?.maxRound === 5 ? 5 : 3;
+    const pickStatus = normalizeFantasyAdminText(fight?.pickStatus);
     const redCorner = normalizeFantasyAdminCorner(fight?.redCorner, `red-${index + 1}`);
     const blueCorner = normalizeFantasyAdminCorner(fight?.blueCorner, `blue-${index + 1}`);
 
@@ -2413,6 +2415,7 @@ function normalizeFantasyAdminEventPayload(payload) {
         2
       ),
       maxRound,
+      pickStatus: FANTASY_FIGHT_PICK_STATUS_VALUES.has(pickStatus) ? pickStatus : "open",
       redCorner,
       blueCorner,
       result: normalizeFantasyAdminFightResult(
@@ -2763,6 +2766,7 @@ async function saveFantasyAdminEventPayload(payload, actor, requestContext) {
               display_order,
               label,
               max_rounds,
+              pick_status,
               red_corner_event_fighter_id,
               blue_corner_event_fighter_id
             )
@@ -2772,8 +2776,9 @@ async function saveFantasyAdminEventPayload(payload, actor, requestContext) {
               $3,
               $4,
               $5,
-              $6::uuid,
-              $7::uuid
+              $6::app.fight_pick_status_enum,
+              $7::uuid,
+              $8::uuid
             )
             on conflict (id) do update
             set
@@ -2781,6 +2786,7 @@ async function saveFantasyAdminEventPayload(payload, actor, requestContext) {
               display_order = excluded.display_order,
               label = excluded.label,
               max_rounds = excluded.max_rounds,
+              pick_status = excluded.pick_status,
               red_corner_event_fighter_id = excluded.red_corner_event_fighter_id,
               blue_corner_event_fighter_id = excluded.blue_corner_event_fighter_id,
               updated_at = now()
@@ -2791,6 +2797,7 @@ async function saveFantasyAdminEventPayload(payload, actor, requestContext) {
             fight.order,
             fight.label,
             fight.maxRound,
+            fight.pickStatus,
             redCornerEventFighterId,
             blueCornerEventFighterId
           ]
@@ -2933,6 +2940,7 @@ async function loadFantasyEventsPayload(targetEventId = null) {
         f.display_order as "order",
         f.label,
         f.max_rounds as "maxRound",
+        f.pick_status as "pickStatus",
         red_ef.id as "redCornerId",
         coalesce(red_ef.card_name, red_f.display_name) as "redCornerName",
         red_f.country_name as "redCornerCountry",
@@ -2973,6 +2981,7 @@ async function loadFantasyEventsPayload(targetEventId = null) {
       order: row.order,
       label: row.label,
       maxRound: row.maxRound,
+      pickStatus: row.pickStatus ?? "open",
       redCorner: {
         id: row.redCornerId,
         name: row.redCornerName,
@@ -5339,6 +5348,56 @@ async function handleFantasyEntries(event) {
 
   try {
     const responsePayload = await withDatabaseTransaction(requestContext, async (client) => {
+      const payloadPicks = Array.isArray(payload?.picks) ? payload.picks : [];
+      const fightGateResult = await client.query(
+        `
+          select
+            f.id,
+            e.status as "eventStatus",
+            f.pick_status as "pickStatus",
+            f.pick_status = 'open' as "isOpen"
+          from app.events e
+          join app.fights f
+            on f.event_id = e.id
+          where e.id = $1::uuid
+          order by f.display_order
+        `,
+        [normalizeText(payload?.eventId)]
+      );
+      const eventStatus = fightGateResult.rows[0]?.eventStatus ?? null;
+      const openFightIds = fightGateResult.rows
+        .filter((fight) => fight.isOpen)
+        .map((fight) => fight.id);
+      const openFightIdSet = new Set(openFightIds);
+
+      if (!eventStatus) {
+        return {
+          ok: false,
+          message: "Evento de fantasy não encontrado."
+        };
+      }
+
+      if (eventStatus !== "published" || !openFightIds.length) {
+        return {
+          ok: false,
+          message: "As picks deste evento já foram travadas."
+        };
+      }
+
+      if (payloadPicks.some((pick) => !openFightIdSet.has(normalizeText(pick?.fightId)))) {
+        return {
+          ok: false,
+          message: "Uma ou mais lutas já fecharam para picks. Atualize a página e tente de novo."
+        };
+      }
+
+      if (payloadPicks.length !== openFightIds.length) {
+        return {
+          ok: false,
+          message: "Complete todas as lutas abertas antes de enviar seu fantasy."
+        };
+      }
+
       const entryResult = await client.query(
         `
           insert into app.fantasy_entries (
@@ -5412,9 +5471,12 @@ async function handleFantasyEntries(event) {
 
       const entry = entryResult.rows[0];
 
-      await client.query("delete from app.fantasy_picks where fantasy_entry_id = $1", [entry.id]);
+      await client.query(
+        "delete from app.fantasy_picks where fantasy_entry_id = $1 and fight_id = any($2::uuid[])",
+        [entry.id, openFightIds]
+      );
 
-      for (const pick of Array.isArray(payload?.picks) ? payload.picks : []) {
+      for (const pick of payloadPicks) {
         await client.query(
           `
             insert into app.fantasy_picks (

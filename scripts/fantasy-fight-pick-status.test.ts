@@ -15,6 +15,7 @@ const fantasyAdminSource = readFileSync(
   "utf8"
 );
 const fantasyServerSource = readFileSync(new URL("../lib/server/fantasy.ts", import.meta.url), "utf8");
+const lambdaApiSource = readFileSync(new URL("../lambda/mmmma-api/index.mjs", import.meta.url), "utf8");
 const fightPickStatusMigrationUrl = new URL(
   "../db/migrations/0018_fantasy_fight_pick_status.sql",
   import.meta.url
@@ -43,8 +44,22 @@ describe("fantasy fight pick status", () => {
     assert.ok(fantasyServerSource.includes("pick_status as \"pickStatus\""));
     assert.ok(fantasyServerSource.includes("openFightIds"));
     assert.ok(fantasyServerSource.includes("pick_status = 'open'"));
+    assert.ok(fantasyServerSource.includes("return upstreamPayload ?? null;"));
     assert.ok(
       fantasyServerSource.includes(
+        "delete from app.fantasy_picks where fantasy_entry_id = $1 and fight_id = any($2::uuid[])"
+      )
+    );
+  });
+
+  it("keeps the Lambda fantasy endpoints in sync with fight pick status", () => {
+    assert.ok(lambdaApiSource.includes("FANTASY_FIGHT_PICK_STATUS_VALUES"));
+    assert.ok(lambdaApiSource.includes("pick_status as \"pickStatus\""));
+    assert.ok(lambdaApiSource.includes("pickStatus: row.pickStatus ?? \"open\""));
+    assert.ok(lambdaApiSource.includes("openFightIds"));
+    assert.ok(lambdaApiSource.includes("pick_status = 'open'"));
+    assert.ok(
+      lambdaApiSource.includes(
         "delete from app.fantasy_picks where fantasy_entry_id = $1 and fight_id = any($2::uuid[])"
       )
     );

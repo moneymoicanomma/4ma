@@ -1187,7 +1187,7 @@ export async function submitFantasyEntry(
       const upstreamPayload =
         (await response.json().catch(() => null)) as FantasyEntryPublicResponse | null;
 
-      return upstreamPayload?.ok ? upstreamPayload : null;
+      return upstreamPayload ?? null;
     } catch {
       return null;
     }
