@@ -39,12 +39,12 @@
 .mainStory {
   position: relative;
   min-width: 0;
-  padding-bottom: clamp(48px, 6vw, 86px);
+  padding-bottom: 48px;
 }
 
 .mainMedia {
   display: grid;
-  min-height: clamp(420px, 45vw, 690px);
+  min-height: clamp(320px, 34vw, 520px);
   overflow: hidden;
   background:
     radial-gradient(circle at 34% 20%, rgba(232, 24, 26, 0.3), transparent 34%),
@@ -80,10 +80,10 @@
   position: relative;
   z-index: 2;
   display: grid;
-  gap: clamp(18px, 2vw, 28px);
-  width: min(80%, 850px);
-  margin: clamp(-74px, -5vw, -42px) 0 0 clamp(28px, 4vw, 74px);
-  padding: clamp(28px, 4vw, 58px);
+  gap: 18px;
+  width: min(76%, 720px);
+  margin: -52px 0 0 clamp(28px, 4vw, 74px);
+  padding: clamp(26px, 3vw, 40px);
   border: 1px solid rgba(255, 255, 255, 0.08);
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.034), rgba(255, 255, 255, 0.014)),
@@ -120,12 +120,12 @@
 .storyPanel h1,
 .emptyLead h1 {
   margin: 0;
-  max-width: 12ch;
+  max-width: 16ch;
   color: #ffffff;
   font-family: var(--font-title);
-  font-size: clamp(52px, 7vw, 104px);
+  font-size: 60px;
   font-weight: 700;
-  line-height: 0.88;
+  line-height: 0.94;
   letter-spacing: 0;
   text-transform: uppercase;
 }
@@ -430,6 +430,11 @@
   .newsGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+  .storyPanel h1,
+  .emptyLead h1 {
+    font-size: 56px;
+  }
 }
 
 @media (max-width: 760px) {
@@ -442,7 +447,7 @@
   }
 
   .mainMedia {
-    min-height: 320px;
+    min-height: 260px;
   }
 
   .storyPanel {
@@ -458,7 +463,8 @@
 
   .storyPanel h1,
   .emptyLead h1 {
-    font-size: clamp(44px, 14vw, 68px);
+    font-size: 42px;
+    line-height: 0.96;
   }
 
   .storyActions,
