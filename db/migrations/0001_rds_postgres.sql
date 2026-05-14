@@ -1,6 +1,7 @@
 begin;
 
-create extension if not exists pgcrypto;
+create schema if not exists extensions;
+create extension if not exists pgcrypto with schema extensions;
 
 revoke create on schema public from public;
 revoke all on schema public from public;
@@ -1033,7 +1034,7 @@ begin
   end if;
 
   loop
-    v_candidate := v_prefix || '-' || upper(encode(gen_random_bytes(4), 'hex'));
+    v_candidate := v_prefix || '-' || upper(encode(extensions.gen_random_bytes(4), 'hex'));
     exit when not exists (
       select 1
       from app.fantasy_entries
@@ -2046,6 +2047,8 @@ grant usage on schema app to mmmma_backoffice;
 grant usage on schema app to mmmma_fighter_portal;
 grant usage on schema app to mmmma_service;
 grant usage on schema app to mmmma_auditor;
+
+grant usage on schema extensions to mmmma_public_api, mmmma_backoffice, mmmma_fighter_portal, mmmma_auditor, mmmma_service;
 
 grant usage on schema audit to mmmma_backoffice;
 grant usage on schema audit to mmmma_service;

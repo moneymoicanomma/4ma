@@ -16,6 +16,10 @@ const fantasyAdminSource = readFileSync(
 );
 const fantasyServerSource = readFileSync(new URL("../lib/server/fantasy.ts", import.meta.url), "utf8");
 const lambdaApiSource = readFileSync(new URL("../lambda/mmmma-api/index.mjs", import.meta.url), "utf8");
+const initialDatabaseMigrationSource = readFileSync(
+  new URL("../db/migrations/0001_rds_postgres.sql", import.meta.url),
+  "utf8"
+);
 const fightPickStatusMigrationUrl = new URL(
   "../db/migrations/0018_fantasy_fight_pick_status.sql",
   import.meta.url
@@ -23,6 +27,10 @@ const fightPickStatusMigrationUrl = new URL(
 const fightPickStatusMigrationSource = existsSync(fightPickStatusMigrationUrl)
   ? readFileSync(fightPickStatusMigrationUrl, "utf8")
   : "";
+const referenceCodePgcryptoMigrationSource = readFileSync(
+  new URL("../db/migrations/0020_reference_code_pgcrypto_schema.sql", import.meta.url),
+  "utf8"
+);
 
 describe("fantasy fight pick status", () => {
   it("defines open and closed pick status on fantasy fights", () => {
@@ -78,5 +86,11 @@ describe("fantasy fight pick status", () => {
     assert.ok(fightPickStatusMigrationSource.includes("alter table app.fights"));
     assert.ok(fightPickStatusMigrationSource.includes("pick_status"));
     assert.ok(fightPickStatusMigrationSource.includes("ensure_fantasy_pick_matches_fight"));
+  });
+
+  it("keeps fantasy reference code generation compatible with pgcrypto in extensions", () => {
+    assert.ok(initialDatabaseMigrationSource.includes("extensions.gen_random_bytes(4)"));
+    assert.ok(referenceCodePgcryptoMigrationSource.includes("app.generate_reference_code"));
+    assert.ok(referenceCodePgcryptoMigrationSource.includes("extensions.gen_random_bytes(4)"));
   });
 });
