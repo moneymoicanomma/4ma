@@ -27,7 +27,6 @@ type FantasyExperienceProps = {
   leaderboardEvent: Omit<FantasyMockEvent, "entries">;
   leaderboardRows: FantasyLeaderboardRow[];
   scoringRules: FantasyScoringRules;
-  initialEntrantCount: number;
 };
 
 type SubmissionState = {
@@ -103,13 +102,6 @@ const fantasyPrizes = [
     ]
   }
 ] as const;
-
-function formatLongDate(value: string) {
-  return new Intl.DateTimeFormat("pt-BR", {
-    dateStyle: "long",
-    timeStyle: "short"
-  }).format(new Date(value));
-}
 
 function formatShortDate(value: string) {
   return new Intl.DateTimeFormat("pt-BR", {
@@ -227,11 +219,9 @@ export function FantasyExperience({
   currentEvent,
   leaderboardEvent,
   leaderboardRows,
-  scoringRules,
-  initialEntrantCount
+  scoringRules
 }: Readonly<FantasyExperienceProps>) {
   const [leadDraft, setLeadDraft] = useState(initialLeadDraft);
-  const [entrantCount, setEntrantCount] = useState(initialEntrantCount);
   const [submissionState, setSubmissionState] = useState(initialSubmissionState);
   const [submittedEntry, setSubmittedEntry] = useState<SubmittedEntry | null>(null);
   const [pickMap, setPickMap] = useState<Record<string, Partial<FantasyPickPayload>>>({});
@@ -360,9 +350,6 @@ export function FantasyExperience({
       return;
     }
 
-    const knownEntrant = submittedEntry?.email === parsed.data.email;
-    const entrantDelta = knownEntrant ? 0 : 1;
-
     if (looksLikeUuid(currentEvent.id)) {
       setSubmissionState({
         status: "submitting",
@@ -392,10 +379,6 @@ export function FantasyExperience({
         }
 
         startTransition(() => {
-          if (entrantDelta > 0) {
-            setEntrantCount((current) => current + entrantDelta);
-          }
-
           setSubmittedEntry({
             referenceCode: payload.referenceCode ?? createReferenceCode(parsed.data.fullName),
             submittedAt: payload.submittedAt ?? new Date().toISOString(),
@@ -425,10 +408,6 @@ export function FantasyExperience({
     const submittedAt = new Date().toISOString();
 
     startTransition(() => {
-      if (entrantDelta > 0) {
-        setEntrantCount((current) => current + entrantDelta);
-      }
-
       setSubmittedEntry({
         referenceCode,
         submittedAt,
@@ -473,32 +452,6 @@ export function FantasyExperience({
             </li>
           ))}
         </ol>
-      </section>
-
-      <section className={styles.boardHeader}>
-        <div className={styles.boardHeaderCopy}>
-          <span className={styles.sectionKicker}>Draft board</span>
-          <h2 className={styles.sectionTitle}>{currentEvent.name}</h2>
-          <p className={styles.sectionBody}>
-            Evento em {currentEvent.cityLabel}. Seus picks ficam privados e o ranking só mostra o
-            nome público e a pontuação final.
-          </p>
-        </div>
-
-        <div className={styles.boardMeta}>
-          <div className={styles.metaCard}>
-            <span>Evento</span>
-            <strong>{formatLongDate(currentEvent.startsAt)}</strong>
-          </div>
-          <div className={styles.metaCard}>
-            <span>Lock</span>
-            <strong>{formatLongDate(currentEvent.lockAt)}</strong>
-          </div>
-          <div className={styles.metaCard}>
-            <span>Participantes</span>
-            <strong>{entrantCount}</strong>
-          </div>
-        </div>
       </section>
 
       <div className={styles.workspace}>
@@ -810,12 +763,7 @@ export function FantasyExperience({
               >
                 {submissionState.message}
               </p>
-            ) : (
-              <p className={styles.panelCopy}>
-                Privacidade: público vê só o nome publicado no ranking. E-mail, WhatsApp, cidade,
-                estado e picks detalhadas ficam reservados ao participante e ao admin.
-              </p>
-            )}
+            ) : null}
           </section>
 
           <section className={styles.panel}>

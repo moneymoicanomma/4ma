@@ -97,7 +97,6 @@ export default async function FantasyPage() {
             leaderboardEvent={publicLeaderboardEvent}
             leaderboardRows={publishedLeaderboard}
             scoringRules={currentEvent.scoringRules}
-            initialEntrantCount={currentEvent.entries.length}
           />
         </div>
       </section>

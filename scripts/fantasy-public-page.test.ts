@@ -14,6 +14,10 @@ const fantasyExperienceCssSource = readFileSync(
   new URL("../app/components/fantasy-experience.module.css", import.meta.url),
   "utf8"
 );
+const landingTopbarSource = readFileSync(
+  new URL("../app/components/landing-topbar.tsx", import.meta.url),
+  "utf8"
+);
 const normalizedFantasyPageSource = fantasyPageSource.replace(/\s+/g, " ");
 
 function evaluateFighterInitials(name: string) {
@@ -29,6 +33,8 @@ function evaluateFighterInitials(name: string) {
 describe("fantasy public page", () => {
   it("uses the public site header instead of exposing admin navigation", () => {
     assert.ok(fantasyPageSource.includes("LandingTopbar"));
+    assert.ok(landingTopbarSource.includes('{ href: "/fantasy", label: "Fantasy"'));
+    assert.ok(landingTopbarSource.includes('pathname === "/fantasy"'));
     assert.equal(fantasyPageSource.includes('href="/admin/fantasy"'), false);
     assert.equal(fantasyPageSource.includes("Abrir admin"), false);
   });
@@ -74,6 +80,7 @@ describe("fantasy public page", () => {
     assert.ok(fantasyExperienceSource.includes("ainda sem resultados"));
     assert.equal(fantasyExperienceSource.includes("Consulta privada"), false);
     assert.equal(fantasyExperienceSource.includes("consulta privada"), false);
+    assert.equal(fantasyExperienceSource.includes("Privacidade: público vê só o nome"), false);
     assert.equal(fantasyExperienceSource.includes("cookie + link seguro"), false);
     assert.equal(fantasyExperienceSource.includes("Como o usuário vai rever"), false);
     assert.equal(fantasyExperienceSource.includes("Este bloco representa o ranking público"), false);
@@ -88,9 +95,13 @@ describe("fantasy public page", () => {
     assert.ok(fantasyExperienceSource.includes("Camiseta do evento autografada"));
     assert.ok(fantasyExperienceSource.includes("cartaz A3"));
     assert.ok(fantasyExperienceSource.includes("medalha de bronze é humilhação demais"));
-    assert.ok(
-      fantasyExperienceSource.indexOf("Premiação do fantasy") <
-        fantasyExperienceSource.indexOf("Draft board")
-    );
+  });
+
+  it("does not render the old draft board intro section", () => {
+    assert.equal(fantasyExperienceSource.includes("Draft board"), false);
+    assert.equal(fantasyExperienceSource.includes("boardHeader"), false);
+    assert.equal(fantasyExperienceSource.includes("Participantes"), false);
+    assert.equal(fantasyExperienceCssSource.includes(".boardHeader"), false);
+    assert.equal(fantasyExperienceCssSource.includes(".boardMeta"), false);
   });
 });
