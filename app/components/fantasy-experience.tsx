@@ -1,6 +1,11 @@
 "use client";
 
-import { type FormEvent, startTransition, useDeferredValue, useState } from "react";
+import {
+  type FormEvent,
+  startTransition,
+  useDeferredValue,
+  useState,
+} from "react";
 
 import {
   FANTASY_ENTRY_SOURCE,
@@ -11,12 +16,12 @@ import {
   parseFantasyEntry,
   type FantasyEntryPublicResponse,
   type FantasyPickPayload,
-  type FantasyRound
+  type FantasyRound,
 } from "@/lib/contracts/fantasy";
 import type {
   FantasyLeaderboardRow,
   FantasyMockEvent,
-  FantasyScoringRules
+  FantasyScoringRules,
 } from "@/lib/fantasy/mock-data";
 
 import { FormConfirmationPopup } from "./form-confirmation-popup";
@@ -60,18 +65,21 @@ const initialLeadDraft: LeadDraft = {
   whatsapp: "",
   city: "",
   state: "",
-  marketingConsent: false
+  marketingConsent: false,
 };
 
 const initialSubmissionState: SubmissionState = {
   status: "idle",
-  message: ""
+  message: "",
 };
 
-const victoryMethodLabel: Record<(typeof FANTASY_VICTORY_METHODS)[number], string> = {
+const victoryMethodLabel: Record<
+  (typeof FANTASY_VICTORY_METHODS)[number],
+  string
+> = {
   decisao: "Decisão",
   finalizacao: "Finalização",
-  nocaute: "Nocaute"
+  nocaute: "Nocaute",
 };
 
 const fantasyPrizes = [
@@ -83,24 +91,24 @@ const fantasyPrizes = [
       "Luva autografada",
       "camiseta do evento",
       "cartaz A2 autografado",
-      "esculhacho ao vivo na próxima live",
-      "post de anúncio dos vencedores com colab"
-    ]
+      "esculacho ao vivo na próxima live",
+      "post de anúncio dos vencedores com colab",
+    ],
   },
   {
     rank: "2º",
     title: "Vice",
     tone: "Silver",
-    prizes: ["Camiseta do evento autografada", "cartaz A3"]
+    prizes: ["Camiseta do evento autografada", "cartaz A3"],
   },
   {
     rank: "3º",
     title: "Bronze moral",
     tone: "Bronze",
     prizes: [
-      "Vídeo do Moicano desejando mais sorte, porque medalha de bronze é humilhação demais; melhor era nem ter participado"
-    ]
-  }
+      "Vídeo do Moicano desejando mais sorte, porque medalha de bronze é humilhação demais; melhor era nem ter participado",
+    ],
+  },
 ] as const;
 
 function formatShortDate(value: string) {
@@ -108,7 +116,7 @@ function formatShortDate(value: string) {
     day: "2-digit",
     month: "short",
     hour: "2-digit",
-    minute: "2-digit"
+    minute: "2-digit",
   }).format(new Date(value));
 }
 
@@ -156,7 +164,7 @@ function fighterInitials(name: string) {
 
 function looksLikeUuid(value: string) {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
-    value
+    value,
   );
 }
 
@@ -164,7 +172,7 @@ function FighterPortrait({
   cornerTone,
   imageUrl,
   name,
-  selected
+  selected,
 }: Readonly<{
   cornerTone: "red" | "blue";
   imageUrl: string;
@@ -175,7 +183,7 @@ function FighterPortrait({
     styles.portrait,
     cornerTone === "blue" ? styles.portraitBlue : null,
     selected && cornerTone === "red" ? styles.portraitSelected : null,
-    selected && cornerTone === "blue" ? styles.portraitSelectedBlue : null
+    selected && cornerTone === "blue" ? styles.portraitSelectedBlue : null,
   ]
     .filter(Boolean)
     .join(" ");
@@ -202,7 +210,7 @@ function normalizeDraftPick(pickPayload: Partial<FantasyPickPayload>) {
 
   const normalizedRound = normalizeFantasyRoundForMethod(
     pickPayload.victoryMethod,
-    pickPayload.round
+    pickPayload.round,
   );
 
   if (normalizedRound === null) {
@@ -211,7 +219,7 @@ function normalizeDraftPick(pickPayload: Partial<FantasyPickPayload>) {
 
   return {
     ...pickPayload,
-    round: normalizedRound
+    round: normalizedRound,
   };
 }
 
@@ -219,19 +227,25 @@ export function FantasyExperience({
   currentEvent,
   leaderboardEvent,
   leaderboardRows,
-  scoringRules
+  scoringRules,
 }: Readonly<FantasyExperienceProps>) {
   const [leadDraft, setLeadDraft] = useState(initialLeadDraft);
-  const [submissionState, setSubmissionState] = useState(initialSubmissionState);
-  const [submittedEntry, setSubmittedEntry] = useState<SubmittedEntry | null>(null);
-  const [pickMap, setPickMap] = useState<Record<string, Partial<FantasyPickPayload>>>({});
+  const [submissionState, setSubmissionState] = useState(
+    initialSubmissionState,
+  );
+  const [submittedEntry, setSubmittedEntry] = useState<SubmittedEntry | null>(
+    null,
+  );
+  const [pickMap, setPickMap] = useState<
+    Record<string, Partial<FantasyPickPayload>>
+  >({});
   const [statePickerOpen, setStatePickerOpen] = useState(false);
   const [confirmationMessage, setConfirmationMessage] = useState("");
 
   const deferredStateQuery = useDeferredValue(leadDraft.state);
   const stateSuggestions = findBrazilianStateSuggestions(deferredStateQuery, 7);
   const openFights = currentEvent.fights.filter((fight) =>
-    isFantasyFightPickOpen(currentEvent.status, fight)
+    isFantasyFightPickOpen(currentEvent.status, fight),
   );
 
   const completedFightCount = openFights.filter((fight) => {
@@ -239,20 +253,26 @@ export function FantasyExperience({
 
     return Boolean(
       pickPayload?.fighterId &&
-        pickPayload?.victoryMethod &&
-        normalizeFantasyRoundForMethod(pickPayload.victoryMethod, pickPayload.round) !== null
+      pickPayload?.victoryMethod &&
+      normalizeFantasyRoundForMethod(
+        pickPayload.victoryMethod,
+        pickPayload.round,
+      ) !== null,
     );
   }).length;
 
   const picksOpen = openFights.length > 0;
   const progressPercentage = Math.round(
-    (completedFightCount / Math.max(openFights.length, 1)) * 100
+    (completedFightCount / Math.max(openFights.length, 1)) * 100,
   );
 
-  function updateLeadDraft<K extends keyof LeadDraft>(field: K, value: LeadDraft[K]) {
+  function updateLeadDraft<K extends keyof LeadDraft>(
+    field: K,
+    value: LeadDraft[K],
+  ) {
     setLeadDraft((current) => ({
       ...current,
-      [field]: value
+      [field]: value,
     }));
 
     if (submissionState.status !== "idle") {
@@ -264,14 +284,17 @@ export function FantasyExperience({
     }
   }
 
-  function updateFightPick(fightId: string, patch: Partial<FantasyPickPayload>) {
+  function updateFightPick(
+    fightId: string,
+    patch: Partial<FantasyPickPayload>,
+  ) {
     setPickMap((current) => ({
       ...current,
       [fightId]: normalizeDraftPick({
         ...current[fightId],
         ...patch,
-        fightId
-      })
+        fightId,
+      }),
     }));
 
     if (submissionState.status !== "idle") {
@@ -290,7 +313,7 @@ export function FantasyExperience({
     if (!picksOpen) {
       setSubmissionState({
         status: "error",
-        message: "As picks deste evento já foram travadas."
+        message: "As picks deste evento já foram travadas.",
       });
       return;
     }
@@ -305,7 +328,7 @@ export function FantasyExperience({
 
         const round = normalizeFantasyRoundForMethod(
           pickPayload.victoryMethod,
-          pickPayload.round
+          pickPayload.round,
         );
 
         if (round === null) {
@@ -316,15 +339,18 @@ export function FantasyExperience({
           fightId: fight.id,
           fighterId: pickPayload.fighterId,
           victoryMethod: pickPayload.victoryMethod,
-          round
+          round,
         } satisfies FantasyPickPayload;
       })
-      .filter((pickPayload): pickPayload is FantasyPickPayload => pickPayload !== null);
+      .filter(
+        (pickPayload): pickPayload is FantasyPickPayload =>
+          pickPayload !== null,
+      );
 
     if (picks.length !== openFights.length) {
       setSubmissionState({
         status: "error",
-        message: "Complete todas as lutas abertas antes de enviar seu fantasy."
+        message: "Complete todas as lutas abertas antes de enviar seu fantasy.",
       });
       return;
     }
@@ -339,13 +365,13 @@ export function FantasyExperience({
       marketingConsent: leadDraft.marketingConsent,
       picks,
       source: FANTASY_ENTRY_SOURCE,
-      website: ""
+      website: "",
     });
 
     if (!parsed.ok) {
       setSubmissionState({
         status: "error",
-        message: parsed.message
+        message: parsed.message,
       });
       return;
     }
@@ -353,7 +379,7 @@ export function FantasyExperience({
     if (looksLikeUuid(currentEvent.id)) {
       setSubmissionState({
         status: "submitting",
-        message: "Enviando picks..."
+        message: "Enviando picks...",
       });
 
       try {
@@ -361,43 +387,47 @@ export function FantasyExperience({
           method: "POST",
           headers: {
             Accept: "application/json",
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
           },
           body: JSON.stringify(parsed.data),
-          cache: "no-store"
+          cache: "no-store",
         });
 
-        const payload =
-          (await response.json().catch(() => null)) as FantasyEntryPublicResponse | null;
+        const payload = (await response
+          .json()
+          .catch(() => null)) as FantasyEntryPublicResponse | null;
 
         if (!response.ok || !payload?.ok) {
           setSubmissionState({
             status: "error",
-            message: payload?.message ?? "Não foi possível enviar seus picks agora."
+            message:
+              payload?.message ?? "Não foi possível enviar seus picks agora.",
           });
           return;
         }
 
         startTransition(() => {
           setSubmittedEntry({
-            referenceCode: payload.referenceCode ?? createReferenceCode(parsed.data.fullName),
+            referenceCode:
+              payload.referenceCode ??
+              createReferenceCode(parsed.data.fullName),
             submittedAt: payload.submittedAt ?? new Date().toISOString(),
             fullName: parsed.data.fullName,
             email: parsed.data.email,
             whatsapp: parsed.data.whatsapp,
             city: parsed.data.city,
             state: parsed.data.state,
-            picks: parsed.data.picks
+            picks: parsed.data.picks,
           });
           setSubmissionState({
             status: "success",
-            message: payload.message
+            message: payload.message,
           });
         });
       } catch {
         setSubmissionState({
           status: "error",
-          message: "Não foi possível enviar seus picks agora."
+          message: "Não foi possível enviar seus picks agora.",
         });
       }
 
@@ -416,21 +446,25 @@ export function FantasyExperience({
         whatsapp: parsed.data.whatsapp,
         city: parsed.data.city,
         state: parsed.data.state,
-        picks: parsed.data.picks
+        picks: parsed.data.picks,
       });
       setSubmissionState({
         status: "success",
-        message: "Picks enviados. Quando o resultado oficial entrar, o ranking sobe automaticamente."
+        message:
+          "Picks enviados. Quando o resultado oficial entrar, o ranking sobe automaticamente.",
       });
       setConfirmationMessage(
-        "Picks enviados. Quando o resultado oficial entrar, o ranking sobe automaticamente."
+        "Picks enviados. Quando o resultado oficial entrar, o ranking sobe automaticamente.",
       );
     });
   }
 
   return (
     <form className={styles.shell} noValidate onSubmit={handleSubmit}>
-      <section className={styles.prizeSection} aria-labelledby="fantasy-prizes-title">
+      <section
+        className={styles.prizeSection}
+        aria-labelledby="fantasy-prizes-title"
+      >
         <div className={styles.prizeHeader}>
           <span className={styles.sectionKicker}>Premiação do fantasy</span>
           <h2 className={styles.prizeTitle} id="fantasy-prizes-title">
@@ -459,19 +493,20 @@ export function FantasyExperience({
           {currentEvent.fights.map((fight, index) => {
             const selectedPick = pickMap[fight.id];
             const selectedWinner = selectedPick?.fighterId ?? "";
-            const fightPicksOpen = isFantasyFightPickOpen(currentEvent.status, fight);
+            const fightPicksOpen = isFantasyFightPickOpen(
+              currentEvent.status,
+              fight,
+            );
 
             return (
               <article
-                className={
-                  [
-                    styles.fightCard,
-                    selectedWinner ? styles.fightCardComplete : null,
-                    !fightPicksOpen ? styles.fightCardClosed : null
-                  ]
-                    .filter(Boolean)
-                    .join(" ")
-                }
+                className={[
+                  styles.fightCard,
+                  selectedWinner ? styles.fightCardComplete : null,
+                  !fightPicksOpen ? styles.fightCardClosed : null,
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
                 key={fight.id}
               >
                 <header className={styles.fightHeader}>
@@ -489,52 +524,67 @@ export function FantasyExperience({
                 </header>
 
                 <div className={styles.fighterGrid}>
-                  {[fight.redCorner, fight.blueCorner].map((fighter, fighterIndex) => {
-                    const isSelected = selectedWinner === fighter.id;
-                    const cornerTone = fighterIndex === 0 ? "red" : "blue";
-                    const fighterButtonClassName = [
-                      styles.fighterButton,
-                      cornerTone === "blue" ? styles.fighterButtonBlue : null,
-                      isSelected && cornerTone === "red" ? styles.fighterButtonSelected : null,
-                      isSelected && cornerTone === "blue" ? styles.fighterButtonSelectedBlue : null
-                    ]
-                      .filter(Boolean)
-                      .join(" ");
+                  {[fight.redCorner, fight.blueCorner].map(
+                    (fighter, fighterIndex) => {
+                      const isSelected = selectedWinner === fighter.id;
+                      const cornerTone = fighterIndex === 0 ? "red" : "blue";
+                      const fighterButtonClassName = [
+                        styles.fighterButton,
+                        cornerTone === "blue" ? styles.fighterButtonBlue : null,
+                        isSelected && cornerTone === "red"
+                          ? styles.fighterButtonSelected
+                          : null,
+                        isSelected && cornerTone === "blue"
+                          ? styles.fighterButtonSelectedBlue
+                          : null,
+                      ]
+                        .filter(Boolean)
+                        .join(" ");
 
-                    return (
-                      <button
-                        aria-pressed={isSelected}
-                        className={fighterButtonClassName}
-                        disabled={!fightPicksOpen}
-                        key={fighter.id}
-                        type="button"
-                        onClick={() => {
-                          updateFightPick(fight.id, {
-                            fighterId: fighter.id
-                          });
-                        }}
-                      >
-                        <span className={styles.cornerLabel}>
-                          {fighterIndex === 0 ? "Corner vermelho" : "Corner azul"}
-                        </span>
-                        <FighterPortrait
-                          cornerTone={cornerTone}
-                          imageUrl={fighter.imageUrl}
-                          name={fighter.name}
-                          selected={isSelected}
-                        />
-                        <span className={styles.fighterName}>{fighter.name}</span>
-                        <span className={styles.fighterCountry}>{fighter.country}</span>
-                      </button>
-                    );
-                  })}
+                      return (
+                        <button
+                          aria-pressed={isSelected}
+                          className={fighterButtonClassName}
+                          disabled={!fightPicksOpen}
+                          key={fighter.id}
+                          type="button"
+                          onClick={() => {
+                            updateFightPick(fight.id, {
+                              fighterId: fighter.id,
+                            });
+                          }}
+                        >
+                          <span className={styles.cornerLabel}>
+                            {fighterIndex === 0
+                              ? "Corner vermelho"
+                              : "Corner azul"}
+                          </span>
+                          <FighterPortrait
+                            cornerTone={cornerTone}
+                            imageUrl={fighter.imageUrl}
+                            name={fighter.name}
+                            selected={isSelected}
+                          />
+                          <span className={styles.fighterName}>
+                            {fighter.name}
+                          </span>
+                          <span className={styles.fighterCountry}>
+                            {fighter.country}
+                          </span>
+                        </button>
+                      );
+                    },
+                  )}
                 </div>
 
                 <div className={styles.selectorBlock}>
-                  <span className={styles.selectorLabel}>Método da vitória</span>
+                  <span className={styles.selectorLabel}>
+                    Método da vitória
+                  </span>
                   <div className={styles.selectorRow}>
                     {FANTASY_VICTORY_METHODS.map((victoryMethod) => {
-                      const selected = selectedPick?.victoryMethod === victoryMethod;
+                      const selected =
+                        selectedPick?.victoryMethod === victoryMethod;
 
                       return (
                         <button
@@ -549,7 +599,7 @@ export function FantasyExperience({
                           type="button"
                           onClick={() => {
                             updateFightPick(fight.id, {
-                              victoryMethod
+                              victoryMethod,
                             });
                           }}
                         >
@@ -563,33 +613,38 @@ export function FantasyExperience({
                 <div className={styles.selectorBlock}>
                   <span className={styles.selectorLabel}>Round</span>
                   <div className={styles.selectorRow}>
-                    {Array.from({ length: fight.maxRound }, (_, indexValue) => (indexValue + 1) as FantasyRound).map(
-                      (round) => {
-                        const decisionAutoRound = selectedPick?.victoryMethod === "decisao";
-                        const selected = selectedPick?.round === round;
+                    {Array.from(
+                      { length: fight.maxRound },
+                      (_, indexValue) => (indexValue + 1) as FantasyRound,
+                    ).map((round) => {
+                      const decisionAutoRound =
+                        selectedPick?.victoryMethod === "decisao";
+                      const selected = selectedPick?.round === round;
 
-                        return (
-                          <button
-                            aria-pressed={selected}
-                            className={
-                              selected
-                                ? `${styles.roundButton} ${styles.selectorButtonSelected}`
-                                : styles.roundButton
-                            }
-                            disabled={!fightPicksOpen || (decisionAutoRound && round !== 3)}
-                            key={round}
-                            type="button"
-                            onClick={() => {
-                              updateFightPick(fight.id, {
-                                round
-                              });
-                            }}
-                          >
-                            R{round}
-                          </button>
-                        );
-                      }
-                    )}
+                      return (
+                        <button
+                          aria-pressed={selected}
+                          className={
+                            selected
+                              ? `${styles.roundButton} ${styles.selectorButtonSelected}`
+                              : styles.roundButton
+                          }
+                          disabled={
+                            !fightPicksOpen ||
+                            (decisionAutoRound && round !== 3)
+                          }
+                          key={round}
+                          type="button"
+                          onClick={() => {
+                            updateFightPick(fight.id, {
+                              round,
+                            });
+                          }}
+                        >
+                          R{round}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
               </article>
@@ -609,11 +664,14 @@ export function FantasyExperience({
               </span>
             </div>
             <div className={styles.progressTrack} aria-hidden="true">
-              <span className={styles.progressFill} style={{ width: `${progressPercentage}%` }} />
+              <span
+                className={styles.progressFill}
+                style={{ width: `${progressPercentage}%` }}
+              />
             </div>
             <p className={styles.panelCopy}>
-              Picks liberados enquanto o evento estiver em status aberto. Depois do lock, só o
-              ranking e seus picks continuam disponíveis.
+              Picks liberados enquanto o evento estiver em status aberto. Depois
+              do lock, só o ranking e seus picks continuam disponíveis.
             </p>
           </section>
 
@@ -732,11 +790,15 @@ export function FantasyExperience({
                 required
                 type="checkbox"
                 onChange={(event) => {
-                  updateLeadDraft("marketingConsent", event.currentTarget.checked);
+                  updateLeadDraft(
+                    "marketingConsent",
+                    event.currentTarget.checked,
+                  );
                 }}
               />
               <span>
-                Autorizo receber newsletters e ofertas dos parceiros oficiais do evento.
+                Autorizo receber newsletters e ofertas dos parceiros oficiais do
+                evento.
               </span>
             </label>
 
@@ -809,7 +871,8 @@ export function FantasyExperience({
                 <div className={styles.privateMeta}>
                   <span>Contato</span>
                   <strong>
-                    {maskEmail(submittedEntry.email)} · {maskWhatsapp(submittedEntry.whatsapp)}
+                    {maskEmail(submittedEntry.email)} ·{" "}
+                    {maskWhatsapp(submittedEntry.whatsapp)}
                   </strong>
                 </div>
                 <div className={styles.privateMeta}>
@@ -826,20 +889,28 @@ export function FantasyExperience({
 
               <div className={styles.privatePickList}>
                 {submittedEntry.picks.map((pickPayload) => {
-                  const fight = currentEvent.fights.find((fightItem) => fightItem.id === pickPayload.fightId);
+                  const fight = currentEvent.fights.find(
+                    (fightItem) => fightItem.id === pickPayload.fightId,
+                  );
                   const pickedFighter =
-                    fight?.redCorner.id === pickPayload.fighterId ? fight.redCorner : fight?.blueCorner;
+                    fight?.redCorner.id === pickPayload.fighterId
+                      ? fight.redCorner
+                      : fight?.blueCorner;
 
                   if (!fight || !pickedFighter) {
                     return null;
                   }
 
                   return (
-                    <div className={styles.privatePick} key={pickPayload.fightId}>
+                    <div
+                      className={styles.privatePick}
+                      key={pickPayload.fightId}
+                    >
                       <span>{fight.label}</span>
                       <strong>{pickedFighter.name}</strong>
                       <small>
-                        {victoryMethodLabel[pickPayload.victoryMethod]} · R{pickPayload.round}
+                        {victoryMethodLabel[pickPayload.victoryMethod]} · R
+                        {pickPayload.round}
                       </small>
                     </div>
                   );
@@ -847,7 +918,9 @@ export function FantasyExperience({
               </div>
             </div>
           ) : (
-            <p className={styles.privateEmpty}>Envie seus picks para ver o resumo aqui.</p>
+            <p className={styles.privateEmpty}>
+              Envie seus picks para ver o resumo aqui.
+            </p>
           )}
         </section>
 
@@ -858,7 +931,9 @@ export function FantasyExperience({
               <h3>{leaderboardEvent.name}</h3>
             </div>
             {leaderboardRows.length ? (
-              <span className={styles.privateBadge}>{leaderboardRows.length} players</span>
+              <span className={styles.privateBadge}>
+                {leaderboardRows.length} players
+              </span>
             ) : null}
           </div>
 
@@ -871,7 +946,8 @@ export function FantasyExperience({
                     <div>
                       <strong>{row.displayName}</strong>
                       <small>
-                        {row.perfectPicks} pick{row.perfectPicks === 1 ? "" : "s"} perfeita
+                        {row.perfectPicks} pick
+                        {row.perfectPicks === 1 ? "" : "s"} perfeita
                         {row.perfectPicks === 1 ? "" : "s"}
                       </small>
                     </div>
