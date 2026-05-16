@@ -75,6 +75,35 @@ const victoryMethodLabel: Record<(typeof FANTASY_VICTORY_METHODS)[number], strin
   nocaute: "Nocaute"
 };
 
+const fantasyPrizes = [
+  {
+    rank: "1º",
+    title: "Campeão",
+    tone: "Gold",
+    prizes: [
+      "Luva autografada",
+      "camiseta do evento",
+      "cartaz A2 autografado",
+      "esculhacho ao vivo na próxima live",
+      "post de anúncio dos vencedores com colab"
+    ]
+  },
+  {
+    rank: "2º",
+    title: "Vice",
+    tone: "Silver",
+    prizes: ["Camiseta do evento autografada", "cartaz A3"]
+  },
+  {
+    rank: "3º",
+    title: "Bronze moral",
+    tone: "Bronze",
+    prizes: [
+      "Vídeo do Moicano desejando mais sorte, porque medalha de bronze é humilhação demais; melhor era nem ter participado"
+    ]
+  }
+] as const;
+
 function formatLongDate(value: string) {
   return new Intl.DateTimeFormat("pt-BR", {
     dateStyle: "long",
@@ -422,6 +451,30 @@ export function FantasyExperience({
 
   return (
     <form className={styles.shell} noValidate onSubmit={handleSubmit}>
+      <section className={styles.prizeSection} aria-labelledby="fantasy-prizes-title">
+        <div className={styles.prizeHeader}>
+          <span className={styles.sectionKicker}>Premiação do fantasy</span>
+          <h2 className={styles.prizeTitle} id="fantasy-prizes-title">
+            Top 3 leva
+          </h2>
+        </div>
+
+        <ol className={styles.prizeList}>
+          {fantasyPrizes.map((prize) => (
+            <li
+              className={`${styles.prizeItem} ${styles[`prizeItem${prize.tone}`]}`}
+              key={prize.rank}
+            >
+              <span className={styles.prizeRank}>{prize.rank}</span>
+              <div className={styles.prizeCopy}>
+                <h3>{prize.title}</h3>
+                <p>{prize.prizes.join(", ")}.</p>
+              </div>
+            </li>
+          ))}
+        </ol>
+      </section>
+
       <section className={styles.boardHeader}>
         <div className={styles.boardHeaderCopy}>
           <span className={styles.sectionKicker}>Draft board</span>

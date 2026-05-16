@@ -56,8 +56,7 @@ const mdueUrl =
   "https://hub.la/g/3KzbFzhm4Lb56jJcDqut?utm_id=97760_v0_s00_e0_tv3";
 const instagramProfileUrl = "https://www.instagram.com/moneymoicano.mma/";
 const fighterSignupUrl = "https://mma.moicano.tv/";
-const symplaTicketsUrl =
-  "https://www.sympla.com.br/evento/money-moicano-mma-1/3391967?share_id=site";
+const symplaTicketsUrl = "https://www.sympla.com.br/evento/money-moicano-mma-1/3391967";
 const fighterSignupLogo =
   "https://assets.moneymoicanomma.com.br/rinha-de-inscritos.svg";
 
@@ -530,9 +529,14 @@ export default async function Home() {
           </p>
 
           <div className="hero__actions">
-            {/* Reativar o CTA de ingressos no hero quando o link oficial estiver disponível. */}
-            <LandingButton href="/blog" size="large" variant="primary">
-              Blog
+            <LandingButton
+              href={symplaTicketsUrl}
+              rel="noopener noreferrer"
+              size="large"
+              target="_blank"
+              variant="primary"
+            >
+              Compre seu ingresso
             </LandingButton>
             <LandingButton href="#transmissao" size="large" variant="secondary">
               Saiba mais

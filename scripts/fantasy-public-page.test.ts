@@ -78,4 +78,19 @@ describe("fantasy public page", () => {
     assert.equal(fantasyExperienceSource.includes("Como o usuário vai rever"), false);
     assert.equal(fantasyExperienceSource.includes("Este bloco representa o ranking público"), false);
   });
+
+  it("shows the fantasy prize podium before the picks board", () => {
+    assert.ok(fantasyExperienceSource.includes("Premiação do fantasy"));
+    assert.ok(fantasyExperienceSource.includes("Luva autografada"));
+    assert.ok(fantasyExperienceSource.includes("camiseta do evento"));
+    assert.ok(fantasyExperienceSource.includes("cartaz A2 autografado"));
+    assert.ok(fantasyExperienceSource.includes("esculhacho ao vivo na próxima live"));
+    assert.ok(fantasyExperienceSource.includes("Camiseta do evento autografada"));
+    assert.ok(fantasyExperienceSource.includes("cartaz A3"));
+    assert.ok(fantasyExperienceSource.includes("medalha de bronze é humilhação demais"));
+    assert.ok(
+      fantasyExperienceSource.indexOf("Premiação do fantasy") <
+        fantasyExperienceSource.indexOf("Draft board")
+    );
+  });
 });
